@@ -8,13 +8,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Generate gradle wrapper
-        run: |
-          gradle wrapper --gradle-version 8.7
-
-      - name: Commit wrapper files
-        uses: stefanzweifel/git-auto-commit-action@v4
+      - name: Generate Gradle Wrapper
+        uses: gradle/actions/setup-gradle@v3
         with:
-          commit_message: "Add Gradle Wrapper"
+          gradle-version: 8.7
+          arguments: wrapper --gradle-version 8.7
+
+      - name: List generated files
+        run: |
+          ls
+          ls gradle
+          ls gradle/wrapper
