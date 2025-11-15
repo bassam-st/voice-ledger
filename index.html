@@ -9,47 +9,51 @@
     body{
       margin:0;
       font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
-      background:#020617;
-      color:#e5e7eb;
+      background:#f3f4f6;
+      color:#111827;
     }
     .app{
-      max-width:960px;
+      max-width:980px;
       margin:12px auto 32px;
       padding:12px;
     }
     h1{
       margin:0 0 10px;
-      font-size:1.3rem;
+      font-size:1.35rem;
       text-align:center;
+      color:#065f46;
     }
     .card{
-      background:#020617;
-      border-radius:16px;
-      border:1px solid #1f2937;
+      background:#ffffff;
+      border-radius:18px;
+      border:1px solid #e5e7eb;
       padding:12px;
-      box-shadow:0 10px 30px rgba(0,0,0,.4);
+      box-shadow:0 10px 30px rgba(15,23,42,.08);
       margin-bottom:12px;
     }
     .tabs{
       display:flex;
       gap:6px;
       margin-bottom:10px;
+      background:#f3f4f6;
+      padding:4px;
+      border-radius:999px;
     }
     .tab-btn{
       flex:1;
       padding:8px;
       border-radius:999px;
-      border:1px solid #1f2937;
-      background:#020617;
-      color:#9ca3af;
+      border:none;
+      background:transparent;
+      color:#6b7280;
       font-size:.9rem;
       cursor:pointer;
     }
     .tab-btn.active{
       background:#10b981;
-      color:#022c22;
-      border-color:#059669;
+      color:#ecfdf5;
       font-weight:600;
+      box-shadow:0 1px 3px rgba(16,185,129,.4);
     }
     .row{
       display:flex;
@@ -61,7 +65,7 @@
     .row label{
       min-width:90px;
       font-size:.85rem;
-      color:#9ca3af;
+      color:#4b5563;
     }
     input[type="text"],
     input[type="number"],
@@ -71,9 +75,9 @@
       flex:1;
       padding:6px 8px;
       border-radius:10px;
-      border:1px solid #374151;
-      background:#020617;
-      color:#e5e7eb;
+      border:1px solid #d1d5db;
+      background:#ffffff;
+      color:#111827;
       font-size:.9rem;
     }
     input[type="number"]{
@@ -90,7 +94,7 @@
       min-height:70px;
       resize:vertical;
     }
-    small{font-size:.75rem;color:#9ca3af}
+    small{font-size:.75rem;color:#6b7280}
     .items-header{
       display:flex;
       justify-content:space-between;
@@ -106,10 +110,10 @@
       flex-wrap:wrap;
     }
     .items-list{
-      border:1px solid #1f2937;
+      border:1px solid #e5e7eb;
       border-radius:12px;
       padding:6px;
-      background:#020617;
+      background:#f9fafb;
       max-height:260px;
       overflow-y:auto;
     }
@@ -136,23 +140,27 @@
       border-radius:999px;
       border:none;
       background:#ef4444;
-      color:#fee2e2;
+      color:#fef2f2;
       font-size:.75rem;
       cursor:pointer;
     }
     .pill-btn{
       padding:4px 10px;
       border-radius:999px;
-      border:1px dashed #4b5563;
-      background:#020617;
-      color:#e5e7eb;
+      border:1px dashed #6b7280;
+      background:#ffffff;
+      color:#065f46;
       font-size:.8rem;
       cursor:pointer;
+    }
+    .pill-btn:hover{
+      background:#ecfdf5;
+      border-color:#10b981;
     }
     .pill-btn:active,
     button:active{
       transform:translateY(1px);
-      opacity:.9;
+      opacity:.95;
     }
     .primary-btn{
       width:100%;
@@ -161,19 +169,24 @@
       border-radius:12px;
       border:none;
       background:#10b981;
-      color:#022c22;
+      color:#ecfdf5;
       font-weight:600;
       font-size:.95rem;
       cursor:pointer;
+      box-shadow:0 2px 5px rgba(16,185,129,.35);
+    }
+    .primary-btn.editing{
+      background:#0ea5e9;
+      box-shadow:0 2px 5px rgba(14,165,233,.35);
     }
     .secondary-btn{
       width:100%;
       margin-top:6px;
       padding:8px;
       border-radius:12px;
-      border:1px solid #4b5563;
-      background:#020617;
-      color:#e5e7eb;
+      border:1px solid #d1d5db;
+      background:#ffffff;
+      color:#111827;
       font-size:.85rem;
       cursor:pointer;
     }
@@ -181,10 +194,11 @@
       width:100%;
       min-height:130px;
       margin-top:6px;
+      background:#f9fafb;
     }
     .history-list{
       margin-top:6px;
-      border-top:1px dashed #374151;
+      border-top:1px dashed #e5e7eb;
       padding-top:6px;
       max-height:180px;
       overflow-y:auto;
@@ -192,13 +206,14 @@
     .history-item{
       padding:6px 8px;
       border-radius:10px;
-      border:1px solid #1f2937;
+      border:1px solid #e5e7eb;
       margin-bottom:4px;
       cursor:pointer;
       font-size:.8rem;
       display:flex;
       justify-content:space-between;
       gap:6px;
+      background:#f9fafb;
     }
     .history-item span{
       white-space:nowrap;
@@ -207,7 +222,11 @@
       max-width:60%;
     }
     .history-item small{
-      color:#a5b4fc;
+      color:#6366f1;
+    }
+    .history-item:hover{
+      background:#ecfdf5;
+      border-color:#10b981;
     }
     .customers-list{
       margin-top:8px;
@@ -220,9 +239,10 @@
       align-items:center;
       padding:6px 8px;
       border-radius:10px;
-      border:1px solid #1f2937;
+      border:1px solid #e5e7eb;
       margin-bottom:4px;
       font-size:.85rem;
+      background:#f9fafb;
     }
     .customer-row-buttons button{
       border:none;
@@ -233,7 +253,7 @@
       margin-inline-start:4px;
     }
     .btn-small-danger{background:#b91c1c;color:#fee2e2;}
-    .btn-small-neutral{background:#111827;color:#e5e7eb;border:1px solid #4b5563;}
+    .btn-small-neutral{background:#ffffff;color:#111827;border:1px solid #d1d5db;}
     @media (min-width:720px){
       .grid-2{
         display:grid;
@@ -317,7 +337,7 @@
           <input type="text" id="customerNoteInput" placeholder="مثال: شاشات، بطاريات، شحنات شهرية ...">
         </div>
         <button id="btnAddCustomer" class="primary-btn">➕ إضافة / تحديث عميل</button>
-        <small>ملاحظة: الأسماء تحفظ داخل جوالك فقط (localStorage)، ولن تضيع إلا إذا مسحت بيانات المتصفح.</small>
+        <small>ملاحظة: الأسماء تحفظ داخل جهازك فقط (localStorage)، ولن تضيع إلا إذا مسحت بيانات المتصفح.</small>
 
         <div class="customers-list" id="customersList"></div>
       </div>
@@ -325,11 +345,9 @@
   </div>
 
   <script>
-    // مفاتيح التخزين
     const STORAGE_CUSTOMERS = "kashf_customers_v1";
     const STORAGE_STATEMENTS = "kashf_statements_v1";
 
-    // العملات المتاحة
     const CURRENCIES = [
       {code:"YER", label:"يمني"},
       {code:"SAR", label:"سعودي"},
@@ -344,6 +362,8 @@
 
     let customers = [];
     let statements = [];
+    let editingCustomerId = null;
+    let editingStatementId = null;
 
     // DOM
     const tabStatements = document.getElementById("tabStatements");
@@ -371,16 +391,12 @@
     const btnCopy = document.getElementById("btnCopy");
     const btnAddCustomer = document.getElementById("btnAddCustomer");
 
-    let editingCustomerId = null;
-
-    // توابع مساعدة
     function loadFromStorage() {
       try {
         const c = localStorage.getItem(STORAGE_CUSTOMERS);
         const s = localStorage.getItem(STORAGE_STATEMENTS);
         customers = c ? JSON.parse(c) : [];
         statements = s ? JSON.parse(s) : [];
-        // توافق مع البيانات القديمة (بنود بدون عملة)
         statements.forEach(st=>{
           if(Array.isArray(st.items)){
             st.items.forEach(it=>{
@@ -663,7 +679,7 @@
       outputText.value = lines.join("\n");
     }
 
-    // حفظ واسترجاع الكشوف
+    // حفظ / تعديل الكشوف
     function saveCurrentStatement() {
       const customerId = customerSelect.value;
       if (!customerId) {
@@ -685,20 +701,44 @@
       const totals = computeTotalsByCurrency(items);
       const totalAll = Object.values(totals).reduce((a,b)=>a+b,0);
 
-      const stmt = {
-        id: "s_" + Date.now(),
-        customerId,
-        date,
-        title,
-        notes,
-        items,
-        total: totalAll,
-        createdAt: new Date().toISOString()
-      };
-      statements.push(stmt);
-      saveStatements();
-      renderHistory();
-      alert("تم حفظ الكشف.");
+      if (editingStatementId) {
+        if (!confirm("هل تريد حفظ التعديلات على هذا الكشف؟")) return;
+        const idx = statements.findIndex(st=>st.id === editingStatementId);
+        if (idx !== -1) {
+          const old = statements[idx];
+          statements[idx] = {
+            ...old,
+            customerId,
+            date,
+            title,
+            notes,
+            items,
+            total: totalAll,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        saveStatements();
+        editingStatementId = null;
+        btnSaveStatement.textContent = "💾 حفظ الكشف لهذا العميل";
+        btnSaveStatement.classList.remove("editing");
+        renderHistory();
+        alert("تم حفظ التعديلات على الكشف.");
+      } else {
+        const stmt = {
+          id: "s_" + Date.now(),
+          customerId,
+          date,
+          title,
+          notes,
+          items,
+          total: totalAll,
+          createdAt: new Date().toISOString()
+        };
+        statements.push(stmt);
+        saveStatements();
+        renderHistory();
+        alert("تم حفظ الكشف.");
+      }
     }
 
     btnSaveStatement.addEventListener("click", () => {
@@ -751,7 +791,10 @@
       (s.items || []).forEach(it => addItem(it.desc, it.amount, it.currency || "YER"));
       updateTotal();
       updateOutput();
-      alert("تم تحميل الكشف في النموذج، يمكنك تعديله وإرساله للتاجر.");
+      editingStatementId = s.id;
+      btnSaveStatement.textContent = "💾 حفظ التعديلات على هذا الكشف";
+      btnSaveStatement.classList.add("editing");
+      alert("تم تحميل الكشف في النموذج. عدّل البنود ثم اضغط حفظ التعديلات.");
     }
 
     btnNewStatement.addEventListener("click", () => {
@@ -764,6 +807,9 @@
       if (currentCustomer) customerSelect.value = currentCustomer;
       updateTotal();
       updateOutput();
+      editingStatementId = null;
+      btnSaveStatement.textContent = "💾 حفظ الكشف لهذا العميل";
+      btnSaveStatement.classList.remove("editing");
     });
 
     // زر نسخ البنود من آخر كشف
@@ -791,6 +837,9 @@
       last.items.forEach(it=> addItem(it.desc, "", it.currency || "YER"));
       updateTotal();
       updateOutput();
+      editingStatementId = null;
+      btnSaveStatement.textContent = "💾 حفظ الكشف لهذا العميل";
+      btnSaveStatement.classList.remove("editing");
     });
 
     // نسخ النص
@@ -819,6 +868,9 @@
     customerSelect.addEventListener("change", () => {
       renderHistory();
       updateOutput();
+      editingStatementId = null;
+      btnSaveStatement.textContent = "💾 حفظ الكشف لهذا العميل";
+      btnSaveStatement.classList.remove("editing");
     });
     dateInput.addEventListener("change", updateOutput);
     titleInput.addEventListener("input", updateOutput);
