@@ -1,0 +1,20 @@
+name: Generate Gradle Wrapper
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate gradle wrapper
+        run: |
+          gradle wrapper --gradle-version 8.7
+
+      - name: Commit wrapper files
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Add Gradle Wrapper"
