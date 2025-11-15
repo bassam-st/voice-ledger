@@ -1,0 +1,44 @@
+{
+  "clients": [
+    {
+      "id": "badyan",
+      "name": "باديان"
+    },
+    {
+      "id": "qatra_zaki",
+      "name": "قاطرة زكي"
+    }
+  ],
+  "statements": [
+    {
+      "id": "st_2025_11_16_1",
+      "clientId": "badyan",
+      "date": "2025-11-16",
+      "title": "بيان شحنة شاشات من شحن",
+      "notes": "بدون المضخة والشاشات ما يغيّر الوصف.",
+      "items": [
+        {
+          "description": "بيان وتحسين",
+          "amount": 2270206,
+          "currency": "YER"
+        },
+        {
+          "description": "جهات أمنية مع البطاريات وبالعقب",
+          "amount": 200000,
+          "currency": "YER"
+        },
+        {
+          "description": "المفتشين ومدراء التفتيش",
+          "amount": 1900,
+          "currency": "SAR"
+        }
+      ],
+      "totalByCurrency": {
+        "YER": 2470206,
+        "SAR": 1900
+      },
+      "createdAt": "2025-11-16T20:20:00Z",
+      "updatedAt": "2025-11-16T20:20:00Z"
+    }
+  ]
+}
