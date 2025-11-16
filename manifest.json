@@ -1,0 +1,11 @@
+{
+  "name": "دفتر كشف الحساب اليومي",
+  "short_name": "كشف الحساب",
+  "start_url": "/voice-ledger/",
+  "scope": "/voice-ledger/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#16a34a",
+  "description": "تطبيق بسيط لحفظ كشوفات العملاء اليومية محلياً على جوال صاحب التطبيق.",
+  "icons": []
+}
