@@ -1,11 +1,12 @@
-self.addEventListener('install', event => {
+self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
-  clients.claim();
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('fetch', event => {
-  // نترك المتصفح يتصرف كما هو (فقط لشرط وجود service worker)
+// شبكة مباشرة بدون كاش معقد – يكفي فقط لكي يتعرف المتصفح أنه PWA
+self.addEventListener("fetch", (event) => {
+  return;
 });
