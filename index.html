@@ -2,745 +2,763 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>دفتر كشف الحساب اليومي</title>
-
-  <meta name="theme-color" content="#16a34a">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="manifest" href="manifest.json">
-
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      background: #f4f6f8;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial;
+      background: #f5f7f9;
       color: #111827;
     }
-    .app-shell {
+    .app {
       max-width: 900px;
-      margin: 0 auto;
+      margin: 16px auto 40px;
+      background: #ffffff;
+      border-radius: 18px;
       padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.06);
     }
     h1 {
       text-align: center;
-      margin: 12px 0 16px;
-      font-size: 1.4rem;
-      color: #166534;
+      margin: 0 0 8px;
+      font-size: 22px;
+      color: #059669;
     }
-    .card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 20px rgba(15,23,42,0.06);
+    .install-link {
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: #111827;
+    }
+    .install-btn {
+      border: none;
+      background: none;
+      color: #059669;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      display: none; /* نُظهره من الجافاسكربت عند توفر التثبيت */
+    }
+
+    .tabs {
+      display: flex;
+      border-radius: 999px;
+      overflow: hidden;
       border: 1px solid #e5e7eb;
+      margin-bottom: 10px;
     }
+    .tab {
+      flex: 1;
+      padding: 8px 0;
+      text-align: center;
+      font-size: 14px;
+      cursor: pointer;
+      background: #f9fafb;
+      color: #111827;
+    }
+    .tab.active {
+      background: #059669;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
     label {
       display: block;
-      margin-bottom: 4px;
-      font-size: .9rem;
+      font-size: 13px;
+      margin: 8px 4px 4px;
       color: #374151;
     }
     input, select, textarea {
       width: 100%;
-      padding: 10px 12px;
+      padding: 10px;
       border-radius: 10px;
       border: 1px solid #d1d5db;
-      font-size: .95rem;
-      background: #ffffff;
-      color: inherit;
+      font-size: 14px;
+      outline: none;
     }
     input:focus, select:focus, textarea:focus {
-      outline: 2px solid #16a34a55;
-      border-color: #16a34a;
+      border-color: #059669;
+      box-shadow: 0 0 0 2px rgba(5,150,105,.15);
     }
-    textarea { min-height: 80px; resize: vertical; }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
 
     .row {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
     }
-    .row > * { flex: 1 1 0; }
+    .row > div {
+      flex: 1;
+      min-width: 120px;
+    }
 
-    .btn {
-      border: none;
+    .chip-btn, .primary-btn, .danger-btn, .secondary-btn {
       border-radius: 999px;
+      border: none;
       padding: 10px 16px;
-      font-size: .95rem;
+      font-size: 14px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      white-space: nowrap;
     }
-    .btn-primary {
-      background: #16a34a;
+    .chip-btn {
+      background: #10b981;
       color: #ffffff;
+      font-weight: 600;
     }
-    .btn-primary:active { opacity: .85; }
-    .btn-secondary {
+    .secondary-btn {
       background: #e5e7eb;
       color: #111827;
     }
-    .btn-danger {
+    .primary-btn {
+      background: #059669;
+      color: #ffffff;
+      font-weight: 600;
+      width: 100%;
+      margin-top: 6px;
+    }
+    .danger-btn {
       background: #ef4444;
       color: #ffffff;
-    }
-    .btn-outline {
-      background: transparent;
-      border: 1px solid #16a34a;
-      color: #16a34a;
+      font-weight: 600;
     }
 
-    .pill-tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .pill {
-      flex: 1 1 0;
-      text-align: center;
-      padding: 10px 0;
-      border-radius: 999px;
-      border: 1px solid #16a34a;
-      cursor: pointer;
-      font-size: .95rem;
-      color: #166534;
-      background: #ffffff;
-    }
-    .pill.active {
-      background: #16a34a;
-      color: #ffffff;
-    }
-
-    .items-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-    .items-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .items-container {
+      margin-top: 8px;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      padding: 10px;
+      background: #f9fafb;
     }
     .item-row {
       display: grid;
-      grid-template-columns: minmax(0,2.3fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1.1fr) auto;
+      grid-template-columns: minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;
       gap: 6px;
+      margin-bottom: 6px;
+      align-items: center;
     }
-    @media (max-width: 640px) {
-      .item-row {
-        grid-template-columns: minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);
-        grid-template-rows: auto auto;
-      }
-      .item-row .item-direction {
-        grid-column: 1 / 3;
-      }
-      .item-row button {
-        grid-column: 3 / -1;
-      }
-    }
-
-    .hint {
-      font-size: .8rem;
-      color: #6b7280;
-      margin-top: 4px;
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #ecfdf5;
+      color: #059669;
+      margin-right: 6px;
     }
 
-    .history-list {
+    .section-title {
+      margin: 14px 0 6px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #111827;
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 6px;
-      max-height: 240px;
-      overflow-y: auto;
-      padding-right: 4px;
+    }
+
+    .history-list, .totals-box {
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      padding: 10px;
+      background: #f9fafb;
+      font-size: 13px;
     }
     .history-item {
-      padding: 8px 10px;
+      padding: 6px 8px;
       border-radius: 10px;
-      background: #f3f4f6;
+      background: #ecfdf5;
+      margin-bottom: 4px;
       cursor: pointer;
-      font-size: .9rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 8px;
     }
     .history-item span.title {
-      font-weight: 500;
+      font-weight: 600;
     }
     .history-item small {
       color: #6b7280;
     }
-    .history-item.active {
-      background: #dcfce7;
-      border: 1px solid #16a34a55;
-    }
 
-    .totals-block {
+    .muted {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .whats-box {
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      padding: 10px;
       background: #f9fafb;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-size: .9rem;
-      line-height: 1.6;
-      border: 1px dashed #d1d5db;
-      white-space: pre-wrap;
     }
 
-    #installBtn {
-      width: 100%;
-      margin-bottom: 8px;
-    }
-
-    textarea#whatsAppText {
-      min-height: 120px;
-      white-space: pre-wrap;
+    @media (max-width: 600px) {
+      .app { margin: 8px; padding: 12px; }
+      .item-row {
+        grid-template-columns: minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 70px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="app-shell">
+  <div class="app">
     <h1>📒 دفتر كشف الحساب اليومي</h1>
-
-    <!-- زر تثبيت التطبيق -->
-    <button id="installBtn" class="btn btn-outline" hidden>
-      📲 تثبيت التطبيق
-    </button>
-
-    <div class="card">
-      <div class="pill-tabs">
-        <div id="tabStatements" class="pill active">الكشوفات</div>
-        <div id="tabCustomers" class="pill">العملاء</div>
-      </div>
-
-      <!-- تبويب الكشوفات -->
-      <div id="viewStatements">
-        <div class="row">
-          <div>
-            <label>العميل:</label>
-            <select id="customerSelect"></select>
-          </div>
-          <div>
-            <label>التاريخ:</label>
-            <input id="dateInput" type="date">
-          </div>
-        </div>
-
-        <div style="margin-top:10px;">
-          <label>عنوان الكشف:</label>
-          <input id="titleInput" type="text" placeholder="مثال: بيان شحنة شاشات من شحن">
-        </div>
-
-        <div style="margin-top:14px;">
-          <div class="items-header">
-            <label style="margin-bottom:0;">البنود التفصيلية</label>
-            <div class="row" style="gap:6px; justify-content:flex-end;">
-              <button id="copyLastBtn" class="btn btn-secondary" type="button">
-                📋 نسخ البنود من آخر كشف
-              </button>
-              <button id="addItemBtn" class="btn btn-primary" type="button">
-                + بند جديد
-              </button>
-            </div>
-          </div>
-          <div class="hint">
-            لكل بند يمكنك اختيار: المبلغ <strong>له</strong> أو <strong>عليه</strong> مع تحديد العملة.
-          </div>
-
-          <div id="itemsContainer" class="items-list"></div>
-        </div>
-
-        <div style="margin-top:10px;">
-          <label>الإجمالي (اختياري):</label>
-          <input id="manualTotal" type="text" placeholder="مثال: 3,326,706 يمني + 2,300 سعودي">
-        </div>
-
-        <div style="margin-top:10px;">
-          <label>ملاحظات إضافية (اختياري):</label>
-          <textarea id="notesInput" placeholder="أي ملاحظات تريد ظهورها في نهاية الكشف"></textarea>
-        </div>
-
-        <div class="row" style="margin-top:14px;">
-          <button id="saveBtn" class="btn btn-primary" type="button">
-            💾 حفظ الكشف لهذا العميل
-          </button>
-          <button id="newWithSameClientBtn" class="btn btn-secondary" type="button">
-            + كشف جديد (مع نفس العميل)
-          </button>
-        </div>
-      </div>
-
-      <!-- تبويب العملاء -->
-      <div id="viewCustomers" style="display:none; margin-top:8px;">
-        <label>إضافة عميل جديد:</label>
-        <div class="row">
-          <input id="newCustomerName" type="text" placeholder="اسم العميل">
-          <button id="addCustomerBtn" class="btn btn-primary" type="button">إضافة</button>
-        </div>
-      </div>
+    <div class="install-link">
+      <button id="installButton" class="install-btn">تثبيت التطبيق 📱</button>
     </div>
 
-    <div class="card">
-      <label>النص الجاهز للإرسال في الواتساب:</label>
-      <textarea id="whatsAppText" readonly></textarea>
-
-      <div class="row" style="margin-top:10px;">
-        <button id="copyTextBtn" class="btn btn-secondary" type="button">📋 نسخ النص</button>
-        <button id="shareWhatsAppBtn" class="btn btn-primary" type="button">🟢 مشاركة في واتساب</button>
-        <button id="sharePdfBtn" class="btn btn-secondary" type="button">📎 مشاركة كـ PDF</button>
-      </div>
+    <div class="tabs">
+      <div class="tab active" id="tabStatements">الكشوفات</div>
+      <div class="tab" id="tabClients">العملاء</div>
     </div>
 
-    <div class="card">
-      <h3 style="margin-top:0; font-size:1rem; color:#166534;">🗂 سجّل الكشوفات لهذا العميل:</h3>
-      <div id="historyList" class="history-list"></div>
-    </div>
+    <!-- نموذج الكشف -->
+    <div id="statementsView">
+      <label>العميل:</label>
+      <input id="clientInput" list="clientsList" placeholder="اكتب اسم العميل أو اختره">
+      <datalist id="clientsList"></datalist>
 
-    <div class="card">
-      <h3 style="margin-top:0; font-size:1rem; color:#166534;">📊 إجمالي حسابات هذا العميل</h3>
-      <div id="customerTotals" class="totals-block">
-لا توجد كشوفات بعد لهذا العميل.
+      <label>التاريخ:</label>
+      <input id="dateInput" type="date">
+
+      <label>عنوان الكشف:</label>
+      <input id="titleInput" placeholder="مثال: بيان محضر شحن من شحن">
+
+      <div class="row" style="margin-top:6px">
+        <button class="chip-btn" id="addItemBtn">+ بند جديد</button>
+        <button class="secondary-btn" id="copyLastItemsBtn">📋 نسخ البنود من آخر كشف</button>
       </div>
-      <p class="hint" style="margin-top:8px;">
-        إذا لم يظهر زر التثبيت يمكنك من قائمة المتصفح اختيار "إضافة إلى الشاشة الرئيسية".
+
+      <div class="items-container" id="itemsContainer">
+        <!-- البنود تضاف هنا -->
+      </div>
+
+      <label>الإجمالي (اختياري):</label>
+      <input id="manualTotalInput" placeholder="مثال: 3,326,706 يمني + 2,300 سعودي">
+
+      <label>ملاحظات إضافية (اختياري):</label>
+      <textarea id="notesInput" placeholder="أي ملاحظات تريد ظهورها في نهاية الكشف"></textarea>
+
+      <div class="row" style="margin-top:10px">
+        <div style="flex:1">
+          <button class="primary-btn" id="saveRecordBtn">💾 حفظ الكشف لهذا العميل</button>
+        </div>
+        <div style="flex:1">
+          <button class="secondary-btn" id="newRecordSameClientBtn">+ كشف جديد (مع نفس العميل)</button>
+        </div>
+      </div>
+
+      <h3 class="section-title">📨 النص الجاهز للإرسال في الواتساب:</h3>
+      <div class="whats-box">
+        <textarea id="whatsText" readonly></textarea>
+        <div class="row" style="margin-top:8px">
+          <div style="flex:1">
+            <button class="secondary-btn" id="copyTextBtn">📋 نسخ النص</button>
+          </div>
+          <div style="flex:1">
+            <button class="chip-btn" id="shareWhatsappBtn">🟢 مشاركة في واتساب</button>
+          </div>
+          <div style="flex:1">
+            <button class="secondary-btn" id="sharePdfBtn">📎 مشاركة كـ PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-title">📚 سجل الكشوفات لهذا العميل:</h3>
+      <div class="history-list" id="historyList">
+        <div class="muted">لا توجد كشوفات بعد لهذا العميل.</div>
+      </div>
+
+      <h3 class="section-title">📊 إجمالي حسابات هذا العميل:</h3>
+      <div class="totals-box" id="totalsBox">
+        <div class="muted">سيتم حساب الإجمالي بعد إضافة كشوفات.</div>
+      </div>
+
+      <p class="muted" style="margin-top:10px">
+        إذا لم يظهر زر التثبيت يمكنك من قائمة المتصفح اختيار: "إضافة إلى الشاشة الرئيسية".
       </p>
+    </div>
+
+    <!-- عرض بسيط لقائمة العملاء (تبويب العملاء) -->
+    <div id="clientsView" style="display:none">
+      <h3 class="section-title">👥 جميع العملاء</h3>
+      <div class="history-list" id="clientsListView"></div>
+      <p class="muted">اختر أي عميل من الأعلى لعرض كشوفاته وتفاصيله.</p>
     </div>
   </div>
 
+  <!-- jsPDF لتحويل النص إلى PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <script>
-    // --------- إعدادات أساسية ----------
-    const STORAGE_KEY = 'voiceLedgerData_v2';
-    const currencies = [
-      { code: 'YER', label: 'يمني' },
-      { code: 'SAR', label: 'سعودي' },
-      { code: 'USD', label: 'دولار' },
-      { code: 'AED', label: 'درهم' },
-      { code: 'OMR', label: 'عماني' },
-    ];
-
-    let state = {
-      customers: [],
-      ledger: {}, // name -> [statements]
-    };
-    let currentCustomer = null;
-    let currentStatementId = null;
-
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) state = JSON.parse(raw);
-      } catch(e) {
-        console.error('Failed to load state', e);
-      }
-      if (!state.customers || !Array.isArray(state.customers)) state.customers = [];
-      if (!state.ledger || typeof state.ledger !== 'object') state.ledger = {};
-      if (state.customers.length === 0) {
-        state.customers.push('باديان');
-        state.ledger['باديان'] = [];
-      }
-    }
-
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-
-    // ---------- عناصر الواجهة ----------
-    const customerSelect = document.getElementById('customerSelect');
+    // ================== البيانات العامة ==================
+    const clientInput = document.getElementById('clientInput');
     const dateInput = document.getElementById('dateInput');
     const titleInput = document.getElementById('titleInput');
     const itemsContainer = document.getElementById('itemsContainer');
-    const manualTotal = document.getElementById('manualTotal');
+    const manualTotalInput = document.getElementById('manualTotalInput');
     const notesInput = document.getElementById('notesInput');
-    const whatsAppText = document.getElementById('whatsAppText');
+    const whatsText = document.getElementById('whatsText');
     const historyList = document.getElementById('historyList');
-    const customerTotalsEl = document.getElementById('customerTotals');
+    const totalsBox = document.getElementById('totalsBox');
+    const clientsDatalist = document.getElementById('clientsList');
+    const clientsListView = document.getElementById('clientsListView');
 
-    function renderCustomerSelect() {
-      customerSelect.innerHTML = '';
-      state.customers.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        customerSelect.appendChild(opt);
-      });
-      if (!currentCustomer) currentCustomer = state.customers[0];
-      customerSelect.value = currentCustomer;
+    let currentItems = [];
+    let allData = loadData();
+    let currentClient = '';
+    let editingIndex = null; // لو نعدل كشف قديم
+
+    // ضبط تاريخ اليوم افتراضياً
+    dateInput.valueAsNumber = Date.now() - (new Date()).getTimezoneOffset() * 60000;
+
+    // ================== التبويبات ==================
+    const tabStatements = document.getElementById('tabStatements');
+    const tabClients = document.getElementById('tabClients');
+    const statementsView = document.getElementById('statementsView');
+    const clientsView = document.getElementById('clientsView');
+
+    tabStatements.onclick = () => {
+      tabStatements.classList.add('active');
+      tabClients.classList.remove('active');
+      statementsView.style.display = '';
+      clientsView.style.display = 'none';
+    };
+    tabClients.onclick = () => {
+      tabClients.classList.add('active');
+      tabStatements.classList.remove('active');
+      statementsView.style.display = 'none';
+      clientsView.style.display = '';
+      renderClientsView();
+    };
+
+    // ================== الدوال الخاصة بالتخزين ==================
+    function loadData() {
+      try {
+        const raw = localStorage.getItem('voiceLedgerData');
+        return raw ? JSON.parse(raw) : { clients: {} };
+      } catch (e) {
+        console.error(e);
+        return { clients: {} };
+      }
     }
 
-    function makeItemRow(item = { description:'', amount:'', currency:'YER', direction:'lahu' }) {
-      const row = document.createElement('div');
-      row.className = 'item-row';
-
-      const desc = document.createElement('input');
-      desc.type = 'text';
-      desc.placeholder = 'وصف البند (مثال: بيان، تصريح، الجهاز، الحمالين...)';
-      desc.value = item.description || '';
-      desc.className = 'item-desc';
-
-      const cur = document.createElement('select');
-      cur.className = 'item-currency';
-      currencies.forEach(c => {
-        const o = document.createElement('option');
-        o.value = c.code;
-        o.textContent = c.label;
-        cur.appendChild(o);
-      });
-      cur.value = item.currency || 'YER';
-
-      const amt = document.createElement('input');
-      amt.type = 'number';
-      amt.placeholder = 'المبلغ';
-      amt.inputMode = 'decimal';
-      amt.value = item.amount !== undefined ? item.amount : '';
-      amt.className = 'item-amount';
-
-      const dir = document.createElement('select');
-      dir.className = 'item-direction';
-      const optLahu = document.createElement('option');
-      optLahu.value = 'lahu';
-      optLahu.textContent = 'له';
-      const optAlayh = document.createElement('option');
-      optAlayh.value = 'alayh';
-      optAlayh.textContent = 'عليه';
-      dir.appendChild(optLahu);
-      dir.appendChild(optAlayh);
-      dir.value = item.direction || 'lahu';
-
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'btn btn-danger';
-      del.textContent = 'حذف';
-      del.onclick = () => row.remove();
-
-      row.appendChild(desc);
-      row.appendChild(cur);
-      row.appendChild(amt);
-      row.appendChild(dir);
-      row.appendChild(del);
-
-      return row;
+    function saveData() {
+      localStorage.setItem('voiceLedgerData', JSON.stringify(allData));
+      refreshClientsOptions();
     }
 
-    function addEmptyItem() {
-      itemsContainer.appendChild(makeItemRow());
-    }
-
-    function getItemsFromUI() {
-      const rows = Array.from(itemsContainer.querySelectorAll('.item-row'));
-      return rows.map(r => {
-        const desc = r.querySelector('.item-desc');
-        const cur = r.querySelector('.item-currency');
-        const amt = r.querySelector('.item-amount');
-        const dir = r.querySelector('.item-direction');
-        return {
-          description: desc.value.trim(),
-          currency: cur.value,
-          amount: amt.value ? Number(amt.value) : 0,
-          direction: dir.value || 'lahu',
-        };
-      }).filter(i => i.description || i.amount);
-    }
-
-    function clearForm(keepCustomer = true) {
-      if (!keepCustomer) currentCustomer = state.customers[0];
-      customerSelect.value = currentCustomer;
-      const today = new Date().toISOString().slice(0,10);
-      dateInput.value = today;
-      titleInput.value = '';
-      manualTotal.value = '';
-      notesInput.value = '';
+    // ================== إدارة البنود ==================
+    function renderItems() {
       itemsContainer.innerHTML = '';
-      addEmptyItem();
-      currentStatementId = null;
-      generateWhatsAppText();
-    }
+      currentItems.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
 
-    function directionLabel(dir) {
-      return dir === 'alayh' ? 'عليه' : 'له';
-    }
+        const desc = document.createElement('input');
+        desc.placeholder = 'وصف البند (مثال: بيان، تصريح، الجواز...)';
+        desc.value = item.description || '';
+        desc.oninput = () => { item.description = desc.value; updateWhatsText(); };
 
-    function generateWhatsAppText() {
-      const name = currentCustomer;
-      const date = dateInput.value || '';
-      const title = titleInput.value.trim() || 'بدون عنوان';
-      const items = getItemsFromUI();
-      let text = `${name}\nالتاريخ: ${date}\n${title}\n----------------\n`;
+        const curr = document.createElement('select');
+        ['يمني','سعودي','دولار','درهم','عُماني'].forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c;
+          opt.textContent = c;
+          if (item.currency === c) opt.selected = true;
+          curr.appendChild(opt);
+        });
+        curr.onchange = () => { item.currency = curr.value; updateTotalsForRecord(); updateWhatsText(); };
 
-      items.forEach((item, idx) => {
-        const label = currencies.find(c => c.code === item.currency)?.label || '';
-        const dirText = directionLabel(item.direction);
-        text += `${idx+1}- ${item.description || 'بند'} - ${item.amount || 0} ${label} (${dirText})\n`;
+        const amount = document.createElement('input');
+        amount.type = 'number';
+        amount.placeholder = 'المبلغ';
+        amount.value = item.amount ?? '';
+        amount.oninput = () => {
+          item.amount = parseFloat(amount.value || '0');
+          updateTotalsForRecord();
+          updateWhatsText();
+        };
+
+        const direction = document.createElement('select');
+        ['له','عليه'].forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d;
+          opt.textContent = d;
+          if (item.direction === d) opt.selected = true;
+          direction.appendChild(opt);
+        });
+        direction.onchange = () => { item.direction = direction.value; updateTotalsForRecord(); updateWhatsText(); };
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'danger-btn';
+        deleteBtn.textContent = 'حذف';
+        deleteBtn.onclick = () => {
+          if (confirm('هل أنت متأكد من حذف هذا البند؟')) {
+            currentItems.splice(idx,1);
+            renderItems();
+            updateTotalsForRecord();
+            updateWhatsText();
+          }
+        };
+
+        row.appendChild(desc);
+        row.appendChild(curr);
+        row.appendChild(amount);
+        row.appendChild(direction);
+        row.appendChild(deleteBtn);
+
+        itemsContainer.appendChild(row);
       });
 
-      if (manualTotal.value.trim()) {
-        text += `\nالإجمالي: ${manualTotal.value.trim()}\n`;
+      if (currentItems.length === 0) {
+        const p = document.createElement('div');
+        p.className = 'muted';
+        p.textContent = 'أضف بنودًا للكشف ثم احفظه.';
+        itemsContainer.appendChild(p);
       }
-      if (notesInput.value.trim()) {
-        text += `\nملاحظات:\n${notesInput.value.trim()}\n`;
-      }
-      whatsAppText.value = text.trim();
-      updateCustomerTotalsView();
     }
 
-    function saveStatement() {
-      if (!currentCustomer) return alert('اختر عميل أولاً');
-      const items = getItemsFromUI();
-      if (items.length === 0) return alert('أضف بندًا واحدًا على الأقل');
+    document.getElementById('addItemBtn').onclick = () => {
+      currentItems.push({
+        description: '',
+        currency: 'يمني',
+        amount: 0,
+        direction: 'له'
+      });
+      renderItems();
+    };
 
-      const stmt = {
-        id: currentStatementId || Date.now().toString(),
+    document.getElementById('copyLastItemsBtn').onclick = () => {
+      const client = clientInput.value.trim();
+      if (!client || !allData.clients[client] || allData.clients[client].records.length === 0) {
+        alert('لا يوجد كشف سابق لنسخ بنوده لهذا العميل.');
+        return;
+      }
+      if (!confirm('هل تريد استبدال البنود الحالية ببنود آخر كشف لهذا العميل؟')) return;
+      const last = allData.clients[client].records[allData.clients[client].records.length - 1];
+      currentItems = last.items.map(it => ({
+        description: it.description,
+        currency: it.currency,
+        amount: 0, // ننسخ الأسماء فقط بدون المبالغ
+        direction: it.direction
+      }));
+      renderItems();
+      updateTotalsForRecord();
+      updateWhatsText();
+    };
+
+    // ================== حفظ وقراءة الكشوفات ==================
+    function getClientData(name) {
+      if (!allData.clients[name]) {
+        allData.clients[name] = { records: [] };
+      }
+      return allData.clients[name];
+    }
+
+    function saveRecord() {
+      const client = clientInput.value.trim();
+      if (!client) { alert('أدخل اسم العميل أولاً'); return; }
+      if (currentItems.length === 0) { alert('أضف بندًا واحدًا على الأقل للكشف'); return; }
+
+      const record = {
         date: dateInput.value || '',
-        title: titleInput.value.trim() || 'بدون عنوان',
-        items,
-        manualTotal: manualTotal.value.trim(),
-        notes: notesInput.value.trim(),
-        text: whatsAppText.value.trim(),
+        title: titleInput.value || '',
+        items: currentItems.map(it => ({...it})),
+        manualTotal: manualTotalInput.value || '',
+        notes: notesInput.value || ''
       };
 
-      const arr = state.ledger[currentCustomer] || [];
-      if (currentStatementId) {
-        const ok = confirm('سيتم تعديل هذا الكشف، هل أنت متأكد؟');
-        if (!ok) return;
-        const idx = arr.findIndex(s => s.id === currentStatementId);
-        if (idx >= 0) arr[idx] = stmt; else arr.push(stmt);
+      const clientData = getClientData(client);
+
+      if (editingIndex !== null) {
+        // تعديل كشف موجود
+        if (!confirm('هل تريد حفظ التعديلات على هذا الكشف؟')) return;
+        clientData.records[editingIndex] = record;
+        editingIndex = null;
       } else {
-        arr.push(stmt);
+        // إضافة كشف جديد
+        clientData.records.push(record);
       }
-      state.ledger[currentCustomer] = arr;
-      saveState();
-      currentStatementId = stmt.id;
-      renderHistory();
-      updateCustomerTotalsView();
+
+      allData.clients[client] = clientData;
+      saveData();
+      currentClient = client;
+      renderHistory(client);
+      renderTotals(client);
+      updateWhatsText(record);
       alert('تم حفظ الكشف بنجاح ✅');
     }
 
-    function renderHistory() {
-      const arr = state.ledger[currentCustomer] || [];
+    document.getElementById('saveRecordBtn').onclick = saveRecord;
+
+    document.getElementById('newRecordSameClientBtn').onclick = () => {
+      if (!confirm('هل تريد إنشاء كشف جديد لهذا العميل؟')) return;
+      editingIndex = null;
+      currentItems = [];
+      renderItems();
+      manualTotalInput.value = '';
+      notesInput.value = '';
+      updateWhatsText();
+    };
+
+    function renderHistory(client) {
       historyList.innerHTML = '';
-      if (arr.length === 0) {
-        historyList.textContent = 'لا توجد كشوفات سابقة لهذا العميل.';
+      const data = allData.clients[client];
+      if (!data || data.records.length === 0) {
+        const p = document.createElement('div');
+        p.className = 'muted';
+        p.textContent = 'لا توجد كشوفات بعد لهذا العميل.';
+        historyList.appendChild(p);
+        totalsBox.innerHTML = '<div class="muted">سيتم حساب الإجمالي بعد إضافة كشوفات.</div>';
         return;
       }
-      arr.slice().reverse().forEach(stmt => {
-        const div = document.createElement('div');
-        div.className = 'history-item' + (stmt.id === currentStatementId ? ' active' : '');
-        const titleSpan = document.createElement('span');
-        titleSpan.className = 'title';
-        titleSpan.textContent = stmt.title || 'بدون عنوان';
-        const meta = document.createElement('small');
-        meta.textContent = stmt.date || '';
 
-        div.appendChild(titleSpan);
-        div.appendChild(meta);
-        div.onclick = () => loadStatement(stmt.id);
+      data.records.forEach((rec, index) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+
+        const span = document.createElement('span');
+        span.className = 'title';
+        span.textContent = rec.title || 'بدون عنوان';
+
+        const small = document.createElement('small');
+        small.textContent = rec.date || '';
+
+        const left = document.createElement('div');
+        left.appendChild(span);
+        left.appendChild(document.createElement('br'));
+        left.appendChild(small);
+
+        const buttons = document.createElement('div');
+        buttons.style.display = 'flex';
+        buttons.style.gap = '4px';
+
+        const openBtn = document.createElement('button');
+        openBtn.className = 'secondary-btn';
+        openBtn.textContent = 'فتح / تعديل';
+        openBtn.style.padding = '4px 8px';
+        openBtn.onclick = () => {
+          loadRecordIntoForm(client, index);
+        };
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'danger-btn';
+        delBtn.textContent = 'حذف';
+        delBtn.style.padding = '4px 8px';
+        delBtn.onclick = () => {
+          if (!confirm('هل تريد حذف هذا الكشف نهائيًا؟')) return;
+          allData.clients[client].records.splice(index,1);
+          saveData();
+          renderHistory(client);
+          renderTotals(client);
+        };
+
+        buttons.appendChild(openBtn);
+        buttons.appendChild(delBtn);
+
+        div.appendChild(left);
+        div.appendChild(buttons);
         historyList.appendChild(div);
       });
     }
 
-    function loadStatement(id) {
-      const arr = state.ledger[currentCustomer] || [];
-      const stmt = arr.find(s => s.id === id);
-      if (!stmt) return;
-      currentStatementId = id;
-
-      dateInput.value = stmt.date || '';
-      titleInput.value = stmt.title || '';
-      manualTotal.value = stmt.manualTotal || '';
-      notesInput.value = stmt.notes || '';
-      itemsContainer.innerHTML = '';
-      (stmt.items || []).forEach(item => {
-        itemsContainer.appendChild(makeItemRow(item));
-      });
-      if (!stmt.items || stmt.items.length === 0) addEmptyItem();
-      whatsAppText.value = stmt.text || '';
-      renderHistory();
-      updateCustomerTotalsView();
+    function loadRecordIntoForm(client, index) {
+      const rec = allData.clients[client].records[index];
+      clientInput.value = client;
+      dateInput.value = rec.date || '';
+      titleInput.value = rec.title || '';
+      manualTotalInput.value = rec.manualTotal || '';
+      notesInput.value = rec.notes || '';
+      currentItems = rec.items.map(it => ({...it}));
+      editingIndex = index;
+      currentClient = client;
+      renderItems();
+      updateTotalsForRecord();
+      updateWhatsText(rec);
+      window.scrollTo({top:0, behavior:'smooth'});
     }
 
-    function copyLastStatementItems() {
-      const arr = state.ledger[currentCustomer] || [];
-      if (arr.length === 0) {
-        alert('لا يوجد كشف سابق لنسخ البنود منه.');
+    // ================== إجمالي العميل ==================
+    function renderTotals(client) {
+      const data = allData.clients[client];
+      if (!data || data.records.length === 0) {
+        totalsBox.innerHTML = '<div class="muted">لا توجد بيانات بعد لحساب الإجمالي.</div>';
         return;
       }
-      const last = arr[arr.length - 1];
-      itemsContainer.innerHTML = '';
-      (last.items || []).forEach(i => {
-        itemsContainer.appendChild(makeItemRow({
-          description: i.description,
-          currency: i.currency,
-          direction: i.direction || 'lahu',
-          amount: ''
-        }));
-      });
-      if (!last.items || last.items.length === 0) addEmptyItem();
-      generateWhatsAppText();
-    }
 
-    function updateCustomerTotalsView() {
-      const arr = state.ledger[currentCustomer] || [];
-      if (arr.length === 0) {
-        customerTotalsEl.textContent = 'لا توجد كشوفات بعد لهذا العميل.';
-        return;
-      }
-      const totals = {}; // currency -> { lahu, alayh }
-      arr.forEach(stmt => {
-        (stmt.items || []).forEach(item => {
-          if (!item || !item.currency) return;
-          const code = item.currency;
-          const dir = item.direction || 'lahu';
-          const val = Number(item.amount) || 0;
-          if (!totals[code]) totals[code] = { lahu: 0, alayh: 0 };
-          if (dir === 'alayh') totals[code].alayh += val;
-          else totals[code].lahu += val;
+      const sums = {}; // currency -> { له, عليه }
+      data.records.forEach(rec => {
+        rec.items.forEach(it => {
+          if (!sums[it.currency]) sums[it.currency] = { له:0, عليه:0 };
+          const val = Number(it.amount || 0);
+          if (it.direction === 'له') sums[it.currency].له += val;
+          else sums[it.currency].عليه += val;
         });
       });
 
-      let text = `إجمالي الحسابات للعميل: ${currentCustomer}\n---------------------\n`;
-      let hasAny = false;
-      Object.keys(totals).forEach(code => {
-        const c = currencies.find(x => x.code === code);
-        const label = c ? c.label : code;
-        const lahu = totals[code].lahu || 0;
-        const alayh = totals[code].alayh || 0;
-        const net = lahu - alayh;
-        if (!lahu && !alayh) return;
-        hasAny = true;
-        text += `${label}:\n`;
-        text += `  له: ${lahu.toLocaleString()} ${label}\n`;
-        text += `  عليه: ${alayh.toLocaleString()} ${label}\n`;
-        text += `  الصافي: ${net.toLocaleString()} ${label}\n\n`;
+      let html = `<div><strong>إجمالي الحسابات للعميل: ${client}</strong></div><hr>`;
+      Object.keys(sums).forEach(curr => {
+        const s = sums[curr];
+        const net = s.له - s.عليه;
+        html += `
+          <div style="margin-top:6px">
+            <strong>${curr}:</strong><br>
+            له: ${s.له.toLocaleString()} ${curr}<br>
+            عليه: ${s.عليه.toLocaleString()} ${curr}<br>
+            الصافي: ${net.toLocaleString()} ${curr}
+          </div>
+        `;
       });
-      if (!hasAny) text += '0 (لا توجد مبالغ مسجلة بعد)\n';
-
-      customerTotalsEl.textContent = text.trim();
+      totalsBox.innerHTML = html;
     }
 
-    // -------- تبويب الكشوفات / العملاء ----------
-    const tabStatements = document.getElementById('tabStatements');
-    const tabCustomers = document.getElementById('tabCustomers');
-    const viewStatements = document.getElementById('viewStatements');
-    const viewCustomers = document.getElementById('viewCustomers');
+    function updateTotalsForRecord() {
+      // فقط لتحديث النص و ليس إجمالي العميل
+      updateWhatsText();
+    }
 
-    tabStatements.onclick = () => {
-      tabStatements.classList.add('active');
-      tabCustomers.classList.remove('active');
-      viewStatements.style.display = '';
-      viewCustomers.style.display = 'none';
-    };
-    tabCustomers.onclick = () => {
-      tabCustomers.classList.add('active');
-      tabStatements.classList.remove('active');
-      viewStatements.style.display = 'none';
-      viewCustomers.style.display = '';
-    };
+    // ================== نص الواتساب ==================
+    function updateWhatsText(recOptional) {
+      const client = clientInput.value.trim() || 'العميل';
+      const date = dateInput.value || '';
+      const title = titleInput.value || 'بدون عنوان';
+      const rec = recOptional || { items: currentItems };
 
-    // -------- أزرار رئيسية ----------
-    document.getElementById('addItemBtn').onclick = addEmptyItem;
-    document.getElementById('copyLastBtn').onclick = copyLastStatementItems;
-    document.getElementById('saveBtn').onclick = saveStatement;
-    document.getElementById('newWithSameClientBtn').onclick = () => {
-      clearForm(true);
-    };
+      let text = `${client}\nالتاريخ: ${date}\n--------------\n`;
 
-    customerSelect.onchange = () => {
-      currentCustomer = customerSelect.value;
-      currentStatementId = null;
-      clearForm(true);
-      renderHistory();
-      updateCustomerTotalsView();
-    };
+      rec.items.forEach((it, idx) => {
+        if (!it.description && !it.amount) return;
+        const amt = it.amount ? it.amount.toLocaleString() : '';
+        text += `${idx+1}- ${it.description || ''} ${amt} ${it.currency || ''} (${it.direction || ''})\n`;
+      });
 
-    dateInput.oninput = generateWhatsAppText;
-    titleInput.oninput = generateWhatsAppText;
-    manualTotal.oninput = generateWhatsAppText;
-    notesInput.oninput = generateWhatsAppText;
-    itemsContainer.addEventListener('input', e => {
-      if (e.target.matches('input,select')) generateWhatsAppText();
-    });
+      if (manualTotalInput.value) text += `--------------\nالإجمالي: ${manualTotalInput.value}\n`;
+      if (notesInput.value) text += `--------------\n${notesInput.value}\n`;
 
-    // العملاء
-    document.getElementById('addCustomerBtn').onclick = () => {
-      const name = document.getElementById('newCustomerName').value.trim();
-      if (!name) return alert('اكتب اسم العميل أولاً');
-      if (state.customers.includes(name)) return alert('هذا العميل موجود بالفعل');
-      state.customers.push(name);
-      state.ledger[name] = [];
-      saveState();
-      document.getElementById('newCustomerName').value = '';
-      currentCustomer = name;
-      renderCustomerSelect();
-      clearForm(true);
-      renderHistory();
-      updateCustomerTotalsView();
-      alert('تم إضافة العميل ✅');
-    };
+      whatsText.value = text.trim();
+    }
 
-    // نسخ ومشاركة
+    // نسخ النص
     document.getElementById('copyTextBtn').onclick = async () => {
       try {
-        await navigator.clipboard.writeText(whatsAppText.value);
+        await navigator.clipboard.writeText(whatsText.value);
         alert('تم نسخ النص ✅');
-      } catch {
-        alert('لم أستطع النسخ تلقائياً، انسخ يدويًا بالضغط المطوّل داخل المربع.');
+      } catch (e) {
+        alert('لم يتم النسخ تلقائيًا، انسخ النص يدويًا.');
       }
     };
 
-    document.getElementById('shareWhatsAppBtn').onclick = () => {
-      const txt = whatsAppText.value.trim();
-      if (!txt) return alert('لا يوجد نص لمشاركته');
-      const encoded = encodeURIComponent(txt);
-      const url = `https://wa.me/?text=${encoded}`;
-      window.open(url, '_blank');
+    // مشاركة واتساب
+    document.getElementById('shareWhatsappBtn').onclick = () => {
+      const encoded = encodeURIComponent(whatsText.value);
+      window.open(`https://wa.me/?text=${encoded}`,'_blank');
     };
 
-    document.getElementById('sharePdfBtn').onclick = () => {
-      const txt = whatsAppText.value.trim();
-      if (!txt) return alert('لا يوجد محتوى للطباعة');
-      const win = window.open('', '_blank', 'width=600,height=800');
-      win.document.write('<html dir="rtl"><head><title>كشف حساب</title></head><body>');
-      win.document.write('<pre style="font-family:system-ui;white-space:pre-wrap;line-height:1.6;">'
-        + txt.replace(/</g,'&lt;')
-        + '</pre>');
-      win.document.write('</body></html>');
-      win.document.close();
-      win.focus();
-      win.print(); // من شاشة الطباعة اختر "حفظ كـ PDF"
+    // مشاركة PDF
+    document.getElementById('sharePdfBtn').onclick = async () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const lines = doc.splitTextToSize(whatsText.value, 180);
+      doc.text(lines, 10, 10);
+      doc.save('كشف-حساب.pdf');
     };
 
-    // -------- تثبيت كتطبيق (PWA) --------
+    // ================== عرض العملاء في التبويب الثاني ==================
+    function refreshClientsOptions() {
+      clientsDatalist.innerHTML = '';
+      const names = Object.keys(allData.clients);
+      names.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        clientsDatalist.appendChild(opt);
+      });
+    }
+
+    function renderClientsView() {
+      clientsListView.innerHTML = '';
+      const names = Object.keys(allData.clients);
+      if (names.length === 0) {
+        clientsListView.innerHTML = '<div class="muted">لا يوجد عملاء بعد.</div>';
+        return;
+      }
+      names.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.onclick = () => {
+          tabStatements.click();
+          clientInput.value = name;
+          currentClient = name;
+          renderHistory(name);
+          renderTotals(name);
+        };
+        const span = document.createElement('span');
+        span.className = 'title';
+        span.textContent = name;
+        const count = allData.clients[name].records.length;
+        const small = document.createElement('small');
+        small.textContent = `${count} كشف`;
+        div.appendChild(span);
+        div.appendChild(small);
+        clientsListView.appendChild(div);
+      });
+    }
+
+    // عند تغيير اسم العميل
+    clientInput.addEventListener('change', () => {
+      const client = clientInput.value.trim();
+      currentClient = client;
+      if (client && allData.clients[client]) {
+        renderHistory(client);
+        renderTotals(client);
+      } else {
+        historyList.innerHTML = '<div class="muted">لا توجد كشوفات بعد لهذا العميل.</div>';
+        totalsBox.innerHTML = '<div class="muted">سيتم حساب الإجمالي بعد إضافة كشوفات.</div>';
+      }
+      updateWhatsText();
+    });
+
+    // أول تشغيل
+    refreshClientsOptions();
+    renderItems();
+    updateWhatsText();
+
+    // ================== زر تثبيت التطبيق (PWA) ==================
     let deferredPrompt = null;
-    const installBtn = document.getElementById('installBtn');
+    const installButton = document.getElementById('installButton');
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      installBtn.hidden = false;
+      installButton.style.display = 'inline-block';
     });
 
-    installBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      installBtn.hidden = true;
+    installButton.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        alert('إذا لم يظهر مربع التثبيت، استخدم من قائمة المتصفح: إضافة إلى الشاشة الرئيسية.');
+        return;
+      }
       deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        console.log('User accepted install');
+      }
       deferredPrompt = null;
+      installButton.style.display = 'none';
     });
 
+    // ================== تسجيل Service Worker بسيط ==================
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(console.error);
     }
-
-    // -------- تشغيل أولي --------
-    loadState();
-    renderCustomerSelect();
-    clearForm(true);
-    renderHistory();
-    updateCustomerTotalsView();
   </script>
 </body>
 </html>
