@@ -1,28 +1,23 @@
 {
-  "id": "/voice-ledger/",
-  "name": "دفتر كشف الحساب اليومي",
-  "short_name": "دفتر الحساب",
-  "description": "حفظ وإدارة كشوفات عملائك محليًا في جهازك مع مشاركة واتساب وطباعة PDF.",
+  "name": "دفتر كشف الحساب اليومي - بسام",
+  "short_name": "كشف بسام",
   "start_url": "/voice-ledger/",
   "scope": "/voice-ledger/",
   "display": "standalone",
-  "display_override": ["standalone"],
   "background_color": "#ffffff",
-  "theme_color": "#16a34a",
+  "theme_color": "#198754",
   "dir": "rtl",
   "lang": "ar",
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
