@@ -264,7 +264,7 @@
       </div>
     </div>
 
-    <!-- نص الواتساب وسجل الكشوفات -->
+    <!-- نص الواتساب وسجل الكشوفات + إجمالي العميل + تثبيت -->
     <div class="card">
       <label>النص الجاهز للإرسال في الواتساب:</label>
       <div id="previewBox" class="preview-box"></div>
@@ -274,6 +274,12 @@
 
       <div class="hint" style="margin-top:10px;">سجل الكشوفات لهذا العميل:</div>
       <div id="statementsList" class="list"></div>
+
+      <!-- زر إجمالي العميل -->
+      <button id="showClientTotalsBtn" class="btn-secondary" style="width:100%;margin-top:8px;">
+        📊 إجمالي حسابات هذا العميل
+      </button>
+      <div id="clientTotalsPanel" class="preview-box" style="margin-top:6px; display:none;"></div>
 
       <!-- زر تثبيت التطبيق -->
       <button id="installButton" class="install-btn" hidden>
@@ -304,6 +310,15 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
     }
 
+    function formatNumber(num) {
+      if (num == null || isNaN(num)) return '0';
+      try {
+        return num.toLocaleString('ar-EG');
+      } catch {
+        return String(num);
+      }
+    }
+
     // ===== عناصر DOM =====
     const clientSelect = document.getElementById('clientSelect');
     const dateInput = document.getElementById('dateInput');
@@ -314,6 +329,8 @@
     const previewBox = document.getElementById('previewBox');
     const statementsList = document.getElementById('statementsList');
     const clientsList = document.getElementById('clientsList');
+    const showClientTotalsBtn = document.getElementById('showClientTotalsBtn');
+    const clientTotalsPanel = document.getElementById('clientTotalsPanel');
 
     // ===== تبويبات =====
     const tabStatements = document.getElementById('tabStatements');
@@ -383,6 +400,7 @@
           renderClientsSelect();
           renderClientsList();
           renderStatementsList();
+          clientTotalsPanel.style.display = 'none';
         });
 
         right.appendChild(badge);
@@ -506,6 +524,7 @@
       setItemsToUI([]);
       currentStatementId = null;
       previewBox.textContent = '';
+      clientTotalsPanel.style.display = 'none';
     }
 
     function renderStatementsList() {
@@ -621,6 +640,7 @@
       const text = generatePreviewText(stmtObj);
       previewBox.textContent = text;
       renderStatementsList();
+      clientTotalsPanel.style.display = 'none';
       alert('تم الحفظ بنجاح');
     }
 
@@ -637,6 +657,7 @@
       notesInput.value = s.notes || '';
       setItemsToUI(s.items || []);
       previewBox.textContent = generatePreviewText(s);
+      clientTotalsPanel.style.display = 'none';
     }
 
     document.getElementById('saveStatementBtn')
@@ -664,6 +685,51 @@
       } catch (e) {
         alert('تعذر النسخ تلقائياً، جرّب تحديد النص يدويًا ونسخه.');
       }
+    });
+
+    // ===== حساب إجمالي العميل حسب العملة =====
+    function computeClientTotals(client) {
+      const totals = {};
+      db.statements
+        .filter(s => s.client === client)
+        .forEach(s => {
+          (s.items || []).forEach(it => {
+            const amount = Number(it.amount) || 0;
+            if (!amount) return;
+            const cur = it.currency || 'يمني';
+            if (!totals[cur]) totals[cur] = 0;
+            totals[cur] += amount;
+          });
+        });
+      return totals;
+    }
+
+    showClientTotalsBtn.addEventListener('click', () => {
+      const client = clientSelect.value;
+      if (!client) {
+        alert('اختر العميل أولاً.');
+        return;
+      }
+      const clientStatements = db.statements.filter(s => s.client === client);
+      if (!clientStatements.length) {
+        alert('لا توجد كشوفات محفوظة لهذا العميل حتى الآن.');
+        clientTotalsPanel.style.display = 'none';
+        return;
+      }
+      const totals = computeClientTotals(client);
+      if (!Object.keys(totals).length) {
+        clientTotalsPanel.style.display = 'block';
+        clientTotalsPanel.textContent = 'لا توجد مبالغ مسجّلة لهذا العميل حتى الآن.';
+        return;
+      }
+      const lines = [];
+      lines.push('إجمالي الحسابات للعميل: ' + client);
+      lines.push('---------------------');
+      Object.entries(totals).forEach(([cur, sum]) => {
+        lines.push(formatNumber(sum) + ' ' + cur);
+      });
+      clientTotalsPanel.style.display = 'block';
+      clientTotalsPanel.textContent = lines.join('\n');
     });
 
     // ===== زر تثبيت التطبيق (PWA) =====
