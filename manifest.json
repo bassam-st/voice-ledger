@@ -1,13 +1,27 @@
 {
+  "id": "/voice-ledger/",
   "name": "دفتر كشف الحساب اليومي",
   "short_name": "كشف الحساب",
+  "description": "تطبيق بسيط لحفظ كشوفات الحساب اليومية محليًا في جهازك.",
   "start_url": "/voice-ledger/",
   "scope": "/voice-ledger/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "display_override": ["standalone"],
+  "orientation": "portrait",
   "theme_color": "#16a34a",
+  "background_color": "#ffffff",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
