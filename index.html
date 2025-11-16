@@ -243,6 +243,13 @@
         <label for="totalInput">الإجمالي (اختياري):</label>
         <input id="totalInput" type="text" placeholder="مثال: 3,326,706 يمني + 2,300 سعودي">
 
+        <!-- حالة الحساب: المبلغ على العميل أو لصالحه -->
+        <label for="directionSelect">حالة الحساب:</label>
+        <select id="directionSelect">
+          <option value="on_client">المبلغ على العميل</option>
+          <option value="for_client">المبلغ لصالح العميل</option>
+        </select>
+
         <label for="notesInput">ملاحظات إضافية (اختياري):</label>
         <textarea id="notesInput" placeholder="أي ملاحظات تريد ظهورها في نهاية الكشف"></textarea>
 
@@ -326,6 +333,7 @@
     const itemsContainer = document.getElementById('itemsContainer');
     const totalInput = document.getElementById('totalInput');
     const notesInput = document.getElementById('notesInput');
+    const directionSelect = document.getElementById('directionSelect');
     const previewBox = document.getElementById('previewBox');
     const statementsList = document.getElementById('statementsList');
     const clientsList = document.getElementById('clientsList');
@@ -389,6 +397,17 @@
         badge.className = 'badge';
         badge.textContent = count + ' كشف';
 
+        const openClientBtn = document.createElement('button');
+        openClientBtn.className = 'btn-secondary btn-small';
+        openClientBtn.textContent = '📄 صفحة العميل';
+        openClientBtn.style.marginLeft = '4px';
+        openClientBtn.addEventListener('click', () => {
+          // اختيار العميل والرجوع لتبويب الكشوفات
+          clientSelect.value = name;
+          tabStatements.click();
+          renderStatementsList();
+        });
+
         const delBtn = document.createElement('button');
         delBtn.className = 'btn-danger btn-small';
         delBtn.textContent = 'حذف';
@@ -404,6 +423,7 @@
         });
 
         right.appendChild(badge);
+        right.appendChild(openClientBtn);
         right.appendChild(delBtn);
         div.appendChild(left);
         div.appendChild(right);
@@ -495,6 +515,7 @@
       itemsContainer.appendChild(makeItemRow());
     });
 
+    // نسخ البنود بدون المبالغ (فقط الوصف + العملة)
     document.getElementById('copyLastItemsBtn').addEventListener('click', () => {
       const client = clientSelect.value;
       if (!client) {
@@ -509,8 +530,13 @@
         return;
       }
       const last = clientStatements[0];
-      setItemsToUI(last.items || []);
-      alert('تم نسخ البنود من آخر كشف لهذا العميل');
+      const copiedItems = (last.items || []).map(it => ({
+        description: it.description,
+        amount: '',
+        currency: it.currency || 'يمني'
+      }));
+      setItemsToUI(copiedItems);
+      alert('تم نسخ أسماء البنود (بدون مبالغ)، أدخل المبالغ يدويًا.');
     });
 
     // ===== حفظ / تحميل كشف =====
@@ -521,6 +547,7 @@
       titleInput.value = '';
       totalInput.value = '';
       notesInput.value = '';
+      directionSelect.value = 'on_client';
       setItemsToUI([]);
       currentStatementId = null;
       previewBox.textContent = '';
@@ -580,6 +607,11 @@
         lines.push('---------------------');
         lines.push('الإجمالي: ' + stmt.total);
       }
+      if (stmt.direction === 'on_client') {
+        lines.push('الحالة: المبلغ على العميل');
+      } else if (stmt.direction === 'for_client') {
+        lines.push('الحالة: المبلغ لصالح العميل');
+      }
       if (stmt.notes) {
         lines.push('---------------------');
         lines.push(stmt.notes);
@@ -599,6 +631,7 @@
       const items = getItemsFromUI();
       const total = totalInput.value.trim();
       const notes = notesInput.value.trim();
+      const direction = directionSelect.value || 'on_client';
 
       if (items.length === 0) {
         alert('أضف على الأقل بنداً واحداً في الكشف');
@@ -614,6 +647,7 @@
         items,
         total,
         notes,
+        direction,
       };
 
       if (!currentStatementId) {
@@ -655,6 +689,7 @@
       titleInput.value = s.title || '';
       totalInput.value = s.total || '';
       notesInput.value = s.notes || '';
+      directionSelect.value = s.direction || 'on_client';
       setItemsToUI(s.items || []);
       previewBox.textContent = generatePreviewText(s);
       clientTotalsPanel.style.display = 'none';
