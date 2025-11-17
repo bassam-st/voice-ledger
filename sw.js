@@ -2,7 +2,7 @@ const CACHE_NAME = 'voice-ledger-cache-v1';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.webmanifest'
   // يمكنك إضافة ملفات أخرى هنا إذا احتجت
 ];
 
