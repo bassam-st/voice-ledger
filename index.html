@@ -27,7 +27,7 @@
       font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
       background: var(--bg);
       color: var(--text-main);
-      font-size: 15px; /* تكبير بسيط للخط */
+      font-size: 15px; /* تكبير بسيط للخط داخل التطبيق */
     }
     .app-shell {
       max-width: 950px;
@@ -310,10 +310,25 @@ document.getElementById("copyTextBtn").onclick=()=>navigator.clipboard.writeText
 document.getElementById("shareWhatsappBtn").onclick=()=>window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
 document.getElementById("printPdfBtn").onclick=printAsPdf;
 
+// تنسيق أرقام المبالغ بالفواصل أثناء الكتابة
+function setupAmountFormatting(inputEl){
+  inputEl.addEventListener("input", () => {
+    const digits = inputEl.value.replace(/\D/g,"");
+    if(!digits){
+      inputEl.value = "";
+      updatePreviewText();
+      return;
+    }
+    const n = parseInt(digits,10);
+    inputEl.value = n.toLocaleString("en-US");
+    updatePreviewText();
+  });
+}
+
 function addEntryRow(init){
   const row=document.createElement("div"); row.className="entry-row";
   const desc=input("text","وصف البند"); desc.className="entry-desc";
-  const amount=input("number","المبلغ"); amount.className="entry-amount";
+  const amount=input("text","المبلغ");  amount.className="entry-amount";
   const curr=select(["يمني","سعودي","درهم","دولار","عماني"]); curr.className="entry-curr";
   const dir=select(["له","عليه"]); dir.className="entry-dir";
   const del=button("حذف","pill-btn pill-red entry-del");
@@ -321,12 +336,18 @@ function addEntryRow(init){
 
   if(init){
     desc.value=init.desc||"";
-    amount.value=init.amount||"";
+    if(init.amount !== undefined && init.amount !== null && init.amount !== ""){
+      const num = Number(init.amount)||0;
+      amount.value = num ? num.toLocaleString("en-US") : "";
+    }
     curr.value=init.currency;
     dir.value=init.direction;
   }
 
-  [desc,amount,curr,dir].forEach(e=>e.addEventListener("input",updatePreviewText));
+  // الوصف / العملة / له/عليه فقط تحدث المعاينة، المبلغ يتولى تنسيقه دالته الخاصة
+  [desc,curr,dir].forEach(e=>e.addEventListener("input",updatePreviewText));
+  setupAmountFormatting(amount);
+
   row.append(desc,amount,curr,dir,del);
   entriesContainer.appendChild(row);
 }
@@ -336,12 +357,15 @@ function select(arr){ const s=document.createElement("select"); arr.forEach(v=>{
 function button(t,c){ const b=document.createElement("button"); b.textContent=t; b.className=c; return b; }
 
 function getEntries(){
-  return [...entriesContainer.querySelectorAll(".entry-row")].map(r=>({
-    desc:r.querySelector(".entry-desc").value.trim(),
-    amount:+r.querySelector(".entry-amount").value||0,
-    currency:r.querySelector(".entry-curr").value,
-    direction:r.querySelector(".entry-dir").value
-  })).filter(e=>e.desc||e.amount);
+  return [...entriesContainer.querySelectorAll(".entry-row")].map(r=>{
+    const rawAmount = r.querySelector(".entry-amount").value.replace(/,/g,"");
+    return {
+      desc:r.querySelector(".entry-desc").value.trim(),
+      amount: parseFloat(rawAmount) || 0,
+      currency:r.querySelector(".entry-curr").value,
+      direction:r.querySelector(".entry-dir").value
+    };
+  }).filter(e=>e.desc||e.amount);
 }
 
 function ensureClient(n){ if(!state.data.clients[n]) state.data.clients[n]={statements:[]}; }
@@ -497,9 +521,10 @@ function updatePreviewText(){
   const d=dateInput.value||"";
   const ti=titleInput.value||"";
   let txt=`${n}\nالتاريخ: ${d}\n----------------\n${ti}\n`;
-  getEntries().forEach((e,i)=>
-    txt+=`\n${i+1}- ${e.desc} ${e.amount} ${e.currency} (${e.direction})`
-  );
+  getEntries().forEach((e,i)=>{
+    const amtText = e.amount ? e.amount.toLocaleString("en-US") : "0";
+    txt+=`\n${i+1}- ${e.desc} ${amtText} ${e.currency} (${e.direction})`;
+  });
   if(manualTotalInput.value)
     txt+=`\n----------------\nالإجمالي: ${manualTotalInput.value}`;
   if(extraNotesInput.value)
@@ -507,7 +532,7 @@ function updatePreviewText(){
   whatsAppBox.textContent=txt;
 }
 
-// ====== طباعة كـ PDF مع "إجمال هذا الكشف" ======
+// ====== طباعة كـ PDF مع خط أكبر و "إجمال هذا الكشف" ======
 function printAsPdf(){
   const name  = clientNameInput.value.trim() || "العميل";
   const date  = dateInput.value || new Date().toISOString().slice(0,10);
@@ -547,8 +572,9 @@ function printAsPdf(){
 body{
   font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
   margin:20px;
+  font-size:16px; /* تكبير الخط في ملف PDF */
 }
-h2{font-size:1.2rem;margin-bottom:4px;}
+h2{font-size:1.4rem;margin-bottom:4px;}
 table{
   width:100%;
   border-collapse:collapse;
@@ -558,12 +584,12 @@ th,td{
   border:1px solid #ddd;
   padding:6px;
   text-align:center;
-  font-size:.85rem;
+  font-size:1rem;
 }
 th{background:#eee;}
 .total-box{
   margin-top:15px;
-  font-size:.9rem;
+  font-size:1rem;
 }
 .total-box ul{
   padding-right:20px;
@@ -583,7 +609,7 @@ ${entries.map((e,i)=>`
 <tr>
 <td>${i+1}</td>
 <td>${e.desc}</td>
-<td>${e.amount}</td>
+<td>${e.amount ? e.amount.toLocaleString("en-US") : 0}</td>
 <td>${e.currency}</td>
 <td>${e.direction}</td>
 </tr>`).join("")}
