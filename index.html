@@ -10,11 +10,6 @@
 
   <style>
     * { box-sizing: border-box; }
-
-    html {
-      font-size: 18px; /* تكبير بسيط لكل النص */
-    }
-
     :root {
       --green: #16a34a;
       --green-dark: #15803d;
@@ -32,6 +27,7 @@
       font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
       background: var(--bg);
       color: var(--text-main);
+      font-size: 15px; /* تكبير بسيط للخط */
     }
     .app-shell {
       max-width: 950px;
@@ -45,7 +41,7 @@
     }
     .subtitle {
       text-align: center;
-      font-size: .9rem;
+      font-size: .8rem;
       color: var(--text-muted);
       margin-bottom: 10px;
     }
@@ -58,7 +54,7 @@
       border: none;
       padding: 6px 14px;
       border-radius: 999px;
-      font-size: .85rem;
+      font-size: .8rem;
       cursor: pointer;
     }
 
@@ -75,7 +71,6 @@
       padding: 8px 4px;
       border-radius: 999px;
       cursor: pointer;
-      font-size: .9rem;
     }
     .tab.active { background: var(--green); color: #fff; }
 
@@ -88,7 +83,7 @@
       margin-bottom: 14px;
     }
 
-    label { display: block; font-size: .85rem; color: var(--text-muted); margin-bottom: 3px; }
+    label { display: block; font-size: .8rem; color: var(--text-muted); margin-bottom: 3px; }
     .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
     .row > * { flex: 1; }
 
@@ -98,7 +93,7 @@
       border-radius: 999px;
       border: 1px solid var(--border);
       background: #f9fafb;
-      font-size: .95rem; /* أكبر شوي */
+      font-size: .9rem;
     }
     textarea { border-radius: var(--radius-md); min-height: 48px; resize: vertical; }
     input:focus, select:focus, textarea:focus {
@@ -128,13 +123,12 @@
     .pill-red   { background: var(--red);   color:#fff; }
     .pill-gray  { background:#e5e7eb; }
 
-    .section-title { font-size:.95rem; font-weight:600; margin-bottom:6px; }
-    .muted { color:var(--text-muted); font-size:.8rem; }
+    .section-title { font-size:.9rem; font-weight:600; margin-bottom:6px; }
+    .muted { color:var(--text-muted); font-size:.78rem; }
 
     .whatsapp-box {
       width:100%; min-height:90px; border-radius:var(--radius-md);
-      padding:8px; font-size:.9rem;
-      border:1px dashed var(--border);
+      padding:8px; font-size:.8rem; border:1px dashed var(--border);
       background:#f9fafb; white-space:pre-wrap;
     }
 
@@ -142,16 +136,16 @@
     .saved-item {
       background:#ecfdf3; border-radius:999px; padding:6px 10px; margin-bottom:4px;
       display:flex; justify-content:space-between; align-items:center; cursor:pointer;
-      border:1px solid #bbf7d0; font-size:.9rem;
+      border:1px solid #bbf7d0; font-size:.8rem;
     }
 
     .totals-box {
       background:#f0fdf4; border-radius:var(--radius-md);
       border:1px solid #bbf7d0; padding:8px 10px; white-space:pre-wrap;
-      font-size:.9rem;
+      font-size:.8rem;
     }
 
-    .footer-hint { text-align:center; font-size:.8rem; color:var(--text-muted); }
+    .footer-hint { text-align:center; font-size:.7rem; color:var(--text-muted); }
   </style>
 </head>
 <body>
@@ -353,8 +347,7 @@ function getEntries(){
 function ensureClient(n){ if(!state.data.clients[n]) state.data.clients[n]={statements:[]}; }
 
 function saveCurrentStatement(){
-  const name=clientNameInput.value.trim(); 
-  if(!name){ alert("اكتب اسم العميل"); return; }
+  const name=clientNameInput.value.trim(); if(!name){ alert("اكتب اسم العميل"); return; }
   ensureClient(name);
   const st={
     id:state.currentStatementId||("st_"+Date.now()),
@@ -368,13 +361,13 @@ function saveCurrentStatement(){
 
   const list=state.data.clients[name].statements;
   const idx=list.findIndex(s=>s.id===st.id);
-  if(idx>=0) list[idx]=st; else list.unshift(st); // الأحدث يظهر أولاً
+  if(idx>=0) list[idx]=st; else list.unshift(st);
 
   saveData();
   state.currentClient=name;
   state.currentStatementId=st.id;
   alert("تم حفظ الكشف");
-  renderStatementsList(name);       // نمرر اسم العميل صراحة
+  renderStatementsList();
   renderTotalsForCurrentClient();
   updatePreviewText();
 }
@@ -389,7 +382,7 @@ function resetForm(keepName){
   entriesContainer.innerHTML="";
   addEntryRow();
   updatePreviewText();
-  renderStatementsList(keepName || state.currentClient);
+  renderStatementsList();
   renderTotalsForCurrentClient();
 }
 
@@ -404,16 +397,11 @@ function copyLastEntries(){
   updatePreviewText();
 }
 
-// ==== سجل الكشوفات – يظهر كل كشوف نفس العميل مرتبة من الأحدث للأقدم ====
-function renderStatementsList(forceName){
-  const name = forceName || state.currentClient || clientNameInput.value.trim();
+function renderStatementsList(){
+  const name=clientNameInput.value.trim();
   statementsListEl.innerHTML="";
-  if(!name){ 
-    statementsListEl.textContent="لا توجد كشوفات"; 
-    return; 
-  }
   const c=state.data.clients[name];
-  if(!c || !c.statements.length){
+  if(!c||!c.statements.length){
     statementsListEl.textContent="لا توجد كشوفات";
     return;
   }
@@ -438,7 +426,7 @@ function loadStatement(name,id){
   entriesContainer.innerHTML="";
   st.entries.forEach(e=>addEntryRow(e));
   updatePreviewText();
-  renderStatementsList(name);
+  renderStatementsList();
   renderTotalsForCurrentClient();
 }
 
@@ -455,26 +443,53 @@ function renderClientsList(){
   });
 }
 
+// ===== حساب إجمالي جميع الكشوفات لكل عميل =====
 function computeTotals(name){
-  const c=state.data.clients[name]; if(!c) return {};
-  const t={};
-  c.statements.forEach(s=>s.entries.forEach(e=>{
-    if(!t[e.currency]) t[e.currency]={lah:0,alaih:0};
-    if(e.direction==="له") t[e.currency].lah+=e.amount;
-    else t[e.currency].alaih+=e.amount;
-  }));
+  const c = state.data.clients[name];
+  if (!c) return {};
+
+  const t = {};
+  c.statements.forEach(s => {
+    s.entries.forEach(e => {
+      if (!e.currency) return;
+      if (!t[e.currency]) t[e.currency] = { lah: 0, alaih: 0 };
+      if (e.direction === "له") {
+        t[e.currency].lah += e.amount || 0;
+      } else {
+        t[e.currency].alaih += e.amount || 0;
+      }
+    });
+  });
   return t;
 }
 
 function renderTotalsForCurrentClient(){
-  const n=clientNameInput.value.trim();
-  if(!state.data.clients[n]){ totalsBoxEl.textContent="لا توجد بيانات"; return; }
-  const t=computeTotals(n); let txt="";
-  Object.keys(t).forEach(c=>{
-    const diff=t[c].lah - t[c].alaih;
-    txt+=`${c}:\nله: ${t[c].lah}\nعليه: ${t[c].alaih}\nالصافي: ${diff}\n\n`;
+  const n = clientNameInput.value.trim();
+  if (!n || !state.data.clients[n]) {
+    totalsBoxEl.textContent = "لا توجد بيانات بعد. احفظ أول كشف للعميل.";
+    return;
+  }
+
+  const t = computeTotals(n);
+  const currencies = Object.keys(t);
+  if (!currencies.length) {
+    totalsBoxEl.textContent = "لا توجد مبالغ مسجلة بعد لهذا العميل.";
+    return;
+  }
+
+  let txt = "إجمالي جميع الكشوفات للعميل: " + n + "\n----------------------\n";
+  currencies.forEach(c=>{
+    const lah   = t[c].lah;
+    const alaih = t[c].alaih;
+    const diff  = lah - alaih; // موجب = له، سالب = عليه
+
+    txt += `\n${c}:\n`;
+    txt += `له: ${lah.toLocaleString("en-US")} ${c}\n`;
+    txt += `عليه: ${alaih.toLocaleString("en-US")} ${c}\n`;
+    txt += `الصافي: ${diff.toLocaleString("en-US")} ${c} (${diff > 0 ? "له" : diff < 0 ? "عليه" : "متساوي"})\n`;
   });
-  totalsBoxEl.textContent = txt || "لا توجد بيانات";
+
+  totalsBoxEl.textContent = txt;
 }
 
 function updatePreviewText(){
@@ -508,7 +523,6 @@ function printAsPdf(){
       if (e.direction === "له")  res[e.currency].lah   += e.amount;
       else                       res[e.currency].alaih += e.amount;
     });
-
     Object.keys(res).forEach(c=>{
       const diff = res[c].lah - res[c].alaih;
       if (diff !== 0) {
@@ -516,7 +530,6 @@ function printAsPdf(){
         autoTotalsHtml += `<li>${Math.abs(diff).toLocaleString()} ${c} (${dir})</li>`;
       }
     });
-
     if (!autoTotalsHtml) {
       autoTotalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
     }
