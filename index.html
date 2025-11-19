@@ -27,7 +27,7 @@
       font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
       background: var(--bg);
       color: var(--text-main);
-      font-size: 16px; /* تكبير الخط */
+      font-size: 16px; /* تكبير الخط داخل التطبيق */
     }
     .app-shell {
       max-width: 950px;
@@ -163,9 +163,9 @@
       <div class="tab active" id="tabStatements">الكشوفات</div>
       <div class="tab" id="tabClients">العملاء</div>
     </div>
+
     <div id="screenStatements">
       <div class="card">
-
         <div class="row">
           <div>
             <label>العميل:</label>
@@ -212,7 +212,6 @@
           <button class="pill-btn pill-green" id="saveStatementBtn" style="flex:1;">💾 حفظ الكشف</button>
           <button class="pill-btn pill-gray" id="newStatementSameClientBtn" style="flex:1;">+ كشف جديد مع نفس العميل</button>
         </div>
-
       </div>
 
       <div class="card">
@@ -242,10 +241,27 @@
         </div>
       </div>
 
+      <!-- بطاقة المزامنة السحابية -->
+      <div class="card">
+        <label class="section-title">☁️ المزامنة السحابية (اختياري)</label>
+        <p class="muted">
+          أدخل نفس البريد الإلكتروني في أي جوال ثم اضغط "مزامنة الآن" ليتم دمج الكشوفات بين أجهزتك بدون حذف.
+        </p>
+        <div class="row">
+          <div>
+            <label>البريد الإلكتروني:</label>
+            <input type="email" id="syncEmail" placeholder="you@example.com">
+          </div>
+        </div>
+        <div class="row">
+          <button class="pill-btn pill-green" id="syncNowBtn" style="flex:1;">☁️ مزامنة الآن</button>
+        </div>
+        <p class="muted" id="syncStatus"></p>
+      </div>
+
       <div class="footer-hint">
         إذا لم يظهر زر التثبيت، استخدم "إضافة إلى الشاشة الرئيسية" من المتصفح.
       </div>
-
     </div>
 
     <div id="screenClients" style="display:none;">
@@ -263,6 +279,7 @@ const state = { data:{clients:{}}, currentClient:"", currentStatementId:null, de
 
 // رابط سيرفر المزامنة (FastAPI على Render)
 const SYNC_API_BASE = "https://voice-ledger-sync.onrender.com";
+const SYNC_EMAIL_KEY = "voiceLedgerSyncEmail";
 
 function loadData(){
   try{
@@ -305,6 +322,15 @@ const whatsAppBox=document.getElementById("whatsAppText");
 const statementsListEl=document.getElementById("statementsList");
 const totalsBoxEl=document.getElementById("totalsBox");
 const clientsListEl=document.getElementById("clientsList");
+
+// عناصر المزامنة
+const syncEmailInput = document.getElementById("syncEmail");
+const syncNowBtn     = document.getElementById("syncNowBtn");
+const syncStatusEl   = document.getElementById("syncStatus");
+
+// تحميل البريد المخزَّن إن وُجد
+const storedSyncEmail = localStorage.getItem(SYNC_EMAIL_KEY) || "";
+if (syncEmailInput) syncEmailInput.value = storedSyncEmail;
 
 // =================================================================
 //         وظائف إضافة / حذف البنود + تحديث النص + الفواصل
@@ -688,6 +714,56 @@ ${entries
 
   w.document.close();
   w.print();
+}
+
+// =================================================================
+//                     دالة المزامنة مع السيرفر
+// =================================================================
+
+async function syncNow() {
+  const email = (syncEmailInput.value || "").trim();
+  if (!email) {
+    alert("اكتب البريد الإلكتروني أولاً");
+    return;
+  }
+  localStorage.setItem(SYNC_EMAIL_KEY, email);
+
+  if (!SYNC_API_BASE) {
+    alert("عنوان سيرفر المزامنة غير مضبوط.");
+    return;
+  }
+
+  try {
+    syncStatusEl.textContent = "⏳ جاري المزامنة...";
+    const resp = await fetch(SYNC_API_BASE + "/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, data: state.data })
+    });
+
+    if (!resp.ok) throw new Error("خطأ من السيرفر");
+    const result = await resp.json();
+
+    if (result && result.data) {
+      // دمج آمن: نعتمد البيانات القادمة من السيرفر (هي نفسها مدموجة)
+      state.data = result.data;
+      saveData();
+      renderStatementsList();
+      renderTotalsForCurrentClient();
+      renderClientsList();
+      syncStatusEl.textContent = "✅ تمت المزامنة بنجاح";
+    } else {
+      syncStatusEl.textContent = "تم الاتصال، لكن لم تُرجع بيانات صالحة.";
+    }
+  } catch (err) {
+    console.error(err);
+    syncStatusEl.textContent = "❌ تعذر الاتصال بسيرفر المزامنة.";
+    alert("فشل الاتصال بسيرفر المزامنة. تأكد أن الخدمة تعمل في Render.");
+  }
+}
+
+if (syncNowBtn) {
+  syncNowBtn.onclick = syncNow;
 }
 
 // =================================================================
