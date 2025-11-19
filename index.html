@@ -4,8 +4,10 @@
   <meta charset="utf-8" />
   <title>دفتر كشف الحساب اليومي</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#16a34a" />
+
   <style>
     * { box-sizing: border-box; }
     :root {
@@ -43,14 +45,8 @@
       color: var(--text-muted);
       margin-bottom: 10px;
     }
-    .install-bar {
-      text-align: center;
-      margin-bottom: 10px;
-      display:flex;
-      justify-content:center;
-      gap:8px;
-      flex-wrap:wrap;
-    }
+
+    .install-bar { text-align: center; margin-bottom: 10px; }
     #installButton {
       display: none;
       background: #0f172a;
@@ -61,6 +57,7 @@
       font-size: .9rem;
       cursor: pointer;
     }
+
     .tabs {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -77,6 +74,7 @@
       font-size: 1rem;
     }
     .tab.active { background: var(--green); color: #fff; }
+
     .card {
       background: #fff;
       border-radius: var(--radius-lg);
@@ -86,9 +84,11 @@
       margin-bottom: 14px;
       font-size: 1rem;
     }
+
     label { display: block; font-size: .9rem; color: var(--text-muted); margin-bottom: 3px; }
     .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
     .row > * { flex: 1; }
+
     input, select, textarea {
       width: 100%;
       padding: 9px 10px;
@@ -103,6 +103,7 @@
       box-shadow: 0 0 0 1px rgba(34,197,94,.35);
       background: #fff;
     }
+
     .entries { display: flex; flex-direction: column; gap: 6px; }
     .entry-row { display: flex; gap: 6px; align-items: center; }
     .entry-desc { flex: 4; }
@@ -110,6 +111,7 @@
     .entry-curr { flex: 1.2; }
     .entry-dir { flex: 1.2; }
     .entry-del { flex: 0; }
+
     @media (max-width: 640px) {
       .entry-row { flex-wrap: wrap; }
       .entry-desc { flex: 1 1 100%; }
@@ -117,38 +119,41 @@
       .entry-curr { flex: 1 1 25%; }
       .entry-dir { flex: 1 1 25%; }
     }
+
     .pill-btn { border-radius: 999px; border: none; cursor: pointer; padding: 10px 16px; font-size: 1rem; }
     .pill-green { background: var(--green); color:#fff; }
     .pill-red   { background: var(--red);   color:#fff; }
     .pill-gray  { background:#e5e7eb; }
+
     .section-title { font-size:1.05rem; font-weight:600; margin-bottom:6px; }
     .muted { color:var(--text-muted); font-size:.85rem; }
+
     .whatsapp-box {
       width:100%; min-height:90px; border-radius:var(--radius-md);
       padding:10px; font-size:1rem; border:1px dashed var(--border);
       background:#f9fafb; white-space:pre-wrap;
     }
+
     .saved-list { max-height:180px; overflow-y:auto; }
     .saved-item {
       background:#ecfdf3; border-radius:999px; padding:8px 12px; margin-bottom:4px;
       display:flex; justify-content:space-between; align-items:center; cursor:pointer;
       border:1px solid #bbf7d0; font-size:1rem;
     }
+
     .totals-box {
       background:#f0fdf4; border-radius:var(--radius-md);
       border:1px solid #bbf7d0; padding:10px 14px; white-space:pre-wrap;
       font-size:1rem;
     }
+
     .footer-hint { text-align:center; font-size:.85rem; color:var(--text-muted); }
-    #syncStatus { margin-top:6px; font-size:.85rem; }
-    #syncStatus.ok { color:#16a34a; }
-    #syncStatus.error { color:#dc2626; }
   </style>
 </head>
 <body>
   <div class="app-shell">
     <h1>📒 دفتر كشف الحساب اليومي</h1>
-    <p class="subtitle">حفظ كشوفات عملائك في جهازك فقط، مع خيار مزامنة بين أجهزتك.</p>
+    <p class="subtitle">حفظ كشوفات عملائك في جهازك فقط (بدون إنترنت أو حساب).</p>
 
     <div class="install-bar">
       <button id="installButton">تثبيت التطبيق 📱</button>
@@ -238,12 +243,37 @@
 
       <div class="card">
         <label class="section-title">☁️ المزامنة السحابية (اختياري)</label>
-        <p class="muted">أدخل نفس البريد في أي جوال ثم اضغط "مزامنة الآن" ليتم دمج الكشوفات بين أجهزتك بدون حذف.</p>
-        <input type="email" id="syncEmail" placeholder="you@example.com">
-        <div class="row" style="margin-top:8px;">
-          <button class="pill-btn pill-green" id="syncNowBtn" style="flex:1;">☁️ مزامنة الآن</button>
+        <p class="muted">
+          أدخل نفس البريد الإلكتروني في أي جوال، ثم اضغط "مزامنة الآن" لدمج الكشوفات بين أجهزتك بدون حذف.
+        </p>
+        <div class="row">
+          <input id="syncEmail" type="email" placeholder="you@example.com">
         </div>
-        <div id="syncStatus"></div>
+        <div class="row">
+          <button id="syncNowBtn" class="pill-btn pill-green" style="flex:1;">☁️ مزامنة الآن</button>
+        </div>
+        <p id="syncStatus" class="muted" style="margin-top:6px;"></p>
+      </div>
+
+      <div class="card">
+        <label class="section-title">🎙️ المساعد الصوتي</label>
+        <p class="muted">
+          قل مثلاً: "بند جديد"، "احفظ الكشف"، "كشف جديد لنفس العميل"،
+          "افتح كشف العميل فلان"، "المبلغ مليون وخمسمية"، "العملة سعودي"...
+        </p>
+        <div id="voiceLog"
+             style="min-height:70px;border-radius:10px;border:1px dashed #e5e7eb;
+                    padding:8px;font-size:.9rem;background:#f9fafb;white-space:pre-wrap;">
+          اضغط على زر المايك وابدأ التحدث...
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <button id="voiceToggleBtn" class="pill-btn pill-green" style="flex:1;">
+            🎙️ بدء الاستماع
+          </button>
+          <button id="voiceStopBtn" class="pill-btn pill-gray" style="flex:1;">
+            ⏹️ إيقاف
+          </button>
+        </div>
       </div>
 
       <div class="footer-hint">
@@ -261,553 +291,683 @@
   </div>
 
   <script>
-  const STORAGE_KEY = "voiceLedgerData_v1";
-  const SYNC_API_BASE = "https://voice-ledger.onrender.com";
+const STORAGE_KEY = "voiceLedgerData_v1";
+const SYNC_API_BASE = "https://voice-ledger-sync.onrender.com";
 
-  const state = {
-    data: { clients: {} },
-    currentClient: "",
-    currentStatementId: null,
-    deferredPrompt: null
+const state = { data:{clients:{}}, currentClient:"", currentStatementId:null, deferredPrompt:null };
+
+// تحميل / حفظ البيانات من localStorage
+function loadData(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw) state.data=JSON.parse(raw);
+  }catch(e){ console.error("خطأ في قراءة التخزين",e); }
+}
+function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); }
+
+// عناصر الواجهة
+const tabStatements=document.getElementById("tabStatements");
+const tabClients=document.getElementById("tabClients");
+const screenStatements=document.getElementById("screenStatements");
+const screenClients=document.getElementById("screenClients");
+
+tabStatements.onclick=()=>showScreen("s");
+tabClients.onclick=()=>showScreen("c");
+
+function showScreen(t){
+  if(t==="s"){
+    screenStatements.style.display="";
+    screenClients.style.display="none";
+    tabStatements.classList.add("active");
+    tabClients.classList.remove("active");
+  } else {
+    screenClients.style.display="";
+    screenStatements.style.display="none";
+    tabClients.classList.add("active");
+    tabStatements.classList.remove("active");
+    renderClientsList();
+  }
+}
+
+const clientNameInput=document.getElementById("clientName");
+const dateInput=document.getElementById("statementDate");
+const titleInput=document.getElementById("statementTitle");
+const entriesContainer=document.getElementById("entriesContainer");
+const manualTotalInput=document.getElementById("manualTotal");
+const extraNotesInput=document.getElementById("extraNotes");
+const whatsAppBox=document.getElementById("whatsAppText");
+const statementsListEl=document.getElementById("statementsList");
+const totalsBoxEl=document.getElementById("totalsBox");
+const clientsListEl=document.getElementById("clientsList");
+const syncEmailInput=document.getElementById("syncEmail");
+const syncNowBtn=document.getElementById("syncNowBtn");
+const syncStatusEl=document.getElementById("syncStatus");
+
+// أزرار أساسية
+document.getElementById("addEntryBtn").onclick=()=>addEntryRow();
+document.getElementById("copyLastEntriesBtn").onclick=copyLastEntries;
+document.getElementById("saveStatementBtn").onclick=saveCurrentStatement;
+document.getElementById("newStatementSameClientBtn").onclick=()=>resetForm(clientNameInput.value.trim());
+document.getElementById("copyTextBtn").onclick=()=>navigator.clipboard.writeText(whatsAppBox.textContent || "");
+document.getElementById("shareWhatsappBtn").onclick=()=>window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
+document.getElementById("printPdfBtn").onclick=printAsPdf;
+syncNowBtn.onclick = syncNow;
+
+// ---------------- تنسيق الأرقام بفواصل ----------------
+function formatNumberInput(input) {
+  let v = input.value.replace(/,/g, "");
+  if (!v) { input.value=""; return; }
+  let n = Number(v);
+  if (!isNaN(n)) input.value = n.toLocaleString("en-US");
+}
+manualTotalInput.addEventListener("input", () => {
+  manualTotalInput.value = manualTotalInput.value.replace(/[^\d+، ,.+\-]/g,"");
+});
+
+// إنشاء صف بند جديد
+function addEntryRow(init) {
+  const row = document.createElement("div");
+  row.className = "entry-row";
+
+  const desc = input("text", "وصف البند");
+  desc.className = "entry-desc";
+
+  const amount = input("text", "المبلغ");
+  amount.className = "entry-amount";
+  amount.oninput = () => {
+    amount.value = amount.value.replace(/[^\d]/g, "");
+    formatNumberInput(amount);
+    updatePreviewText();
   };
 
-  function loadData() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) state.data = JSON.parse(raw);
-    } catch (e) {
-      console.error("خطأ في قراءة التخزين", e);
-    }
-  }
-  function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
-  }
+  const curr = select(["يمني", "سعودي", "درهم", "دولار", "عماني"]);
+  curr.className = "entry-curr";
 
-  const tabStatements    = document.getElementById("tabStatements");
-  const tabClients       = document.getElementById("tabClients");
-  const screenStatements = document.getElementById("screenStatements");
-  const screenClients    = document.getElementById("screenClients");
+  const dir = select(["له", "عليه"]);
+  dir.className = "entry-dir";
 
-  tabStatements.onclick = () => showScreen("s");
-  tabClients.onclick    = () => showScreen("c");
+  const del = button("حذف", "pill-btn pill-red entry-del");
+  del.onclick = () => confirm("حذف البند؟") && row.remove();
 
-  function showScreen(t) {
-    if (t === "s") {
-      screenStatements.style.display = "";
-      screenClients.style.display    = "none";
-      tabStatements.classList.add("active");
-      tabClients.classList.remove("active");
-    } else {
-      screenClients.style.display    = "";
-      screenStatements.style.display = "none";
-      tabClients.classList.add("active");
-      tabStatements.classList.remove("active");
-      renderClientsList();
-    }
+  if (init) {
+    desc.value = init.desc || "";
+    amount.value = init.amount ? Number(init.amount).toLocaleString("en-US") : "";
+    curr.value = init.currency;
+    dir.value = init.direction;
   }
 
-  const clientNameInput  = document.getElementById("clientName");
-  const dateInput        = document.getElementById("statementDate");
-  const titleInput       = document.getElementById("statementTitle");
-  const entriesContainer = document.getElementById("entriesContainer");
-  const manualTotalInput = document.getElementById("manualTotal");
-  const extraNotesInput  = document.getElementById("extraNotes");
-  const whatsAppBox      = document.getElementById("whatsAppText");
-  const statementsListEl = document.getElementById("statementsList");
-  const totalsBoxEl      = document.getElementById("totalsBox");
-  const clientsListEl    = document.getElementById("clientsList");
-  const syncEmailInput   = document.getElementById("syncEmail");
-  const syncNowBtn       = document.getElementById("syncNowBtn");
-  const syncStatus       = document.getElementById("syncStatus");
+  [desc, curr, dir].forEach(e => e.addEventListener("input", updatePreviewText));
 
-  document.getElementById("addEntryBtn").onclick              = () => addEntryRow();
-  document.getElementById("copyLastEntriesBtn").onclick       = copyLastEntries;
-  document.getElementById("saveStatementBtn").onclick         = saveCurrentStatement;
-  document.getElementById("newStatementSameClientBtn").onclick= () => resetForm(clientNameInput.value.trim());
-  document.getElementById("copyTextBtn").onclick              = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
-  document.getElementById("shareWhatsappBtn").onclick         = () => window.open("https://wa.me/?text=" + encodeURIComponent(whatsAppBox.textContent || ""));
-  document.getElementById("printPdfBtn").onclick              = printAsPdf;
-  syncNowBtn.onclick                                          = doSyncNow;
+  row.append(desc, amount, curr, dir, del);
+  entriesContainer.appendChild(row);
+  return row; // مهم للمساعد الصوتي
+}
 
-  function formatNumberInput(input) {
-    let v = input.value.replace(/,/g, "");
-    if (!v) return;
-    let n = Number(v);
-    if (!isNaN(n)) input.value = n.toLocaleString("en-US");
+// أدوات صغيرة
+function input(t,p){ const e=document.createElement("input"); e.type=t; e.placeholder=p; return e; }
+function select(arr){ const s=document.createElement("select"); arr.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;s.append(o);}); return s; }
+function button(t,c){ const b=document.createElement("button"); b.textContent=t; b.className=c; return b; }
+
+// استخراج البنود (أرقام بدون فواصل)
+function getEntries(){
+  return [...entriesContainer.querySelectorAll(".entry-row")].map(r=>({
+    desc: r.querySelector(".entry-desc").value.trim(),
+    amount: Number(r.querySelector(".entry-amount").value.replace(/,/g,"")) || 0,
+    currency: r.querySelector(".entry-curr").value,
+    direction: r.querySelector(".entry-dir").value
+  })).filter(e=>e.desc || e.amount);
+}
+
+// العملاء
+function ensureClient(n){ if(!state.data.clients[n]) state.data.clients[n]={statements:[]}; }
+
+function saveCurrentStatement(){
+  const name=clientNameInput.value.trim();
+  if(!name) return alert("اكتب اسم العميل");
+
+  ensureClient(name);
+
+  const st={
+    id: state.currentStatementId || ("st_"+Date.now()),
+    date: dateInput.value,
+    title: titleInput.value.trim(),
+    entries: getEntries(),
+    manualTotal: manualTotalInput.value.trim(),
+    extraNotes: extraNotesInput.value.trim()
+  };
+  if(!st.entries.length) return alert("أضف بندًا واحدًا على الأقل");
+
+  const list=state.data.clients[name].statements;
+  const idx=list.findIndex(s=>s.id===st.id);
+  if(idx>=0) list[idx]=st; else list.unshift(st);
+
+  saveData();
+  state.currentClient=name;
+  state.currentStatementId=st.id;
+
+  alert("✔ تم حفظ الكشف");
+  renderStatementsList();
+  renderTotalsForCurrentClient();
+  updatePreviewText();
+}
+
+function resetForm(keepName){
+  state.currentStatementId=null;
+  if(keepName) clientNameInput.value=keepName; else clientNameInput.value="";
+  dateInput.value=new Date().toISOString().slice(0,10);
+  titleInput.value="";
+  manualTotalInput.value="";
+  extraNotesInput.value="";
+  entriesContainer.innerHTML="";
+  addEntryRow();
+  updatePreviewText();
+  renderStatementsList();
+  renderTotalsForCurrentClient();
+}
+
+// نسخ آخر كشف
+function copyLastEntries(){
+  const name=clientNameInput.value.trim();
+  const c=state.data.clients[name];
+  if(!c||!c.statements.length) return alert("لا يوجد كشف سابق");
+
+  entriesContainer.innerHTML="";
+  c.statements[0].entries.forEach(e=>
+    addEntryRow({desc:e.desc, amount:"", currency:e.currency, direction:e.direction})
+  );
+  updatePreviewText();
+}
+
+// سجل الكشوفات
+function renderStatementsList(){
+  const name=clientNameInput.value.trim();
+  statementsListEl.innerHTML="";
+  const c=state.data.clients[name];
+  if(!c||!c.statements.length){
+    statementsListEl.textContent="لا توجد كشوفات";
+    return;
   }
+  c.statements.forEach(st=>{
+    const d=document.createElement("div");
+    d.className="saved-item";
+    d.innerHTML=`<span>${st.title}</span><span class="date">${st.date}</span>`;
+    d.onclick=()=>confirm("فتح هذا الكشف؟")&&loadStatement(name,st.id);
+    statementsListEl.appendChild(d);
+  });
+}
 
-  function addEntryRow(init) {
-    const row = document.createElement("div");
-    row.className = "entry-row";
+function loadStatement(name,id){
+  const st=state.data.clients[name].statements.find(s=>s.id===id);
+  if(!st) return;
+  state.currentClient=name;
+  state.currentStatementId=id;
+  clientNameInput.value=name;
+  dateInput.value=st.date;
+  titleInput.value=st.title;
+  manualTotalInput.value=st.manualTotal||"";
+  extraNotesInput.value=st.extraNotes||"";
+  entriesContainer.innerHTML="";
+  st.entries.forEach(e=>addEntryRow(e));
+  updatePreviewText();
+  renderStatementsList();
+  renderTotalsForCurrentClient();
+}
 
-    const desc   = input("text", "وصف البند");
-    desc.className = "entry-desc";
+// قائمة العملاء
+function renderClientsList(){
+  clientsListEl.innerHTML="";
+  const names=Object.keys(state.data.clients);
+  if(!names.length){ clientsListEl.textContent="لا يوجد عملاء بعد"; return; }
+  names.forEach(n=>{
+    const d=document.createElement("div");
+    d.className="saved-item";
+    const last=state.data.clients[n].statements[0];
+    d.innerHTML=`<span>${n}</span><span class="date">${last?last.date:""}</span>`;
+    d.onclick=()=>{ showScreen("s"); loadStatement(n,last.id); };
+    clientsListEl.appendChild(d);
+  });
+}
 
-    const amount = input("text", "المبلغ");
-    amount.className = "entry-amount";
-    amount.oninput = () => {
-      amount.value = amount.value.replace(/[^\d]/g, "");
-      formatNumberInput(amount);
-      updatePreviewText();
-    };
-
-    const curr = select(["يمني", "سعودي", "درهم", "دولار", "عماني"]);
-    curr.className = "entry-curr";
-
-    const dir = select(["له", "عليه"]);
-    dir.className = "entry-dir";
-
-    const del = button("حذف", "pill-btn pill-red entry-del");
-    del.onclick = () => confirm("حذف البند؟") && row.remove();
-
-    if (init) {
-      desc.value = init.desc || "";
-      amount.value = init.amount ? Number(init.amount).toLocaleString("en-US") : "";
-      curr.value = init.currency || "يمني";
-      dir.value = init.direction || "له";
-    }
-
-    [desc, curr, dir].forEach(e => e.addEventListener("input", updatePreviewText));
-
-    row.append(desc, amount, curr, dir, del);
-    entriesContainer.appendChild(row);
-  }
-
-  function input(t, p) {
-    const e = document.createElement("input");
-    e.type = t;
-    e.placeholder = p;
-    return e;
-  }
-  function select(arr) {
-    const s = document.createElement("select");
-    arr.forEach(v => {
-      const o = document.createElement("option");
-      o.value = o.textContent = v;
-      s.append(o);
+// إجمالي جميع الكشوفات للعميل
+function computeTotals(name){
+  const c=state.data.clients[name];
+  if(!c) return {};
+  const t={};
+  c.statements.forEach(s=>{
+    s.entries.forEach(e=>{
+      if(!e.currency) return;
+      if(!t[e.currency]) t[e.currency]={lah:0,alaih:0};
+      if(e.direction==="له") t[e.currency].lah+=e.amount;
+      else t[e.currency].alaih+=e.amount;
     });
-    return s;
+  });
+  return t;
+}
+
+function renderTotalsForCurrentClient(){
+  const n=clientNameInput.value.trim();
+  if(!n || !state.data.clients[n]){
+    totalsBoxEl.textContent="لا توجد بيانات بعد. احفظ أول كشف للعميل.";
+    return;
   }
-  function button(t, c) {
-    const b = document.createElement("button");
-    b.textContent = t;
-    b.className = c;
-    return b;
+  const t=computeTotals(n);
+  const cur=Object.keys(t);
+  if(!cur.length){
+    totalsBoxEl.textContent="لا توجد مبالغ مسجلة لهذا العميل.";
+    return;
   }
+  let txt=`إجمالي جميع الكشوفات للعميل: ${n}\n----------------------\n`;
+  cur.forEach(c=>{
+    const lah=t[c].lah;
+    const alaih=t[c].alaih;
+    const diff=lah-alaih;
+    txt+=`\n${c}:\nله: ${lah.toLocaleString()} ${c}\nعليه: ${alaih.toLocaleString()} ${c}\nالصافي: ${diff.toLocaleString()} (${diff>0?"له":diff<0?"عليه":"متساوي"})\n`;
+  });
+  totalsBoxEl.textContent=txt;
+}
 
-  function getEntries() {
-    return [...entriesContainer.querySelectorAll(".entry-row")]
-      .map(r => ({
-        desc: r.querySelector(".entry-desc").value.trim(),
-        amount: Number((r.querySelector(".entry-amount").value || "").replace(/,/g, "")) || 0,
-        currency: r.querySelector(".entry-curr").value,
-        direction: r.querySelector(".entry-dir").value
-      }))
-      .filter(e => e.desc || e.amount);
-  }
+// تحديث نص الواتساب
+function updatePreviewText(){
+  const n=clientNameInput.value.trim()||"العميل";
+  const d=dateInput.value||"";
+  const ti=titleInput.value||"";
+  let txt=`${n}\nالتاريخ: ${d}\n----------------\n${ti}\n`;
+  getEntries().forEach((e,i)=>{
+    txt+=`\n${i+1}- ${e.desc} ${e.amount.toLocaleString()} ${e.currency} (${e.direction})`;
+  });
+  if(manualTotalInput.value)
+    txt+=`\n----------------\nالإجمالي: ${manualTotalInput.value}`;
+  if(extraNotesInput.value)
+    txt+=`\n\nملاحظات:\n${extraNotesInput.value}`;
+  whatsAppBox.textContent=txt;
+}
 
-  function ensureClient(name) {
-    if (!state.data.clients[name]) state.data.clients[name] = { statements: [] };
-  }
+// طباعة PDF مع شعار
+function printAsPdf(){
+  const name=clientNameInput.value||"العميل";
+  const date=dateInput.value||"";
+  const title=titleInput.value||"";
+  const entries=getEntries();
+  const manual=manualTotalInput.value.trim();
 
-  function saveCurrentStatement() {
-    const name = clientNameInput.value.trim();
-    if (!name) return alert("اكتب اسم العميل");
-
-    ensureClient(name);
-
-    const st = {
-      id: state.currentStatementId || "st_" + Date.now(),
-      date: dateInput.value,
-      title: titleInput.value.trim(),
-      entries: getEntries(),
-      manualTotal: manualTotalInput.value.trim(),
-      extraNotes: extraNotesInput.value.trim()
-    };
-
-    if (!st.entries.length) return alert("أضف بندًا واحدًا على الأقل");
-
-    const list = state.data.clients[name].statements;
-    const idx  = list.findIndex(s => s.id === st.id);
-    if (idx >= 0) list[idx] = st;
-    else list.unshift(st);
-
-    saveData();
-    state.currentClient = name;
-    state.currentStatementId = st.id;
-
-    alert("✔ تم حفظ الكشف");
-    renderStatementsList();
-    renderTotalsForCurrentClient();
-    updatePreviewText();
-  }
-
-  function resetForm(keepName) {
-    state.currentStatementId = null;
-    if (keepName) clientNameInput.value = keepName;
-    dateInput.value = new Date().toISOString().slice(0, 10);
-    titleInput.value = "";
-    manualTotalInput.value = "";
-    extraNotesInput.value = "";
-    entriesContainer.innerHTML = "";
-    addEntryRow();
-    updatePreviewText();
-    renderStatementsList();
-    renderTotalsForCurrentClient();
-  }
-
-  function copyLastEntries() {
-    const name = clientNameInput.value.trim();
-    const c = state.data.clients[name];
-    if (!c || !c.statements.length) return alert("لا يوجد كشف سابق");
-
-    entriesContainer.innerHTML = "";
-    c.statements[0].entries.forEach(e =>
-      addEntryRow({ desc: e.desc, amount: "", currency: e.currency, direction: e.direction })
-    );
-    updatePreviewText();
-  }
-
-  function renderStatementsList() {
-    const name = clientNameInput.value.trim();
-    statementsListEl.innerHTML = "";
-    const c = state.data.clients[name];
-    if (!c || !c.statements.length) {
-      statementsListEl.textContent = "لا توجد كشوفات";
-      return;
-    }
-    c.statements.forEach(st => {
-      const d = document.createElement("div");
-      d.className = "saved-item";
-      d.innerHTML = `<span>${st.title || "كشف بدون عنوان"}</span><span class="date">${st.date || ""}</span>`;
-      d.onclick = () => confirm("فتح هذا الكشف؟") && loadStatement(name, st.id);
-      statementsListEl.appendChild(d);
+  let autoTotalsHtml="";
+  if(!manual){
+    const res={};
+    entries.forEach(e=>{
+      if(!res[e.currency]) res[e.currency]={lah:0,alaih:0};
+      if(e.direction==="له") res[e.currency].lah+=e.amount;
+      else res[e.currency].alaih+=e.amount;
     });
-  }
-
-  function loadStatement(name, id) {
-    const st = state.data.clients[name].statements.find(s => s.id === id);
-    if (!st) return;
-    state.currentClient = name;
-    state.currentStatementId = id;
-
-    clientNameInput.value  = name;
-    dateInput.value        = st.date;
-    titleInput.value       = st.title;
-    manualTotalInput.value = st.manualTotal || "";
-    extraNotesInput.value  = st.extraNotes || "";
-
-    entriesContainer.innerHTML = "";
-    st.entries.forEach(e => addEntryRow(e));
-
-    updatePreviewText();
-    renderStatementsList();
-    renderTotalsForCurrentClient();
-  }
-
-  function renderClientsList() {
-    clientsListEl.innerHTML = "";
-    const names = Object.keys(state.data.clients);
-    if (!names.length) {
-      clientsListEl.textContent = "لا يوجد عملاء بعد";
-      return;
-    }
-    names.forEach(n => {
-      const d = document.createElement("div");
-      d.className = "saved-item";
-      const last = state.data.clients[n].statements[0];
-      d.innerHTML = `<span>${n}</span><span class="date">${last ? last.date : ""}</span>`;
-      d.onclick = () => { showScreen("s"); loadStatement(n, last.id); };
-      clientsListEl.appendChild(d);
+    Object.keys(res).forEach(c=>{
+      const diff=res[c].lah-res[c].alaih;
+      if(diff!==0){
+        const dir=diff>0?"له":"عليه";
+        autoTotalsHtml+=`<li>${Math.abs(diff).toLocaleString()} ${c} (${dir})</li>`;
+      }
     });
+    if(!autoTotalsHtml) autoTotalsHtml="<li>لا يوجد رصيد لهذا الكشف.</li>";
   }
 
-  function computeTotals(name) {
-    const c = state.data.clients[name];
-    if (!c) return {};
-    const t = {};
-    c.statements.forEach(s =>
-      s.entries.forEach(e => {
-        if (!e.currency) return;
-        if (!t[e.currency]) t[e.currency] = { lah: 0, alaih: 0 };
-        if (e.direction === "له") t[e.currency].lah += e.amount;
-        else t[e.currency].alaih += e.amount;
-      })
-    );
-    return t;
-  }
+  const notes=(extraNotesInput.value||"").replace(/\n/g,"<br>");
 
-  function renderTotalsForCurrentClient() {
-    const n = clientNameInput.value.trim();
-    if (!n || !state.data.clients[n]) {
-      totalsBoxEl.textContent = "لا توجد بيانات بعد. احفظ أول كشف للعميل.";
-      return;
-    }
-    const t = computeTotals(n);
-    const cur = Object.keys(t);
-    if (!cur.length) {
-      totalsBoxEl.textContent = "لا توجد مبالغ مسجلة لهذا العميل.";
-      return;
-    }
-    let txt = `إجمالي جميع الكشوفات للعميل: ${n}\n----------------------\n`;
-    cur.forEach(c => {
-      const lah   = t[c].lah;
-      const alaih = t[c].alaih;
-      const diff  = lah - alaih;
-      txt += `\n${c}:\nله: ${lah.toLocaleString()} ${c}\nعليه: ${alaih.toLocaleString()} ${c}\nالصافي: ${diff.toLocaleString()} (${diff > 0 ? "له" : diff < 0 ? "عليه" : "متساوي"})\n`;
-    });
-    totalsBoxEl.textContent = txt;
-  }
-
-  function updatePreviewText() {
-    const n  = clientNameInput.value.trim() || "العميل";
-    const d  = dateInput.value || "";
-    const ti = titleInput.value || "";
-    let txt = `${n}\nالتاريخ: ${d}\n----------------\n${ti}\n`;
-    getEntries().forEach((e, i) => {
-      txt += `\n${i + 1}- ${e.desc} ${e.amount.toLocaleString()} ${e.currency} (${e.direction})`;
-    });
-    if (manualTotalInput.value)
-      txt += `\n----------------\nالإجمالي: ${manualTotalInput.value}`;
-    if (extraNotesInput.value)
-      txt += `\n\nملاحظات:\n${extraNotesInput.value}`;
-    whatsAppBox.textContent = txt;
-  }
-
-  function printAsPdf() {
-    const name    = clientNameInput.value || "العميل";
-    const date    = dateInput.value || "";
-    const title   = titleInput.value || "";
-    const entries = getEntries();
-    const manual  = manualTotalInput.value.trim();
-
-    let autoTotalsHtml = "";
-    if (!manual) {
-      const res = {};
-      entries.forEach(e => {
-        if (!res[e.currency]) res[e.currency] = { lah: 0, alaih: 0 };
-        if (e.direction === "له") res[e.currency].lah += e.amount;
-        else res[e.currency].alaih += e.amount;
-      });
-      Object.keys(res).forEach(c => {
-        const diff = res[c].lah - res[c].alaih;
-        if (diff !== 0) {
-          const dir = diff > 0 ? "له" : "عليه";
-          autoTotalsHtml += `<li>${Math.abs(diff).toLocaleString()} ${c} (${dir})</li>`;
-        }
-      });
-      if (!autoTotalsHtml) autoTotalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
-    }
-
-    const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
-
-    const w = window.open("", "_blank");
-    w.document.write(`
+  const w=window.open("","_blank");
+  w.document.write(`
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
 <title>كشف - ${name}</title>
 <style>
-body { font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; margin: 20px; font-size: 18px; }
-h2   { font-size: 22px; margin-bottom: 4px; }
-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-th, td { border: 1px solid #ddd; padding: 6px; text-align: center; font-size: 16px; }
-th { background: #eee; }
-.total-box { margin-top: 15px; font-size: 18px; }
-.total-box ul { padding-right: 20px; margin: 6px 0 0; }
-.header {
+body{font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;margin:20px;font-size:18px;}
+h2{font-size:1.4rem;margin-bottom:4px;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{border:1px solid #ddd;padding:6px;text-align:center;font-size:16px;}
+th{background:#eee;}
+.total-box{margin-top:15px;font-size:18px;}
+.total-box ul{padding-right:20px;margin:6px 0 0;}
+.header-bar{
+  width:100%;
   display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
+  justify-content:flex-start;
+  align-items:center;
   margin-bottom:10px;
 }
-.logo-box {
-  font-size:18px;
+.header-logo{
+  font-size:20px;
   font-weight:bold;
-  text-align:right;
 }
-.logo-box span { display:block; }
 </style>
 </head>
 <body>
-<div class="header">
-  <div></div>
-  <div class="logo-box">
-    <span>مكتب بسام الشتيمي</span>
-    <span>للتخليص الجمركي</span>
-  </div>
+<div class="header-bar">
+  <div class="header-logo">مكتب بسام الشتيمي للتخليص الجمركي</div>
 </div>
+
 <h2>كشف حساب</h2>
 <div>العميل: ${name}</div>
 <div>التاريخ: ${date}</div>
 <div>العنوان: ${title}</div>
+
 <table>
 <tr><th>#</th><th>الوصف</th><th>المبلغ</th><th>العملة</th><th>له/عليه</th></tr>
-${entries.map((e, i) => `
+${entries.map((e,i)=>`
 <tr>
-<td>${i + 1}</td>
+<td>${i+1}</td>
 <td>${e.desc}</td>
 <td>${e.amount.toLocaleString()}</td>
 <td>${e.currency}</td>
 <td>${e.direction}</td>
 </tr>`).join("")}
 </table>
+
 <div class="total-box">
 <strong>إجمال هذا الكشف:</strong>
-<ul>${manual ? `<li>${manual}</li>` : autoTotalsHtml}</ul>
+<ul>
+${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
+</ul>
 </div>
-<strong>ملاحظات:</strong><br>${notes || "لا توجد"}
+
+<strong>ملاحظات:</strong><br>${notes}
 </body>
 </html>`);
-    w.document.close();
-    w.print();
+  w.document.close();
+  w.print();
+}
+
+// ====================== المزامنة السحابية ======================
+function mergeData(localData, remoteData){
+  if(!remoteData || !remoteData.clients) return localData;
+  if(!localData.clients) localData.clients={};
+  Object.keys(remoteData.clients).forEach(cname=>{
+    const rClient=remoteData.clients[cname];
+    const lClient=localData.clients[cname]||{statements:[]};
+    const existingIds=new Set(lClient.statements.map(s=>s.id));
+    const merged=[...lClient.statements];
+    rClient.statements.forEach(st=>{
+      if(!existingIds.has(st.id)) merged.push(st);
+    });
+    merged.sort((a,b)=> (b.date||"") .localeCompare(a.date||""));
+    localData.clients[cname]={statements:merged};
+  });
+  return localData;
+}
+
+async function syncNow(){
+  const email = syncEmailInput.value.trim();
+  if(!email){ syncStatusEl.textContent="اكتب البريد الإلكتروني أولاً."; return; }
+  syncStatusEl.textContent="جاري المزامنة...";
+  try{
+    // تحميل النسخة من السيرفر
+    const loadRes = await fetch(`${SYNC_API_BASE}/load`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email})
+    });
+    let remoteData={clients:{}};
+    if(loadRes.ok){
+      remoteData = await loadRes.json();
+    }
+    // دمج
+    state.data = mergeData(state.data, remoteData);
+    // إرسال النسخة المدموجة للباك أب
+    await fetch(`${SYNC_API_BASE}/backup`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,data:state.data})
+    });
+    saveData();
+    renderStatementsList();
+    renderTotalsForCurrentClient();
+    syncStatusEl.textContent="✔ تمت المزامنة بنجاح بدون حذف أي بيانات.";
+  }catch(e){
+    console.error(e);
+    syncStatusEl.textContent="❌ تعذر الاتصال بسيرفر المزامنة.";
+  }
+}
+
+// ====================== المساعد الصوتي المحلي ======================
+const voiceLogEl = document.getElementById("voiceLog");
+const voiceToggleBtn = document.getElementById("voiceToggleBtn");
+const voiceStopBtn = document.getElementById("voiceStopBtn");
+
+let recognition = null;
+let recognizing = false;
+
+const voiceState = {
+  mode: "idle",          // idle | new_entry_desc | new_entry_amount | new_entry_currency | new_entry_direction
+  pendingEntryRow: null,
+};
+
+function speak(text){
+  try{
+    const utter=new SpeechSynthesisUtterance(text);
+    const voices=window.speechSynthesis.getVoices();
+    const arVoice=voices.find(v=>v.lang && v.lang.startsWith("ar"));
+    if(arVoice) utter.voice=arVoice;
+    utter.rate=1.0;
+    utter.pitch=1.0;
+    speechSynthesis.speak(utter);
+  }catch(e){ console.warn(e); }
+}
+
+function logVoice(line){
+  voiceLogEl.textContent += "\n" + line;
+  voiceLogEl.scrollTop = voiceLogEl.scrollHeight;
+}
+
+function initRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition ||
+             window.mozSpeechRecognition || window.msSpeechRecognition;
+  if(!SR){
+    logVoice("❌ المتصفح لا يدعم الأوامر الصوتية. جرّب متصفح كروم.");
+    return null;
+  }
+  const r=new SR();
+  r.lang="ar-YE";
+  r.continuous=true;
+  r.interimResults=false;
+  return r;
+}
+
+// أوامر عامة
+function handleGlobalCommand(text){
+  const t=text.trim();
+
+  if(/(بند جديد|اضف بند|ضيف بند|أضف بند)/.test(t)){
+    const row = addEntryRow();
+    voiceState.mode="new_entry_desc";
+    voiceState.pendingEntryRow=row;
+    logVoice("👂 ماذا أكتب في وصف البند؟");
+    speak("حاضر يا بسام، أضفت بند جديد. ما هو وصف البند؟");
+    return;
   }
 
-  async function doSyncNow() {
-    const email = (syncEmailInput.value || "").trim();
-    if (!email) {
-      alert("أدخل بريدك الإلكتروني للمزامنة");
+  if(/(احفظ|حفظ الكشف|خزن الكشف)/.test(t)){
+    saveCurrentStatement();
+    logVoice("✅ تم حفظ الكشف.");
+    speak("تم حفظ الكشف يا بسام");
+    return;
+  }
+
+  if(/(كشف جديد مع نفس العميل|كشف جديد لنفس العميل)/.test(t)){
+    resetForm(clientNameInput.value.trim());
+    logVoice("🧾 بدأنا كشف جديد لنفس العميل.");
+    speak("بدأت كشف جديد لنفس العميل");
+    return;
+  }
+
+  const mOpen = t.match(/افتح\s+كشف\s+(?:العميل\s+)?(.+)/);
+  if(mOpen){
+    const cname=mOpen[1].trim();
+    const c=state.data.clients[cname];
+    if(!c || !c.statements.length){
+      logVoice(`❌ لا يوجد كشوفات مسجلة للعميل: ${cname}`);
+      speak(`لا يوجد كشوفات للعميل ${cname}`);
       return;
     }
-    syncStatus.textContent = "جاري المزامنة...";
-    syncStatus.className = "";
-    try {
-      const res = await fetch(SYNC_API_BASE + "/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, payload: state.data })
-      });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-      if (data && data.merged) {
-        state.data = data.merged;
-        saveData();
-        renderStatementsList();
-        renderTotalsForCurrentClient();
-      }
-      syncStatus.textContent = "تمت المزامنة بنجاح ✔";
-      syncStatus.className = "ok";
-    } catch (e) {
-      console.error(e);
-      syncStatus.textContent = "تعذر الاتصال بسيرفر المزامنة.";
-      syncStatus.className = "error";
+    const last=c.statements[0];
+    loadStatement(cname,last.id);
+    logVoice(`📂 تم فتح آخر كشف للعميل: ${cname}`);
+    speak(`تم فتح آخر كشف للعميل ${cname}`);
+    return;
+  }
+
+  if(/(اعرض الإجمالي|كم إجمالي العميل|كم عليه|كم له)/.test(t)){
+    renderTotalsForCurrentClient();
+    speak("عرضت لك إجمالي حسابات هذا العميل");
+    return;
+  }
+
+  logVoice("❓ لم أفهم الأمر جيداً. حاول أن تقول: بند جديد، احفظ الكشف، افتح كشف العميل فلان...");
+  speak("لم أفهم الأمر يا بسام، حاول أن تقول بند جديد أو احفظ الكشف أو افتح كشف العميل فلان");
+}
+
+// أوامر خطوة بخطوة للبند الجديد
+function handleStepCommand(text){
+  const t=text.trim();
+
+  if(voiceState.mode==="new_entry_desc" && voiceState.pendingEntryRow){
+    const descInput=voiceState.pendingEntryRow.querySelector(".entry-desc");
+    descInput.value=t;
+    updatePreviewText();
+    voiceState.mode="new_entry_amount";
+    logVoice(`✏️ وصف البند: ${t}`);
+    speak("كم المبلغ يا بسام؟");
+    return;
+  }
+
+  if(voiceState.mode==="new_entry_amount" && voiceState.pendingEntryRow){
+    const amountInput=voiceState.pendingEntryRow.querySelector(".entry-amount");
+    const digitsOnly=t.replace(/[^\d]/g,"");
+    if(!digitsOnly){
+      logVoice("❌ لم أستطع فهم المبلغ، حاول أن تقول مثلاً: مليون وخمسمية ألف.");
+      speak("لم أفهم المبلغ يا بسام، أعد المبلغ من فضلك");
+      return;
     }
+    amountInput.value=digitsOnly;
+    amountInput.dispatchEvent(new Event("input"));
+    updatePreviewText();
+    voiceState.mode="new_entry_currency";
+    logVoice(`💰 المبلغ: ${amountInput.value}`);
+    speak("ما هي العملة؟ يمني أم سعودي أم درهم أم دولار أم عماني؟");
+    return;
   }
 
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let recog = null;
-  if (SpeechRecognition) {
-    recog = new SpeechRecognition();
-    recog.lang = "ar-SA";
-    recog.continuous = false;
-    const voiceBtn = document.createElement("button");
-    voiceBtn.textContent = "🎤 أوامر صوتية";
-    voiceBtn.className = "pill-btn pill-gray";
-    voiceBtn.onclick = () => { try { recog.start(); } catch(e){} };
-    document.querySelector(".install-bar").appendChild(voiceBtn);
-  }
+  if(voiceState.mode==="new_entry_currency" && voiceState.pendingEntryRow){
+    const currSelect=voiceState.pendingEntryRow.querySelector(".entry-curr");
+    let val=null;
+    if(/يمني|ريال/.test(t)) val="يمني";
+    else if(/سعودي/.test(t)) val="سعودي";
+    else if(/درهم/.test(t)) val="درهم";
+    else if(/دولار|امريكي/.test(t)) val="دولار";
+    else if(/عماني/.test(t)) val="عماني";
 
-  function speak(text) {
-    if (!("speechSynthesis" in window)) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "ar-SA";
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }
-
-  function handleVoiceCommand(text) {
-    const t = text.trim();
-    if (t.includes("كشف جديد")) {
-      resetForm(clientNameInput.value.trim());
-      speak("حاضر يا بسام، فتحت كشف جديد لنفس العميل");
-    } else if (t.includes("بند جديد") || t.includes("أضف بند") || t.includes("ضيف بند")) {
-      addEntryRow();
-      speak("تم إضافة بند جديد");
-    } else if (t.startsWith("الوصف")) {
-      const desc = t.replace("الوصف", "").trim();
-      const lastRow = entriesContainer.querySelector(".entry-row:last-child");
-      if (lastRow && desc) {
-        lastRow.querySelector(".entry-desc").value = desc;
-        updatePreviewText();
-        speak("تم إدخال الوصف");
-      }
-    } else if (t.startsWith("المبلغ")) {
-      const lastRow = entriesContainer.querySelector(".entry-row:last-child");
-      const raw = t.replace("المبلغ", "").replace(/[^0-9]/g, "").trim();
-      if (lastRow && raw) {
-        const n = Number(raw);
-        lastRow.querySelector(".entry-amount").value = n.toLocaleString("en-US");
-        updatePreviewText();
-        speak("تم إدخال المبلغ");
-      }
-    } else if (t.includes("العملة يمني")) {
-      const lastRow = entriesContainer.querySelector(".entry-row:last-child");
-      if (lastRow) {
-        lastRow.querySelector(".entry-curr").value = "يمني";
-        updatePreviewText();
-        speak("تم اختيار العملة يمني");
-      }
-    } else if (t.includes("العملة سعودي")) {
-      const lastRow = entriesContainer.querySelector(".entry-row:last-child");
-      if (lastRow) {
-        lastRow.querySelector(".entry-curr").value = "سعودي";
-        updatePreviewText();
-        speak("تم اختيار العملة سعودي");
-      }
-    } else if (t.includes("له")) {
-      const lastRow = entriesContainer.querySelector(".entry-row:last-child");
-      if (lastRow) {
-        lastRow.querySelector(".entry-dir").value = "له";
-        updatePreviewText();
-        speak("تم اختيار له");
-      }
-    } else if (t.includes("عليه")) {
-      const lastRow = entriesContainer.querySelector(".entry-row:last-child");
-      if (lastRow) {
-        lastRow.querySelector(".entry-dir").value = "عليه";
-        updatePreviewText();
-        speak("تم اختيار عليه");
-      }
-    } else if (t.includes("احفظ الكشف") || t.includes("حفظ الكشف")) {
-      saveCurrentStatement();
-      speak("تم حفظ الكشف يا بسام");
-    } else {
-      speak("لم أفهم الأمر، حاول مرة أخرى");
+    if(!val){
+      logVoice("❌ لم أفهم العملة، قل: يمني أو سعودي أو درهم أو دولار أو عماني.");
+      speak("لم أفهم العملة يا بسام، قل يمني أو سعودي أو درهم أو دولار أو عماني");
+      return;
     }
+    currSelect.value=val;
+    updatePreviewText();
+    voiceState.mode="new_entry_direction";
+    logVoice(`💱 العملة: ${val}`);
+    speak("هل هي له أم عليه؟");
+    return;
   }
 
-  if (recog) {
-    recog.onresult = e => {
-      const text = e.results[0][0].transcript;
-      handleVoiceCommand(text);
+  if(voiceState.mode==="new_entry_direction" && voiceState.pendingEntryRow){
+    const dirSelect=voiceState.pendingEntryRow.querySelector(".entry-dir");
+    let val=null;
+    if(/له/.test(t)) val="له";
+    else if(/عليه|علي/.test(t)) val="عليه";
+
+    if(!val){
+      logVoice("❌ لم أفهم هل هي له أم عليه.");
+      speak("هل البند له أم عليه يا بسام؟");
+      return;
+    }
+    dirSelect.value=val;
+    updatePreviewText();
+    logVoice(`📌 الاتجاه: ${val}`);
+    speak("تم إضافة البند يا بسام. هل تريد بند جديد أم حفظ الكشف؟");
+    voiceState.mode="idle";
+    voiceState.pendingEntryRow=null;
+    return;
+  }
+
+  voiceState.mode="idle";
+  voiceState.pendingEntryRow=null;
+  handleGlobalCommand(t);
+}
+
+function handleSpeechResult(text){
+  logVoice("👤 أنت: " + text);
+  if(voiceState.mode==="idle") handleGlobalCommand(text);
+  else handleStepCommand(text);
+}
+
+voiceToggleBtn.onclick=()=>{
+  if(!recognition){
+    recognition=initRecognition();
+    if(!recognition) return;
+    recognition.onresult=(event)=>{
+      const res=event.results[event.results.length-1];
+      if(!res.isFinal) return;
+      const text=res[0].transcript;
+      handleSpeechResult(text);
     };
-    recog.onerror = e => {
+    recognition.onerror=(e)=>{
       console.error(e);
-      speak("حدث خطأ في الاستماع");
+      logVoice("❌ حدث خطأ في الميكروفون: " + e.error);
+      recognizing=false;
+      voiceToggleBtn.textContent="🎙️ بدء الاستماع";
+    };
+    recognition.onend=()=>{
+      recognizing=false;
+      voiceToggleBtn.textContent="🎙️ بدء الاستماع";
     };
   }
 
-  const installButton = document.getElementById("installButton");
-  window.addEventListener("beforeinstallprompt", e => {
-    e.preventDefault();
-    state.deferredPrompt = e;
-    installButton.style.display = "inline-flex";
-  });
-  installButton.onclick = async () => {
-    if (!state.deferredPrompt) return;
-    state.deferredPrompt.prompt();
-    state.deferredPrompt = null;
-    installButton.style.display = "none";
-  };
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js");
+  if(!recognizing){
+    recognition.start();
+    recognizing=true;
+    voiceState.mode="idle";
+    voiceState.pendingEntryRow=null;
+    logVoice("\n--- بدء الاستماع ---");
+    speak("أنا أستمع لك يا بسام");
+    voiceToggleBtn.textContent="🎙️ جاري الاستماع...";
   }
+};
 
-  loadData();
-  dateInput.value = new Date().toISOString().slice(0, 10);
-  addEntryRow();
-  updatePreviewText();
-  renderStatementsList();
+voiceStopBtn.onclick=()=>{
+  if(recognition && recognizing) recognition.stop();
+  recognizing=false;
+  voiceToggleBtn.textContent="🎙️ بدء الاستماع";
+  logVoice("--- تم إيقاف الاستماع ---");
+};
+
+// ====================== PWA ======================
+const installButton=document.getElementById("installButton");
+
+window.addEventListener("beforeinstallprompt", e=>{
+  e.preventDefault();
+  state.deferredPrompt=e;
+  installButton.style.display="inline-flex";
+});
+installButton.onclick=async()=>{
+  if(!state.deferredPrompt) return;
+  state.deferredPrompt.prompt();
+  state.deferredPrompt=null;
+  installButton.style.display="none";
+};
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("./sw.js");
+}
+
+// تشغيل أولي
+loadData();
+dateInput.value=new Date().toISOString().slice(0,10);
+addEntryRow();
+updatePreviewText();
   </script>
 </body>
 </html>
