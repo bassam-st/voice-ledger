@@ -1,100 +1,85 @@
 from fastapi import FastAPI
-from pydantic import BaseModel, EmailStr
-from typing import Dict, Any
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from openai import OpenAI
 import json
-import os
-import threading
 
-DATA_FILE = "sync_data.json"
-lock = threading.Lock()
+client = OpenAI()  # يعتمد على متغير البيئة OPENAI_API_KEY
 
-app = FastAPI(title="Voice Ledger Sync Server", version="1.0.0")
+app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # يمكنك تضييقها على دومينك
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-class SyncRequest(BaseModel):
-  email: EmailStr
-  payload: Dict[str, Any]
+class VoiceRequest(BaseModel):
+    text: str
+    client_name: str | None = None
+    has_entries: bool | None = None
+    current_tab: str | None = None
 
+class VoiceResponse(BaseModel):
+    action: str = "none"
+    reply: str | None = None
+    client_name: str | None = None
+    title: str | None = None
+    amount: float | None = None
+    desc: str | None = None
+    currency: str | None = None
+    direction: str | None = None
 
-class SyncResponse(BaseModel):
-  merged_data: Dict[str, Any]
+SYSTEM_PROMPT = """
+أنت مساعد صوتي محاسب يعمل لصالح "بسّام" داخل تطبيق دفتر كشف حساب.
+وظيفتك فهم الأوامر الصوتية بالعربية (لهجة يمنية غالباً) وإرجاع JSON فقط بدون أي نص آخر.
 
+الأفعال المتاحة (action):
+- "add_entry" : إضافة بند جديد.
+- "save_statement" : حفظ الكشف الحالي.
+- "new_statement_same_client" : إنشاء كشف جديد لنفس العميل.
+- "set_client_name" : تغيير أو ضبط اسم العميل. استخدم الحقل client_name.
+- "set_title" : ضبط عنوان الكشف. استخدم الحقل title.
+- "set_amount_last_entry" : ضبط مبلغ آخر بند. استخدم الحقل amount كرقم.
+- "add_entry_with_values" : إضافة بند جديد مع القيم (desc, amount, currency, direction).
+- "none" : عندما لا تفهم.
 
-def load_all() -> Dict[str, Any]:
-  if not os.path.exists(DATA_FILE):
-    return {}
+الرد الصوتي:
+- الحقل reply يجب أن يكون جملة عربية مهذبة، وتخاطب المستخدم باسمه "بسّام".
+
+قواعد:
+- أعد دائماً JSON صالح فقط بدون أي شرح خارجي.
+- مثال JSON صحيح:
+  {"action":"add_entry","reply":"تم إضافة بند جديد يا بسام"}
+"""
+
+@app.post("/voice-command", response_model=VoiceResponse)
+def voice_command(req: VoiceRequest):
+  user_content = {
+      "text": req.text,
+      "client_name": req.client_name,
+      "has_entries": req.has_entries,
+      "current_tab": req.current_tab,
+  }
+
+  completion = client.chat.completions.create(
+      model="gpt-4o-mini",
+      messages=[
+          {"role": "system", "content": SYSTEM_PROMPT},
+          {"role": "user", "content": json.dumps(user_content, ensure_ascii=False)},
+      ],
+      temperature=0.2,
+  )
+
+  raw = completion.choices[0].message.content or ""
   try:
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-      return json.load(f)
+      data = json.loads(raw)
   except Exception:
-    return {}
+      data = {"action": "none", "reply": "لم أفهم الأمر بشكل واضح يا بسّام."}
 
-
-def save_all(data: Dict[str, Any]) -> None:
-  with open(DATA_FILE, "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False)
-
-
-def merge_payload(old: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
-  """
-  دمج بيانات العميل بدون مسح:
-  - يجمع جميع العملاء.
-  - يجمع جميع الكشوفات لكل عميل حسب id.
-  - إذا تكرر id يتم أخذ آخر نسخة (من الجهاز الحالي).
-  """
-  if not old:
-    return new or {}
-
-  if new is None:
-    new = {}
-
-  old_clients = (old.get("clients") or {})
-  new_clients = (new.get("clients") or {})
-  merged = {"clients": {}}
-
-  all_client_names = set(old_clients.keys()) | set(new_clients.keys())
-
-  for cname in all_client_names:
-    old_c = old_clients.get(cname, {}) or {}
-    new_c = new_clients.get(cname, {}) or {}
-    old_statements = old_c.get("statements") or []
-    new_statements = new_c.get("statements") or []
-
-    by_id: Dict[str, Dict[str, Any]] = {}
-
-    for st in old_statements:
-      sid = str(st.get("id") or "")
-      if sid:
-        by_id[sid] = st
-
-    for st in new_statements:
-      sid = str(st.get("id") or "")
-      if sid:
-        by_id[sid] = st  # يكتب فوق القديم
-
-    merged_statements = sorted(
-      by_id.values(),
-      key=lambda s: s.get("date") or "",
-      reverse=True,
-    )
-
-    merged["clients"][cname] = {"statements": merged_statements}
-
-  return merged
-
-
-@app.get("/")
-def root():
-  return {"status": "ok", "message": "voice-ledger sync server"}
-
-
-@app.post("/sync", response_model=SyncResponse)
-def sync(req: SyncRequest):
-  with lock:
-    all_data = load_all()
-    user_data = all_data.get(req.email, {})
-    merged = merge_payload(user_data, req.payload or {})
-    all_data[req.email] = merged
-    save_all(all_data)
-
-  return SyncResponse(merged_data=merged)
+  # تأكد من وجود الحقول الأساسية
+  if "action" not in data:
+      data["action"] = "none"
+  return data
