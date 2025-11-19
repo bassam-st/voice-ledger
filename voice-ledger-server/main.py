@@ -1,181 +1,214 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Dict, Any
-from datetime import datetime
+from pydantic import BaseModel, EmailStr
+from typing import Any, Dict, Optional
+from fastapi.middleware.cors import CORSMiddleware
+
 import json
-import os
+import sqlite3
+from pathlib import Path
+from datetime import datetime
+from threading import Lock
 
-from sqlalchemy import create_engine, Column, String, DateTime, Text
-from sqlalchemy.orm import declarative_base, sessionmaker
+# ==============================
+# إعدادات قاعدة البيانات
+# ==============================
 
-# =========================
-# إعداد قاعدة البيانات البسيطة (SQLite)
-# =========================
+BASE_DIR = Path(__file__).parent
+DB_PATH = BASE_DIR / "voice_ledger.db"
 
-DB_URL = os.getenv("DATABASE_URL", "sqlite:///./voice_ledger.db")
-
-engine = create_engine(DB_URL, connect_args={"check_same_thread": False} if DB_URL.startswith("sqlite") else {})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-
-class AccountData(Base):
-  __tablename__ = "accounts"
-
-  email = Column(String, primary_key=True, index=True)
-  data_json = Column(Text, nullable=False)  # نخزن فيها الـ JSON الخاص بجميع العملاء والكشوفات
-  updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+_db_lock = Lock()
 
 
-Base.metadata.create_all(bind=engine)
+def init_db() -> None:
+  """إنشاء جدول التخزين إذا لم يكن موجوداً."""
+  with _db_lock:
+    conn = sqlite3.connect(DB_PATH)
+    try:
+      cur = conn.cursor()
+      cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sync_data (
+          email TEXT PRIMARY KEY,
+          payload TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+        """
+      )
+      conn.commit()
+    finally:
+      conn.close()
 
-# =========================
-# نماذج البيانات المستلمة من التطبيق
-# =========================
 
-class SyncPayload(BaseModel):
-  email: str
-  data: Dict[str, Any]  # نفس شكل state.data في الواجهة (مثل { "clients": {...} })
+def load_payload(email: str) -> Optional[Dict[str, Any]]:
+  """قراءة البيانات المخزنة لهذا البريد."""
+  with _db_lock:
+    conn = sqlite3.connect(DB_PATH)
+    try:
+      cur = conn.cursor()
+      cur.execute("SELECT payload FROM sync_data WHERE email = ?", (email,))
+      row = cur.fetchone()
+      if not row:
+        return None
+      return json.loads(row[0])
+    finally:
+      conn.close()
 
 
-# =========================
-# تطبيق FastAPI
-# =========================
+def save_payload(email: str, data: Dict[str, Any]) -> None:
+  """حفظ (أو تحديث) بيانات هذا البريد."""
+  payload = json.dumps(data, ensure_ascii=False)
+  now = datetime.utcnow().isoformat()
+  with _db_lock:
+    conn = sqlite3.connect(DB_PATH)
+    try:
+      cur = conn.cursor()
+      cur.execute(
+        """
+        INSERT INTO sync_data (email, payload, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(email) DO UPDATE SET
+          payload = excluded.payload,
+          updated_at = excluded.updated_at
+        """,
+        (email, payload, now),
+      )
+      conn.commit()
+    finally:
+      conn.close()
+
+
+# ==============================
+# نماذج Pydantic
+# ==============================
+
+class SyncRequest(BaseModel):
+  email: EmailStr
+  data: Dict[str, Any]
+
+
+class SyncResponse(BaseModel):
+  status: str
+  message: str
+  data: Dict[str, Any]
+
+
+# ==============================
+# دوال المـَرْج (الدمج الآمن)
+# ==============================
+
+def merge_data(server_data: Optional[Dict[str, Any]],
+               client_data: Dict[str, Any]) -> Dict[str, Any]:
+  """
+  دمج بيانات العميل مع بيانات السيرفر لنفس البريد بدون حذف أي شيء.
+  - إذا لا توجد بيانات على السيرفر => نرجع بيانات العميل كما هي.
+  - إذا توجد بيانات على السيرفر:
+      * ندمج العملاء clients بالاسم.
+      * لكل عميل: ندمج الكشوفات statements حسب id.
+      * إذا وجد نفس id في الجهتين نحتفظ بالكشف الذي يحتوي على بنود أكثر.
+  """
+  if not server_data:
+    return client_data or {"clients": {}}
+
+  # نضمن وجود المفتاح الأساسي
+  server_clients = dict(server_data.get("clients", {}))
+  incoming_clients = dict(client_data.get("clients", {}))
+
+  merged_clients: Dict[str, Any] = {}
+
+  # نبدأ من بيانات السيرفر
+  for cname, cdata in server_clients.items():
+    merged_clients[cname] = {
+      "statements": list(cdata.get("statements", []))
+    }
+
+  # ندمج بيانات العميل القادم
+  for cname, cdata in incoming_clients.items():
+    incoming_statements = cdata.get("statements", [])
+    if cname not in merged_clients:
+      merged_clients[cname] = {"statements": list(incoming_statements)}
+      continue
+
+    existing_list = merged_clients[cname].get("statements", [])
+    by_id: Dict[str, Dict[str, Any]] = {}
+
+    # بيانات السيرفر أولاً
+    for st in existing_list:
+      sid = str(st.get("id") or "")
+      if not sid:
+        sid = f"st_{datetime.utcnow().timestamp()}"
+        st["id"] = sid
+      by_id[sid] = st
+
+    # ثم بيانات الجهاز الحالي (لا نحذف القديمة)
+    for st in incoming_statements:
+      sid = str(st.get("id") or "")
+      if not sid:
+        sid = f"st_{datetime.utcnow().timestamp()}"
+        st["id"] = sid
+
+      if sid not in by_id:
+        by_id[sid] = st
+      else:
+        # إذا موجود في الجهتين نأخذ الكشف الذي يحتوي على بنود أكثر
+        old_entries = by_id[sid].get("entries", [])
+        new_entries = st.get("entries", [])
+        if len(new_entries) > len(old_entries):
+          by_id[sid] = st
+
+    merged_clients[cname]["statements"] = list(by_id.values())
+
+  return {"clients": merged_clients}
+
+
+# ==============================
+# إنشاء تطبيق FastAPI
+# ==============================
 
 app = FastAPI(
   title="Voice Ledger Sync API",
-  description="خدمة مزامنة لكشوفات تطبيق دفتر كشف الحساب اليومي.",
-  version="1.0.0"
+  version="1.0.0",
+  description="خدمة مزامنة لدفتر كشف الحساب اليومي."
+)
+
+# تفعيل CORS لكل المصادر (بما أن الاستعمال شخصي)
+app.add_middleware(
+  CORSMiddleware,
+  allow_origins=["*"],
+  allow_credentials=True,
+  allow_methods=["*"],
+  allow_headers=["*"],
 )
 
 
-# دالة مساعدة: دمج بيانات العميل دون حذف
-def merge_clients_data(existing_data: Dict[str, Any], new_data: Dict[str, Any]) -> Dict[str, Any]:
+@app.on_event("startup")
+def on_startup():
+  init_db()
+
+
+@app.get("/health")
+def health_check():
+  return {"status": "ok", "time": datetime.utcnow().isoformat()}
+
+
+@app.post("/sync", response_model=SyncResponse)
+def sync_data(req: SyncRequest):
   """
-  existing_data و new_data نفس الهيكل:
-  {
-    "clients": {
-      "اسم العميل": {
-        "statements": [ { id, date, title, entries[], manualTotal, extraNotes }, ... ]
-      },
-      ...
-    }
-  }
-  الدمج:
-  - لا نحذف أي كشف قديم.
-  - نوحد الكشوفات حسب id، لو نفس id موجود في الاثنين نأخذ نسخة "الجديدة" (من new_data).
-  - نرتب الكشوفات بحيث الأحدث في الأعلى (حسب التاريخ أو حسب رقم id).
+  نقطة المزامنة الرئيسية.
+  - يستقبل email + data (نفس شكل state.data في الواجهة).
+  - يقرأ بيانات هذا البريد من قاعدة البيانات.
+  - يدمج server_data مع client_data بطريقة آمنة (بدون حذف).
+  - يحفظ النسخة المدموجة في قاعدة البيانات.
+  - يرجع البيانات المدموجة للواجهة لتخزينها في localStorage.
   """
-  result = {"clients": {}}
-
-  existing_clients = (existing_data or {}).get("clients", {})
-  new_clients = (new_data or {}).get("clients", {})
-
-  # جميع أسماء العملاء
-  all_names = set(existing_clients.keys()) | set(new_clients.keys())
-
-  for name in all_names:
-    ex_client = existing_clients.get(name, {"statements": []})
-    new_client = new_clients.get(name, {"statements": []})
-
-    ex_statements = ex_client.get("statements", []) or []
-    new_statements = new_client.get("statements", []) or []
-
-    # خريطة id -> statement
-    combined_map = {}
-
-    # نبدأ بالقديمة
-    for st in ex_statements:
-      st_id = st.get("id")
-      if not st_id:
-        continue
-      combined_map[st_id] = st
-
-    # ثم نضيف الجديدة (لو نفس id نكتب فوق القديمة)
-    for st in new_statements:
-      st_id = st.get("id")
-      if not st_id:
-        continue
-      combined_map[st_id] = st
-
-    # نحولها لقائمة
-    merged_list = list(combined_map.values())
-
-    # نحاول الترتيب حسب التاريخ (لو موجود)، وإلا حسب id (اللي فيه رقم timestamp)
-    def sort_key(st):
-      date_str = st.get("date") or ""
-      try:
-        # نحاول تحويل التاريخ لصيغة يوم-شهر-سنة بسيطة
-        return (date_str, st.get("id", ""))
-      except Exception:
-        return ("", st.get("id", ""))
-
-    merged_list.sort(key=sort_key, reverse=True)
-
-    result["clients"][name] = {
-      "statements": merged_list
-    }
-
-  return result
-
-
-@app.post("/api/sync")
-def sync_data(payload: SyncPayload):
-  """
-  المزامنة الكاملة:
-  - التطبيق يرسل (email + كل بياناته المحلية data)
-  - السيرفر يجلب أي بيانات سابقة لهذا الإيميل (إن وجدت)
-  - يدمجها مع البيانات الجديدة (بدون مسح)
-  - يخزن النتيجة في قاعدة البيانات
-  - يرجع النتيجة للتطبيق، والتطبيق يحفظها في localStorage
-
-  بهذا الشكل:
-  - لو جوال A فيه 5 كشوفات، وجوال B فيه 4 كشوفات لنفس الإيميل:
-    بعد المزامنة يصبح لدى الاثنين 9 كشوفات (دمج كامل) بدون حذف.
-  """
-  email = payload.email.strip().lower()
-  if not email:
-    raise HTTPException(status_code=400, detail="Email is required")
-
-  db = SessionLocal()
   try:
-    # قراءة البيانات الحالية (إن وجدت)
-    existing = db.query(AccountData).filter(AccountData.email == email).first()
-    existing_data = {}
-    if existing:
-      try:
-        existing_data = json.loads(existing.data_json)
-      except Exception:
-        existing_data = {}
-
-    # دمج البيانات
-    merged = merge_clients_data(existing_data, payload.data)
-
-    # حفظ في قاعدة البيانات
-    data_json = json.dumps(merged, ensure_ascii=False)
-    now = datetime.utcnow()
-
-    if existing:
-      existing.data_json = data_json
-      existing.updated_at = now
-    else:
-      acc = AccountData(email=email, data_json=data_json, updated_at=now)
-      db.add(acc)
-
-    db.commit()
-
-    # نرجع البيانات المدموجة
-    return {
-      "status": "ok",
-      "email": email,
-      "data": merged,
-      "updated_at": now.isoformat() + "Z"
-    }
-
-  finally:
-    db.close()
-
-
-@app.get("/api/ping")
-def ping():
-  return {"status": "ok", "message": "Voice Ledger Sync API is running"}
+    existing = load_payload(req.email)
+    merged = merge_data(existing, req.data or {"clients": {}})
+    save_payload(req.email, merged)
+    return SyncResponse(
+      status="ok",
+      message="تمت المزامنة ودمج البيانات بنجاح.",
+      data=merged
+    )
+  except Exception as exc:
+    print("Sync error:", exc)
+    raise HTTPException(status_code=500, detail="حدث خطأ أثناء المزامنة.")
