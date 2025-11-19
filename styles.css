@@ -1,0 +1,31 @@
+body {
+    font-family: "Tahoma";
+    background: #f2f2f2;
+    margin: 0;
+    padding: 20px;
+}
+
+.app-container {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 10px #ccc;
+}
+
+.mic-btn {
+    background: #28a745;
+    color: white;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.voice-box {
+    background: #eee;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 10px;
+    min-height: 40px;
+}
