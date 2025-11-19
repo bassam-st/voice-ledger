@@ -1,10 +1,12 @@
-const CACHE_NAME = "voice-ledger-v1";
+const CACHE_NAME = "voice-ledger-cache-v1";
+
 const ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./icon-192.png",
-  "./icon-512.png"
+  "/voice-ledger/",
+  "/voice-ledger/index.html",
+  "/voice-ledger/manifest.webmanifest",
+  "/voice-ledger/sw.js",
+  "/voice-ledger/icons/icon-192.png",
+  "/voice-ledger/icons/icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -15,24 +17,17 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
+    caches.keys().then(keys =>
       Promise.all(
-        keys
-          .filter((k) => k !== CACHE_NAME)
-          .map((k) => caches.delete(k))
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       )
     )
   );
 });
 
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
-
+  if (event.request.method !== "GET") return;
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req).catch(() => caches.match("./index.html"));
-    })
+    caches.match(event.request).then((res) => res || fetch(event.request))
   );
 });
