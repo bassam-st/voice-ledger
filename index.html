@@ -261,6 +261,9 @@
 const STORAGE_KEY = "voiceLedgerData_v1";
 const state = { data:{clients:{}}, currentClient:"", currentStatementId:null, deferredPrompt:null };
 
+// رابط سيرفر المزامنة (FastAPI على Render)
+const SYNC_API_BASE = "https://voice-ledger-sync.onrender.com";
+
 function loadData(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY);
@@ -302,7 +305,8 @@ const whatsAppBox=document.getElementById("whatsAppText");
 const statementsListEl=document.getElementById("statementsList");
 const totalsBoxEl=document.getElementById("totalsBox");
 const clientsListEl=document.getElementById("clientsList");
-    // =================================================================
+
+// =================================================================
 //         وظائف إضافة / حذف البنود + تحديث النص + الفواصل
 // =================================================================
 
