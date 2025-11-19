@@ -1,31 +1,165 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>مساعد بسّام الصوتي</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <title>دفتر كشف الحساب اليومي</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#16a34a" />
+
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --green: #16a34a;
+      --green-dark: #15803d;
+      --red: #dc2626;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      font-size: 16px;
+    }
+    .app-shell {
+      max-width: 950px;
+      margin: 0 auto;
+      padding: 16px 10px 40px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      margin: 8px 0 4px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: .95rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .install-bar { text-align: center; margin-bottom: 10px; }
+    #installButton {
+      display: none;
+      background: #0f172a;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: .9rem;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #e5e7eb;
+      border-radius: 999px;
+      padding: 4px;
+      margin-bottom: 12px;
+    }
+    .tab {
+      text-align: center;
+      padding: 10px 4px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .tab.active { background: var(--green); color: #fff; }
+
+    .card {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      box-shadow: 0 8px 20px rgba(15,23,42,.06);
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+      font-size: 1rem;
+    }
+
+    label { display: block; font-size: .9rem; color: var(--text-muted); margin-bottom: 3px; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .row > * { flex: 1; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      font-size: 1rem;
+    }
+    textarea { border-radius: var(--radius-md); min-height: 60px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 1px rgba(34,197,94,.35);
+      background: #fff;
+    }
+
+    .entries { display: flex; flex-direction: column; gap: 6px; }
+    .entry-row { display: flex; gap: 6px; align-items: center; }
+    .entry-desc { flex: 4; }
+    .entry-amount { flex: 2.5; }
+    .entry-curr { flex: 1.2; }
+    .entry-dir { flex: 1.2; }
+    .entry-del { flex: 0; }
+
+    @media (max-width: 640px) {
+      .entry-row { flex-wrap: wrap; }
+      .entry-desc { flex: 1 1 100%; }
+      .entry-amount { flex: 1 1 45%; }
+      .entry-curr { flex: 1 1 25%; }
+      .entry-dir { flex: 1 1 25%; }
+    }
+
+    .pill-btn { border-radius: 999px; border: none; cursor: pointer; padding: 10px 16px; font-size: 1rem; }
+    .pill-green { background: var(--green); color:#fff; }
+    .pill-red   { background: var(--red);   color:#fff; }
+    .pill-gray  { background:#e5e7eb; }
+
+    .section-title { font-size:1.05rem; font-weight:600; margin-bottom:6px; }
+    .muted { color:var(--text-muted); font-size:.85rem; }
+
+    .whatsapp-box {
+      width:100%; min-height:90px; border-radius:var(--radius-md);
+      padding:10px; font-size:1rem; border:1px dashed var(--border);
+      background:#f9fafb; white-space:pre-wrap;
+    }
+
+    .saved-list { max-height:180px; overflow-y:auto; }
+    .saved-item {
+      background:#ecfdf3; border-radius:999px; padding:8px 12px; margin-bottom:4px;
+      display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+      border:1px solid #bbf7d0; font-size:1rem;
+    }
+
+    .totals-box {
+      background:#f0fdf4; border-radius:var(--radius-md);
+      border:1px solid #bbf7d0; padding:10px 14px; white-space:pre-wrap;
+      font-size:1rem;
+    }
+
+    .footer-hint { text-align:center; font-size:.85rem; color:var(--text-muted); }
+  </style>
 </head>
 <body>
+  <div class="app-shell">
+    <h1>📒 دفتر كشف الحساب اليومي</h1>
+    <p class="subtitle">حفظ كشوفات عملائك في جهازك فقط (بدون إنترنت أو حساب).</p>
 
-<div class="app-container">
-    <h2>🔊 مساعد بسام الصوتي</h2>
+    <div class="install-bar">
+      <button id="installButton">تثبيت التطبيق 📱</button>
+    </div>
 
-    <button id="start-voice" class="mic-btn">🎤 اضغط وتحدث</button>
-
-    <div id="voice-text" class="voice-box">في انتظار أمرك يا بسّام…</div>
-
-    <hr>
-
-    <!-- هنا جزء الكشوفات (نفس كودك القديم) -->
-    <div id="statements-section"></div>
-
-</div>
-
-<script src="whisper-worker.js"></script>
-<script src="intent-engine.js"></script>
-<script src="voice.js"></script>
-<script src="app.js"></script>
-
-</body>
-</html>
+    <div class="tabs">
+      <div class="tab active" id="tabStatements">الكشوفات</div>
+      <div class="tab" id="tabClients">العملاء</div>
+    </div>
