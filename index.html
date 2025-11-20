@@ -109,7 +109,7 @@
       <button id="voiceAssistantBtn"
               style="background:#15803d; color:white; padding:12px 22px;
                      border:none; border-radius:50px; font-size:1.1rem;">
-          🎤 مساعد بسّام الصوتي
+        🎤 مساعد بسّام الصوتي
       </button>
     </div>
 
@@ -149,6 +149,7 @@
 
         <button class="btn-green" id="saveStatementBtn" style="margin-top:15px;">💾 حفظ الكشف</button>
       </div>
+
       <!-- سجل الكشوفات -->
       <div class="card">
         <h3>📁 سجل الكشوفات:</h3>
@@ -166,7 +167,7 @@
 
   </div> <!-- نهاية app-shell -->
 
-  <!-- ملف المساعد الصوتي -->
+  <!-- ملف المساعد الصوتي (أوامر محلية) -->
   <script src="voice.js"></script>
 
   <!-- سكربت التطبيق الرئيسي -->
@@ -202,6 +203,7 @@
 
     // ========== إضافة بند ==========
     const entriesContainer = document.getElementById("entriesContainer");
+    const totalDisplay = document.getElementById("totalDisplay");
     document.getElementById("addEntryBtn").onclick = addEntryRow;
 
     function addEntryRow(desc = "", amount = "", currency = "يمني", direction = "عليه") {
@@ -222,6 +224,9 @@
           <select class="currency">
             <option ${currency === "يمني" ? "selected" : ""}>يمني</option>
             <option ${currency === "سعودي" ? "selected" : ""}>سعودي</option>
+            <option ${currency === "درهم" ? "selected" : ""}>درهم</option>
+            <option ${currency === "دولار" ? "selected" : ""}>دولار</option>
+            <option ${currency === "عماني" ? "selected" : ""}>عماني</option>
           </select>
 
           <input class="amount" placeholder="المبلغ" type="number" value="${amount}">
@@ -230,8 +235,62 @@
         <button class="btn-red deleteEntry">حذف</button>
       `;
 
-      wrapper.querySelector(".deleteEntry").onclick = () => wrapper.remove();
+      wrapper.querySelector(".deleteEntry").onclick = () => {
+        wrapper.remove();
+        updatePreviewText();
+      };
+
+      // حدث لتحديث الإجمالي عند التعديل
+      wrapper.querySelectorAll(".amount, .direction, .currency").forEach(el => {
+        el.addEventListener("input", updatePreviewText);
+        el.addEventListener("change", updatePreviewText);
+      });
+
       entriesContainer.appendChild(wrapper);
+      updatePreviewText();
+    }
+
+    // ========== حساب وعرض الإجمالي ==========
+    function updatePreviewText() {
+      if (!entriesContainer) return;
+
+      const entries = [...entriesContainer.children].map(w => ({
+        desc: w.querySelector(".desc")?.value || "",
+        amount: Number(w.querySelector(".amount")?.value || 0),
+        currency: w.querySelector(".currency")?.value || "يمني",
+        direction: w.querySelector(".direction")?.value || "عليه"
+      }));
+
+      const totals = {};
+      entries.forEach(e => {
+        if (!e.amount) return;
+        if (!totals[e.currency]) {
+          totals[e.currency] = { lah: 0, alaih: 0 };
+        }
+        if (e.direction === "له") {
+          totals[e.currency].lah += e.amount;
+        } else {
+          totals[e.currency].alaih += e.amount;
+        }
+      });
+
+      const parts = [];
+      Object.keys(totals).forEach(curr => {
+        const t = totals[curr];
+        const net = t.lah - t.alaih;
+        const dir = net > 0 ? "له" : net < 0 ? "عليه" : "متساوي";
+        const netAbs = Math.abs(net).toLocaleString("ar-EG");
+        const lahStr = t.lah.toLocaleString("ar-EG");
+        const alaihStr = t.alaih.toLocaleString("ar-EG");
+
+        if (dir === "متساوي") {
+          parts.push(`${curr}: له ${lahStr}، عليه ${alaihStr}، الصافي 0 (${dir})`);
+        } else {
+          parts.push(`${curr}: له ${lahStr}، عليه ${alaihStr}، الصافي ${netAbs} ${dir}`);
+        }
+      });
+
+      totalDisplay.innerHTML = parts.length ? parts.join("<br>") : "";
     }
 
     // ========== حفظ الكشف ==========
@@ -256,11 +315,13 @@
       saveData();
       renderStatementsList();
       renderClients();
+      updatePreviewText();
 
       alert("تم حفظ الكشف ✔️");
 
-      // تفريغ الحقول
+      // تفريغ الحقول للبنود فقط (العميل والتاريخ يبقوا لو حابب)
       entriesContainer.innerHTML = "";
+      updatePreviewText();
     };
 
     // ========== عرض الكشوفات ==========
@@ -292,7 +353,7 @@
       entriesContainer.innerHTML = "";
       s.entries.forEach(e => addEntryRow(e.desc, e.amount, e.currency, e.direction));
 
-      // الانتقال للتبويب
+      updatePreviewText();
       tabStatements.click();
     }
 
@@ -318,7 +379,7 @@
       const list = document.getElementById("statementsList");
       list.innerHTML = "";
 
-      filtered.forEach((s, i) => {
+      filtered.forEach((s) => {
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
@@ -331,6 +392,7 @@
 
     renderStatementsList();
     renderClients();
+    updatePreviewText();
   </script>
 
 </body>
