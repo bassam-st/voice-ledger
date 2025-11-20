@@ -3,7 +3,6 @@
   const btn = document.getElementById("voiceAssistantBtn");
   if (!btn) return;
 
-  // هل المتصفح يدعم التعرف على الصوت؟
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -14,12 +13,11 @@
   }
 
   const recognition = new SpeechRecognition();
-  recognition.lang = "ar-SA"; // تقدر تجرب "ar-YE" أو "ar" لو حاب
+  recognition.lang = "ar-SA";
   recognition.interimResults = false;
 
   let listening = false;
 
-  // عند الضغط على الزر نبدأ/نوقف الاستماع
   btn.addEventListener("click", () => {
     if (listening) {
       recognition.stop();
@@ -50,12 +48,10 @@
     handleVoiceCommand(text);
   };
 
-  // ================= أوامر بسيطة =================
   function handleVoiceCommand(text) {
     const clientInput = document.getElementById("clientName");
     const titleInput = document.getElementById("statementTitle");
 
-    // أمر: إضافة بند جديد
     if (/بند جديد|اضف بند|ضيف بند/i.test(text)) {
       if (typeof addEntryRow === "function") {
         addEntryRow();
@@ -66,8 +62,6 @@
       return;
     }
 
-    // أمر: كتابة اسم العميل
-    // مثال: "اسم العميل محمد أحمد"
     if (text.startsWith("اسم العميل")) {
       const name = text.replace("اسم العميل", "").trim();
       if (clientInput) clientInput.value = name;
@@ -75,8 +69,6 @@
       return;
     }
 
-    // أمر: عنوان الكشف
-    // مثال: "عنوان الكشف سيارة العزاني"
     if (text.startsWith("عنوان الكشف")) {
       const st = text.replace("عنوان الكشف", "").trim();
       if (titleInput) titleInput.value = st;
@@ -84,11 +76,9 @@
       return;
     }
 
-    // لو ما فهم الأمر:
     say("سمعتك تقول: " + text + " لكن لم أفهم الأمر");
   }
 
-  // ================= رد صوتي لبسّام =================
   function say(message) {
     if (!("speechSynthesis" in window)) return;
     const utter = new SpeechSynthesisUtterance(message);
