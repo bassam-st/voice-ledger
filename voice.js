@@ -1,6 +1,6 @@
 // ============================
 //  ملف voice.js
-//  مساعد بسّام الصوتي للأوامر المحلية بدون اشتراك
+//  مساعد بسّام الصوتي الذكي للأوامر المحلية (بدون اشتراك)
 // ============================
 
 (function () {
@@ -25,7 +25,7 @@
 
   let listening = false;
 
-  // نطق صوتي للرد على بسّام
+  // نطق صوتي
   function speak(text) {
     try {
       if (!("speechSynthesis" in window)) return;
@@ -38,49 +38,7 @@
     }
   }
 
-  // التحكم في زر الاستماع
-  btn.addEventListener("click", () => {
-    if (!listening) {
-      try {
-        recognition.start();
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      recognition.stop();
-    }
-  });
-
-  recognition.onstart = () => {
-    listening = true;
-    btn.textContent = "🎙️ أستمع لك الآن يا بسّام...";
-    btn.style.background = "#b91c1c";
-  };
-
-  recognition.onend = () => {
-    listening = false;
-    btn.textContent = "🎤 مساعد بسّام الصوتي";
-    btn.style.background = "#15803d";
-  };
-
-  recognition.onerror = (e) => {
-    listening = false;
-    btn.textContent = "🎤 مساعد بسّام الصوتي";
-    btn.style.background = "#15803d";
-    console.error("Speech recognition error:", e.error);
-    speak("عفواً يا بسام، حصل خطأ في الميكروفون أو في التعرف على الصوت.");
-  };
-
-  recognition.onresult = (event) => {
-    const rawText = event.results[0][0].transcript.trim();
-    console.log("🗣️ سمع:", rawText);
-    handleCommand(rawText);
-  };
-
-  // ============================
-  //     أدوات مساعدة عامة
-  // ============================
-
+  // أدوات DOM
   function getEl(id) {
     return document.getElementById(id);
   }
@@ -100,7 +58,7 @@
     return str.replace(/[٠-٩]/g, (d) => map[d] || d);
   }
 
-  // إزالة الحركات وبعض الاختلافات مثل أ -> ا ، آ -> ا ، ة -> ه
+  // إزالة الحركات + توحيد بعض الحروف
   function normalizeArabicLetters(str) {
     return str
       .replace(/[\u064B-\u0652]/g, "") // حركات
@@ -109,7 +67,7 @@
       .replace(/ى/g, "ي");
   }
 
-  // تحويل كلمات الأرقام العربية إلى رقم (تقريبي)
+  // تحويل كلمات الأرقام إلى رقم (تقريبية – للأحرف فقط)
   function arabicWordsToNumber(text) {
     if (!text) return 0;
 
@@ -194,20 +152,64 @@
   }
 
   // ============================
+  //   التحكم في زر الاستماع
+  // ============================
+
+  btn.addEventListener("click", () => {
+    if (!listening) {
+      try {
+        recognition.start();
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      recognition.stop();
+    }
+  });
+
+  recognition.onstart = () => {
+    listening = true;
+    btn.textContent = "🎙️ أستمع لك الآن يا بسّام...";
+    btn.style.background = "#b91c1c";
+  };
+
+  recognition.onend = () => {
+    listening = false;
+    btn.textContent = "🎤 مساعد بسّام الصوتي";
+    btn.style.background = "#15803d";
+  };
+
+  recognition.onerror = (e) => {
+    listening = false;
+    btn.textContent = "🎤 مساعد بسّام الصوتي";
+    btn.style.background = "#15803d";
+    console.error("Speech recognition error:", e.error);
+    speak("عفواً يا بسام، حصل خطأ في الميكروفون أو في التعرف على الصوت.");
+  };
+
+  recognition.onresult = (event) => {
+    const rawText = event.results[0][0].transcript.trim();
+    console.log("🗣️ النص الذي سمعته:", rawText);
+    handleCommand(rawText);
+  };
+
+  // ============================
   //       تنفيذ الأوامر
   // ============================
 
   function handleCommand(rawText) {
     const text = rawText.trim();
-    const lowered = text.toLowerCase(); // للأوامر العامة
+    const lowered = normalizeArabicLetters(text.toLowerCase());
 
-    const clientInput   = getEl("clientName");
-    const dateInput     = getEl("statementDate") || getEl("dateInput");
-    const titleInput    = getEl("statementTitle");
-    const extraNotes    = getEl("extraNotes");
+    console.log("🔍 normalized:", lowered);
+
+    const clientInput = getEl("clientName");
+    const dateInput   = getEl("statementDate") || getEl("dateInput");
+    const titleInput  = getEl("statementTitle");
+    const extraNotes  = getEl("extraNotes");
 
     // ===== تحيات عامة =====
-    if (lowered.includes("السلام") || lowered.includes("مرحبا") || lowered.includes("هلا")) {
+    if (lowered.includes("سلام") || lowered.includes("مرحبا") || lowered.includes("هلا")) {
       speak("هلا يا بسام، أنا مساعدك الصوتي في دفتر كشف الحساب، تحت أمرك.");
       return;
     }
@@ -218,27 +220,27 @@
       lowered.includes("افتح كشف") ||
       lowered.includes("سجل كشف")
     ) {
-      if (clientInput) clientInput.value = "";
-      if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
-      if (titleInput) titleInput.value = "";
-      if (extraNotes) extraNotes.value = "";
-
-      const entriesContainer = getEl("entriesContainer");
-      if (entriesContainer) {
-        entriesContainer.innerHTML = "";
-        if (typeof addEntryRow === "function") {
-          addEntryRow();
+      if (typeof resetForm === "function") {
+        resetForm(""); // يفتح كشف جديد ويخلي الاسم فاضي
+      } else {
+        if (clientInput) clientInput.value = "";
+        if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+        if (titleInput) titleInput.value = "";
+        if (extraNotes) extraNotes.value = "";
+        const entriesContainer = getEl("entriesContainer");
+        if (entriesContainer) {
+          entriesContainer.innerHTML = "";
+          if (typeof addEntryRow === "function") addEntryRow();
         }
+        if (typeof updatePreviewText === "function") updatePreviewText();
       }
 
-      if (typeof updatePreviewText === "function") updatePreviewText();
       if (typeof renderStatementsList === "function") renderStatementsList();
-
       speak("حاضر يا بسام، فتحت لك كشف جديد.");
       return;
     }
 
-    // ===== اسم العميل: "اسم العميل محمد" أو "العميل محمد" =====
+    // ===== اسم العميل =====
     if (lowered.startsWith("اسم العميل") || lowered.startsWith("العميل")) {
       let name = text
         .replace(/^اسم العميل/i, "")
@@ -246,6 +248,7 @@
         .trim();
       if (clientInput && name) {
         clientInput.value = name;
+        console.log("👤 اسم العميل:", name);
         speak("تم تعيين اسم العميل " + name);
         if (typeof updatePreviewText === "function") updatePreviewText();
       } else {
@@ -254,7 +257,7 @@
       return;
     }
 
-    // ===== عنوان الكشف: "عنوان الكشف شحنة كذا" =====
+    // ===== عنوان الكشف =====
     if (lowered.startsWith("عنوان الكشف") || lowered.startsWith("العنوان")) {
       let title = text
         .replace(/^عنوان الكشف/i, "")
@@ -262,6 +265,7 @@
         .trim();
       if (titleInput && title) {
         titleInput.value = title;
+        console.log("📝 عنوان الكشف:", title);
         speak("تم تعيين عنوان الكشف.");
         if (typeof updatePreviewText === "function") updatePreviewText();
       } else {
@@ -270,40 +274,42 @@
       return;
     }
 
-    // ===== إضافة بند جديد: "اضف بند" / "ضيف بند جديد" =====
+    // ===== إضافة بند =====
     if (/بند جديد|اضف بند|أضف بند|ضيف بند|زود بند/i.test(text)) {
+      console.log("➕ أمر: بند جديد");
       if (typeof addEntryRow === "function") {
         addEntryRow();
         speak("تم إضافة بند جديد يا بسام.");
       } else {
-        // احتياط لو الدالة غير متاحة
         const btnAdd = getEl("addEntryBtn");
         if (btnAdd) {
           btnAdd.click();
           speak("تم إضافة بند جديد يا بسام.");
         } else {
-          speak("لا أستطيع إضافة بند الآن، يوجد خطأ في الصفحة.");
+          speak("لا أستطيع إضافة بند الآن.");
         }
       }
       return;
     }
 
-    // ===== وصف البند: "وصف البند كذا كذا..." =====
+    // ===== وصف البند =====
     if (lowered.startsWith("وصف البند")) {
       const descText = text.replace(/^وصف البند/i, "").trim();
+      console.log("📝 وصف البند المطلوب:", descText);
       const lastRow = getLastEntryRow();
       if (lastRow && descText) {
-        // نحاول نلقط خانة الوصف سواء كانت entry-desc أو desc
         const descInput =
           lastRow.querySelector(".entry-desc") ||
           lastRow.querySelector(".desc") ||
           lastRow.querySelector("input");
         if (descInput) {
           descInput.value = descText;
+          console.log("✅ تم وضع الوصف في آخر بند:", descText);
           speak("كتبت وصف البند.");
           if (typeof updatePreviewText === "function") updatePreviewText();
         } else {
-          speak("ما لقيت خانة وصف البند يا بسام.");
+          console.warn("لم يتم إيجاد خانة وصف البند داخل الصف");
+          speak("ما لقيت خانة الوصف.");
         }
       } else {
         speak("ما لقيت بند أكتب فيه الوصف.");
@@ -311,7 +317,7 @@
       return;
     }
 
-    // ===== المبلغ: يكتب أي رقم يسمعه =====
+    // ===== المبلغ =====
     if (
       lowered.startsWith("المبلغ") ||
       lowered.startsWith("ادخل المبلغ") ||
@@ -323,19 +329,26 @@
         .replace(/^اكتب المبلغ/i, "")
         .trim();
 
-      // نحول الأرقام العربية إلى إنجليزية
+      console.log("📦 المبلغ (خام قبل التحويل):", numPart);
+
+      // 1) حوّل الأرقام العربية إلى إنجليزية
       numPart = arabicDigitsToEnglish(numPart);
 
-      // نحاول نلقط الأرقام مباشرة
-      const digitsOnly = numPart.replace(/[^\d]/g, "");
+      // 2) خذ فقط الأرقام والمسافات بينها
+      let onlyDigitsAndSpaces = numPart.replace(/[^\d\s]/g, "");
+      // 3) احذف المسافات بين الأرقام تماماً
+      let joinDigits = onlyDigitsAndSpaces.replace(/\s+/g, "");
+      console.log("🔢 بعد تنظيف الأرقام:", joinDigits);
+
       let value = 0;
 
-      if (digitsOnly) {
-        // إذا وجدنا أرقام → نستخدمها كما هي
-        value = Number(digitsOnly);
+      if (joinDigits) {
+        value = Number(joinDigits);
+        console.log("✅ رقم من الأرقام:", value);
       } else {
-        // ما في أرقام واضحة → نحاول نفهمها من الكلمات
+        // لا توجد أرقام… جرّب الكلمات
         value = arabicWordsToNumber(numPart);
+        console.log("🧠 تحويل كلمات إلى رقم (تقريبي):", value);
       }
 
       const lastRow = getLastEntryRow();
@@ -348,33 +361,36 @@
           speak("تم إدخال المبلغ " + value.toLocaleString("en-US"));
           if (typeof updatePreviewText === "function") updatePreviewText();
         } else {
-          speak("ما لقيت خانة المبلغ يا بسام.");
+          speak("ما لقيت خانة المبلغ.");
         }
       } else {
-        speak("ما قدرت أفهم رقم المبلغ يا بسام، حاول تقوله مرة ثانية بالأرقام أو بشكل أوضح.");
+        speak("ما قدرت أفهم رقم المبلغ يا بسام.");
       }
       return;
     }
 
-    // ===== العملة: "العملة يمني / سعودي / درهم / دولار / عماني" =====
-    if (lowered.includes("العملة") || lowered.includes("عمله")) {
+    // ===== العملة =====
+    if (lowered.includes("العمله") || lowered.includes("العملة")) {
       const lastRow = getLastEntryRow();
       if (!lastRow) {
-        speak("ما في بند عشان أعدل عليه العملة.");
+        speak("ما في بند عشان أغير العملة.");
         return;
       }
+
       const currSelect =
         lastRow.querySelector(".entry-curr") ||
         lastRow.querySelector(".currency");
       if (!currSelect) {
-        speak("ما قدرت أجد خانة العملة.");
+        speak("ما لقيت خانة العملة.");
         return;
       }
 
-      if (lowered.includes("يمني")) {
+      console.log("💱 نص العملة:", lowered);
+
+      if (lowered.includes("يمني") || lowered.includes("ريال يمني") || lowered.includes("بالريال")) {
         currSelect.value = "يمني";
         speak("تم تعيين العملة يمني.");
-      } else if (lowered.includes("سعودي")) {
+      } else if (lowered.includes("سعودي") || lowered.includes("ريال سعودي")) {
         currSelect.value = "سعودي";
         speak("تم تعيين العملة سعودي.");
       } else if (lowered.includes("درهم")) {
@@ -383,19 +399,23 @@
       } else if (lowered.includes("دولار")) {
         currSelect.value = "دولار";
         speak("تم تعيين العملة دولار.");
-      } else if (lowered.includes("عماني")) {
+      } else if (lowered.includes("عماني") || lowered.includes("عمان")) {
         currSelect.value = "عماني";
         speak("تم تعيين العملة عماني.");
       } else {
-        speak("ما فهمت نوع العملة يا بسام.");
+        speak("ما فهمت نوع العملة.");
       }
 
       if (typeof updatePreviewText === "function") updatePreviewText();
       return;
     }
 
-    // ===== له / عليه: "خله له" أو "خله عليه" =====
-    if (lowered.includes("خله له") || lowered.includes("خليها له") || lowered.endsWith(" له")) {
+    // ===== له =====
+    if (
+      lowered.includes("خله له") ||
+      lowered.includes("خليها له") ||
+      lowered.endsWith(" له")
+    ) {
       const lastRow = getLastEntryRow();
       if (lastRow) {
         const dirSelect =
@@ -410,7 +430,12 @@
       return;
     }
 
-    if (lowered.includes("خله عليه") || lowered.includes("خليها عليه") || lowered.endsWith(" عليه")) {
+    // ===== عليه =====
+    if (
+      lowered.includes("خله عليه") ||
+      lowered.includes("خليها عليه") ||
+      lowered.endsWith(" عليه")
+    ) {
       const lastRow = getLastEntryRow();
       if (lastRow) {
         const dirSelect =
@@ -425,12 +450,13 @@
       return;
     }
 
-    // ===== حفظ الكشف: "احفظ الكشف" =====
+    // ===== حفظ الكشف =====
     if (
       lowered.includes("احفظ الكشف") ||
       lowered.includes("حفظ الكشف") ||
       lowered.includes("سجل الكشف")
     ) {
+      console.log("💾 أمر: حفظ الكشف بالصوت");
       const saveBtn = getEl("saveStatementBtn");
       if (saveBtn) {
         saveBtn.click();
@@ -444,7 +470,8 @@
       return;
     }
 
-    // لو ما فهمنا الأمر
-    speak("سمعتك تقول: " + rawText + " لكن لم أفهم الأمر يا بسام، حاول تعيده بشكل أبسط.");
+    // ===== لم يفهم الأمر =====
+    console.warn("❓ لم يتم التعرف على الأمر:", rawText);
+    speak("سمعتك تقول: " + rawText + " لكن ما فهمت أمرك يا بسام.");
   }
 })();
