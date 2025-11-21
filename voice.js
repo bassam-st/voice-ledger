@@ -1,352 +1,298 @@
 // ============================
-//  ملف voice.js
-//  مساعد بسّام الصوتي – أوامر محلّية بدون اشتراك
+//   مساعد بسّام الصوتي الذكي
+//   يعمل بدون اشتراكات (محلي)
+//   يدعم: إضافة بند – مبلغ – عملة – له/عليه – اسم عميل – عنوان – وصف بند
+//   + ذكاء للتعرف على أسماء العملاء
 // ============================
 
 (function () {
+
+  // زر المساعد
   const btn = document.getElementById("voiceAssistantBtn");
-  if (!btn) return;
 
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  let recognition = null;
-  let listening = false;
-
-  // دالة نطق
-  function speak(text) {
-    try {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "ar-SA";
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-    } catch (e) {
-      console.warn("Speech synthesis not available", e);
-    }
-  }
-
-  // لو المتصفح لا يدعم التعرف على الصوت
-  if (!SpeechRecognition) {
-    btn.disabled = true;
-    btn.textContent = "🎤 الميكروفون غير مدعوم في هذا المتصفح";
+  if (!btn) {
+    console.warn("زر المساعد الصوتي غير موجود في الصفحة");
     return;
   }
 
-  // تهيئة التعرف على الصوت
-  recognition = new SpeechRecognition();
+  // هل المتصفح يدعم الصوت؟
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    btn.disabled = true;
+    btn.textContent = "🎤 جهازك لا يدعم الميكروفون";
+    return;
+  }
+
+  // إنشاء محرك التعرف
+  const recognition = new SpeechRecognition();
   recognition.lang = "ar-SA";
-  recognition.continuous = false;
   recognition.interimResults = false;
+
+  let listening = false;
+
+  // الضغط على الزر
+  btn.addEventListener("click", () => {
+    if (listening) {
+      recognition.stop();
+    } else {
+      try {
+        recognition.start();
+      } catch (_) {}
+    }
+  });
 
   recognition.onstart = () => {
     listening = true;
-    btn.textContent = "🎙️ أستمع لك الآن يا بسّام...";
+    btn.textContent = "🎙️ يستمع لك يا بسام...";
     btn.style.background = "#b91c1c";
   };
 
   recognition.onend = () => {
     listening = false;
-    btn.textContent = "🎤 مساعد بسّام الصوتي";
+    btn.textContent = "🎤 مساعد بسام الصوتي";
     btn.style.background = "#15803d";
   };
 
   recognition.onerror = (e) => {
     listening = false;
-    btn.textContent = "🎤 مساعد بسّام الصوتي";
-    alert("حدث خطأ في الميكروفون أو التعرف على الصوت: " + e.error);
+    btn.textContent = "🎤 مساعد بسام الصوتي";
+    alert("خطأ في الميكروفون: " + e.error);
   };
 
+  // ============================
+  //   الرد بالصوت
+  // ============================
+  function say(msg) {
+    try {
+      const u = new SpeechSynthesisUtterance(msg);
+      u.lang = "ar-SA";
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  // ============================
+  //   استقبال الأمر الصوتي
+  // ============================
   recognition.onresult = (event) => {
     const text = event.results[0][0].transcript.trim();
-    console.log("🗣️ سمعتك تقول:", text);
-    handleVoiceCommand(text);
+    console.log("🗣️ أمر صوتي:", text);
+    handleCommand(text);
   };
 
-  // زر تشغيل/إيقاف الاستماع
-  btn.addEventListener("click", () => {
-    if (!listening) {
-      try {
-        recognition.start();
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      recognition.stop();
-    }
-  });
+  // ============================
+  //   سطح التطبيق (DOM)
+  // ============================
+  const el = (id) => document.getElementById(id);
+
+  const clientName = el("clientName");
+  const dateInput = el("statementDate");
+  const titleInput = el("statementTitle");
+  const entriesContainer = el("entriesContainer");
+  const manualTotal = el("manualTotal");
+  const extraNotes = el("extraNotes");
 
   // ============================
-  //     مساعدات للوصول للعناصر
+  //   وظائف أساسية
   // ============================
-
-  function getEl(id) {
-    return document.getElementById(id);
+  function addEntry() {
+    const addBtn = el("addEntryBtn");
+    if (addBtn) addBtn.click();
   }
 
-  function getLastEntryRow() {
-    const container = getEl("entriesContainer");
-    if (!container || !container.children.length) return null;
-    return container.children[container.children.length - 1];
-  }
-
-  function normalize(text) {
-    return text.trim().toLowerCase();
+  function getLastEntry() {
+    if (!entriesContainer || !entriesContainer.children.length) return null;
+    return entriesContainer.children[entriesContainer.children.length - 1];
   }
 
   // ============================
-  //        معالجة الأوامر
+  //   معالجة الأوامر
   // ============================
+  function handleCommand(raw) {
+    const text = normalize(raw);
 
-  function handleVoiceCommand(rawText) {
-    const text = normalize(rawText);
-
-    const clientInput = getEl("clientName");
-    const dateInput = getEl("statementDate");
-    const titleInput = getEl("statementTitle");
-    const entriesContainer = getEl("entriesContainer");
-    const extraNotes = getEl("extraNotes");
-
-    // ===== 1) كشف جديد =====
-    if (
-      text.includes("كشف جديد") ||
-      text.includes("افتح كشف جديد") ||
-      text.includes("سجل كشف جديد")
-    ) {
-      // نستخدم resetForm الموجودة في index.html إن وُجدت
-      if (typeof resetForm === "function") {
-        resetForm(clientInput ? clientInput.value : "");
-      } else {
-        // تفريغ يدوي احتياطي
-        if (clientInput) clientInput.value = clientInput.value || "";
-        if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
-        if (titleInput) titleInput.value = "";
-        if (extraNotes) extraNotes.value = "";
-        if (entriesContainer) {
-          entriesContainer.innerHTML = "";
-          if (typeof addEntryRow === "function") addEntryRow();
-        }
-        if (typeof updatePreviewText === "function") updatePreviewText();
-      }
-
-      speak("حاضر يا بسام، فتحت لك كشف جديد.");
+    // ======== تحية ========
+    if (text.includes("السلام") || text.includes("مرحبا")) {
+      say("هلا يا بسام، أنا جاهز أساعدك في كشف الحساب");
       return;
     }
 
-    // ===== 2) اسم العميل: "اسم العميل محمد" أو "العميل محمد" =====
+    // ======== كشف جديد ========
+    if (text.includes("كشف جديد") || text.includes("افتح كشف")) {
+      resetForm(clientName.value);
+      say("تم فتح كشف جديد يا بسّام");
+      return;
+    }
+
+    // ======== إضافة بند ========
+    if (text.includes("بند جديد") || text.includes("اضف بند") || text.includes("ضيف بند") || text.includes("زود بند")) {
+      addEntry();
+      say("تم إضافة بند جديد");
+      return;
+    }
+
+    // ======== اسم العميل ========
     if (text.startsWith("اسم العميل") || text.startsWith("العميل")) {
-      let name = text
-        .replace("اسم العميل", "")
-        .replace("العميل", "")
-        .trim();
-      if (clientInput && name) {
-        clientInput.value = name;
-        speak("سجلت اسم العميل " + name);
-        if (typeof updatePreviewText === "function") updatePreviewText();
-      } else {
-        speak("ما فهمت اسم العميل يا بسام.");
-      }
+      const name = text.replace("اسم العميل", "").replace("العميل", "").trim();
+      const best = bestClientMatch(name);
+
+      clientName.value = best.name;
+      say("سجلت اسم العميل " + best.name);
       return;
     }
 
-    // ===== 3) عنوان الكشف =====
+    // ======== عنوان الكشف ========
     if (text.startsWith("عنوان الكشف") || text.startsWith("العنوان")) {
-      const title = text
-        .replace("عنوان الكشف", "")
-        .replace("العنوان", "")
-        .trim();
-      if (titleInput && title) {
-        titleInput.value = title;
-        speak("تم تعيين عنوان الكشف.");
-        if (typeof updatePreviewText === "function") updatePreviewText();
-      } else {
-        speak("ما فهمت العنوان يا بسام.");
-      }
+      const title = text.replace("عنوان الكشف", "").replace("العنوان", "").trim();
+      titleInput.value = title;
+      say("تم تسجيل عنوان الكشف");
       return;
     }
 
-    // ===== 4) إضافة بند جديد =====
-    if (
-      text.includes("اضف بند") ||
-      text.includes("أضف بند") ||
-      text.includes("ضيف بند") ||
-      text.includes("بند جديد") ||
-      text.includes("زود بند")
-    ) {
-      if (typeof addEntryRow === "function") {
-        addEntryRow();
-        speak("تم إضافة بند جديد يا بسام.");
-      } else {
-        speak("لا أستطيع إضافة بند الآن، يوجد خطأ في الصفحة.");
-      }
-      return;
-    }
-
-    // ===== 5) وصف البند =====
-    // مثال: "وصف البند البيان والتحسين"
+    // ======== وصف البند ========
     if (text.startsWith("وصف البند")) {
       const desc = text.replace("وصف البند", "").trim();
-      const lastRow = getLastEntryRow();
-      if (lastRow && desc) {
-        const descInput =
-          lastRow.querySelector(".entry-desc") ||
-          lastRow.querySelector("input");
-        if (descInput) descInput.value = desc;
-        speak("كتبت وصف البند.");
-        if (typeof updatePreviewText === "function") updatePreviewText();
-      } else {
-        speak("ما لقيت بند أكتب فيه الوصف.");
-      }
+      const row = getLastEntry();
+      if (!row) return say("أضف بند أولاً يا بسّام");
+
+      row.querySelector(".entry-desc").value = desc;
+      say("تم تسجيل وصف البند");
       return;
     }
 
-    // ===== 6) المبلغ =====
-    // مثال: "المبلغ 150000" أو "ادخل المبلغ 2000"
-    if (
-      text.startsWith("المبلغ") ||
-      text.startsWith("ادخل المبلغ") ||
-      text.startsWith("اكتب المبلغ")
-    ) {
-      const numText = text
-        .replace("المبلغ", "")
-        .replace("ادخل المبلغ", "")
-        .replace("اكتب المبلغ", "")
-        .trim()
-        .replace(/[^\d]/g, "");
-      const value = Number(numText || "0");
-      const lastRow = getLastEntryRow();
-      if (lastRow && value > 0) {
-        const amountInput =
-          lastRow.querySelector(".entry-amount") ||
-          lastRow.querySelector("input[type='number']");
-        if (amountInput) {
-          amountInput.value = value;
-          speak("تم إدخال المبلغ.");
-          if (typeof updatePreviewText === "function") updatePreviewText();
-        } else {
-          speak("ما لقيت خانة المبلغ يا بسام.");
-        }
-      } else {
-        speak("ما قدرت أقرأ رقم المبلغ يا بسام.");
-      }
+    // ======== مبلغ ========
+    if (text.includes("المبلغ") || text.includes("ادخل المبلغ")) {
+      const num = extractNumber(text);
+      const row = getLastEntry();
+      if (!row) return say("ما في بند تضيف له مبلغ");
+
+      row.querySelector(".entry-amount").value = num;
+      say("تم تسجيل المبلغ " + num);
       return;
     }
 
-    // ===== 7) العملة =====
-    // مثال: "العملة يمني / سعودي / درهم / دولار / عماني"
-    if (text.includes("العملة") || text.includes("عملة")) {
-      const lastRow = getLastEntryRow();
-      if (!lastRow) {
-        speak("ما في بند عشان أعدل عليه العملة.");
-        return;
-      }
-      const currSelect =
-        lastRow.querySelector(".entry-curr") ||
-        lastRow.querySelector("select");
+    // ======== عملة ========
+    if (text.includes("عملة") || text.includes("العملة")) {
+      const row = getLastEntry();
+      if (!row) return say("لا يوجد بند لأحدد العملة");
 
-      if (!currSelect) {
-        speak("ما قدرت أجد خانة العملة.");
-        return;
-      }
+      const c = text.includes("سعودي")
+        ? "سعودي"
+        : text.includes("يمني")
+        ? "يمني"
+        : text.includes("دولار")
+        ? "دولار"
+        : text.includes("درهم")
+        ? "درهم"
+        : "يمني";
 
-      if (text.includes("يمني")) {
-        currSelect.value = "يمني";
-        speak("تم تعيين العملة يمني.");
-      } else if (text.includes("سعودي")) {
-        currSelect.value = "سعودي";
-        speak("تم تعيين العملة سعودي.");
-      } else if (text.includes("درهم")) {
-        currSelect.value = "درهم";
-        speak("تم تعيين العملة درهم.");
-      } else if (text.includes("دولار")) {
-        currSelect.value = "دولار";
-        speak("تم تعيين العملة دولار.");
-      } else if (text.includes("عماني")) {
-        currSelect.value = "عماني";
-        speak("تم تعيين العملة عماني.");
-      } else {
-        speak("ما فهمت نوع العملة يا بسام.");
-      }
-
-      if (typeof updatePreviewText === "function") updatePreviewText();
+      row.querySelector(".entry-curr").value = c;
+      say("تم تحديد العملة " + c);
       return;
     }
 
-    // ===== 8) له / عليه =====
-    // "خليها له" / "خله له" / "خليها عليه" / "خله عليه"
-    if (
-      text.includes("خليه له") ||
-      text.includes("خليها له") ||
-      text.includes("خله له")
-    ) {
-      const lastRow = getLastEntryRow();
-      if (lastRow) {
-        const dirSelect =
-          lastRow.querySelector(".entry-dir") ||
-          lastRow.querySelector(".direction") ||
-          lastRow.querySelector("select:last-of-type");
-        if (dirSelect) {
-          dirSelect.value = "له";
-          speak("تم تعيينها له.");
-          if (typeof updatePreviewText === "function") updatePreviewText();
-        } else {
-          speak("ما لقيت خانة له أو عليه.");
-        }
-      } else {
-        speak("ما لقيت بند أعدل عليه يا بسام.");
-      }
+    // ======== له / عليه ========
+    if (text.includes("خله له") || text.includes("له")) {
+      const row = getLastEntry();
+      if (!row) return say("أضف بند أولاً");
+      row.querySelector(".entry-dir").value = "له";
+      say("تم تعيينها له");
       return;
     }
 
-    if (
-      text.includes("خليه عليه") ||
-      text.includes("خليها عليه") ||
-      text.includes("خله عليه")
-    ) {
-      const lastRow = getLastEntryRow();
-      if (lastRow) {
-        const dirSelect =
-          lastRow.querySelector(".entry-dir") ||
-          lastRow.querySelector(".direction") ||
-          lastRow.querySelector("select:last-of-type");
-        if (dirSelect) {
-          dirSelect.value = "عليه";
-          speak("تم تعيينها عليه.");
-          if (typeof updatePreviewText === "function") updatePreviewText();
-        } else {
-          speak("ما لقيت خانة له أو عليه.");
-        }
-      } else {
-        speak("ما لقيت بند أعدل عليه يا بسام.");
-      }
+    if (text.includes("خله عليه") || text.includes("عليه")) {
+      const row = getLastEntry();
+      if (!row) return say("أضف بند أولاً");
+      row.querySelector(".entry-dir").value = "عليه";
+      say("تم تعيينها عليه");
       return;
     }
 
-    // ===== 9) حفظ الكشف =====
-    if (
-      text.includes("احفظ الكشف") ||
-      text.includes("حفظ الكشف") ||
-      text.includes("سجل الكشف")
-    ) {
-      const saveBtn = getEl("saveStatementBtn");
-      if (saveBtn) {
-        saveBtn.click();
-        speak("تم حفظ الكشف يا بسام.");
-      } else if (typeof saveCurrentStatement === "function") {
-        saveCurrentStatement();
-        speak("تم حفظ الكشف يا بسام.");
-      } else {
-        speak("ما قدرت أحفظ الكشف، زر الحفظ غير موجود.");
-      }
+    // ======== حفظ الكشف ========
+    if (text.includes("احفظ") || text.includes("سجل الكشف")) {
+      const saveBtn = el("saveStatementBtn");
+      if (saveBtn) saveBtn.click();
+      say("تم حفظ الكشف يا بسام");
       return;
     }
 
-    // ===== 10) تحية بسيطة =====
-    if (text.includes("السلام") || text.includes("مرحبا") || text.includes("هلا")) {
-      speak("هلا يا بسام، أنا مساعدك الصوتي لكشوفات العملاء، تحت أمرك.");
-      return;
-    }
-
-    // لو ما فهمنا الأمر
-    speak("سمعتك تقول: " + rawText + " لكن ما فهمت الأمر يا بسام.");
+    // ======== لم يفهم الأمر ========
+    say("ما فهمت الأمر يا بسام. حاول تعيده بشكل أبسط.");
   }
+
+  // ============================
+  //   دوال الذكاء
+  // ============================
+  function normalize(str) {
+    return String(str).trim().toLowerCase();
+  }
+
+  function extractNumber(text) {
+    const map = { "٠": "0","١": "1","٢": "2","٣": "3","٤": "4","٥": "5","٦": "6","٧": "7","٨": "8","٩": "9" };
+    let fixed = "";
+    for (const ch of text) fixed += map[ch] || ch;
+    const m = fixed.match(/\d+/g);
+    return m ? Number(m.join("")) : 0;
+  }
+
+  function getAllClientNames() {
+    try {
+      const raw = localStorage.getItem("voiceLedgerData_v1");
+      const data = raw ? JSON.parse(raw) : {};
+      return Object.keys(data.clients || {});
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function similarity(a, b) {
+    a = normalize(a);
+    b = normalize(b);
+    if (!a || !b) return 0;
+
+    const distance = levenshtein(a, b);
+    const maxLen = Math.max(a.length, b.length);
+    return 1 - distance / maxLen;
+  }
+
+  function bestClientMatch(name) {
+    const all = getAllClientNames();
+    if (!all.length) return { name, score: 0 };
+
+    let best = name;
+    let bestScore = 0;
+
+    all.forEach((n) => {
+      const s = similarity(name, n);
+      if (s > bestScore) {
+        bestScore = s;
+        best = n;
+      }
+    });
+
+    return bestScore > 0.45 ? { name: best, score: bestScore } : { name, score: bestScore };
+  }
+
+  function levenshtein(a, b) {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,
+          dp[i][j - 1] + 1,
+          dp[i - 1][j - 1] + cost
+        );
+      }
+    }
+    return dp[m][n];
+  }
+
 })();
