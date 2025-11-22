@@ -1,14 +1,14 @@
 {
-  "id": "/voice-ledger/",
-  "name": "محاسب بسام - دفتر كشف الحساب اليومي",
-  "short_name": "محاسب بسام",
-  "description": "دفتر بسيط لحفظ كشوفات العملاء مع دعم التثبيت على الجوال.",
-  "start_url": "/voice-ledger/",
-  "scope": "/voice-ledger/",
+  "name": "دفتر كشف الحساب اليومي",
+  "short_name": "كشف الحساب",
+  "description": "حفظ كشوفات عملائك في جهازك فقط (بدون إنترنت أو حساب).",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "display_override": ["standalone"],
-  "theme_color": "#16a34a",
+  "orientation": "portrait",
   "background_color": "#ffffff",
+  "theme_color": "#16a34a",
   "icons": [
     {
       "src": "icon-192.png",
