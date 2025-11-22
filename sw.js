@@ -1,43 +1,55 @@
-const CACHE_NAME = "voice-ledger-cache-v1";
+// sw.js — نسخة جديدة لتحديث الكاش وجلب أحدث نسخة من التطبيق
 
+const CACHE_NAME = "voice-ledger-v6"; // ← غيّرنا رقم النسخة
 const ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/icon-192.png",
-  "/icon-512.png"
+  "./",
+  "./index.html",
+  "./styles.css",
+  "./app.js",
+  "./voice.js",
+  "./manifest.webmanifest",
+  "./icon-192.png",
+  "./icon-512.png"
 ];
 
-// تثبيت الـ Service Worker وتخزين الملفات الأساسية
-self.addEventListener("install", (event) => {
+// عند التثبيت: تخزين الملفات في الكاش
+self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
   );
   self.skipWaiting();
 });
 
-// تفعيل وحذف الكاشات القديمة
-self.addEventListener("activate", (event) => {
+// عند التفعيل: حذف أي كاش قديم
+self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then((keys) =>
+    caches.keys().then(keys =>
       Promise.all(
         keys
-          .filter((k) => k !== CACHE_NAME)
-          .map((k) => caches.delete(k))
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
       )
     )
   );
   self.clients.claim();
 });
 
-// محاولة جلب من الكاش ثم من الشبكة
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+// استراتيجية الجلب: شبكة أولاً ثم الكاش احتياطيًا
+self.addEventListener("fetch", event => {
+  const req = event.request;
+
+  // لا نتدخل في طلبات أخرى (api…)
+  if (req.method !== "GET") return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request);
-    })
+    fetch(req)
+      .then(res => {
+        const resClone = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, resClone));
+        return res;
+      })
+      .catch(() =>
+        caches.match(req).then(cached => cached || caches.match("./index.html"))
+      )
   );
 });
