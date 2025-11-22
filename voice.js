@@ -1,206 +1,154 @@
-(async function () {
+// voice.js — نسخة العمل الأصلية بالكامل
+
+(function () {
   const btn = document.getElementById("voiceAssistantBtn");
   if (!btn) return;
 
-  // Whisper model to use
-  const WHISPER_MODEL = "base"; // الأفضل
+  // التحقق من دعم المتصفح
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  // التحويل إلى نص باستخدام نموذج Whisper
-  async function transcribeAudio(blob) {
-    const formData = new FormData();
-    formData.append("file", blob, "voice.webm");
-    formData.append("model", WHISPER_MODEL);
-
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: formData,
-    });
-
-    const data = await res.json();
-    return data.text;
+  if (!SpeechRecognition) {
+    btn.disabled = true;
+    btn.textContent = "🎤 المساعد الصوتي غير مدعوم في هذا المتصفح";
+    return;
   }
 
-  // ================== التسجيل الصوتي ===================
-  let recorder, chunks = [], listening = false;
+  const recognition = new SpeechRecognition();
+  recognition.lang = "ar-SA";
+  recognition.interimResults = false;
+  let listening = false;
 
-  btn.addEventListener("click", async () => {
-    if (listening) {
-      recorder.stop();
-      listening = false;
-      btn.textContent = "🎤 مساعد بسّام الصوتي";
-    } else {
-      await startRecording();
-    }
+  btn.addEventListener("click", () => {
+    if (listening) recognition.stop();
+    else recognition.start();
   });
 
-  async function startRecording() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    recorder = new MediaRecorder(stream);
-    chunks = [];
-
-    recorder.ondataavailable = e => chunks.push(e.data);
-    recorder.onstop = async () => {
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      const text = await transcribeAudio(blob);
-      console.log("🎧 النص المُستمع:", text);
-      handleVoiceCommand(text.trim());
-    };
-
-    recorder.start();
+  recognition.onstart = () => {
     listening = true;
-    btn.textContent = "🎙️ أستمع لك الآن يا بسّام...";
+    btn.textContent = "🎙️ أستمع لك الآن...";
+  };
+
+  recognition.onend = () => {
+    listening = false;
+    btn.textContent = "🎤 مساعد بسّام الصوتي";
+  };
+
+  recognition.onerror = (e) => {
+    listening = false;
+    btn.textContent = "🎤 مساعد بسّام الصوتي";
+    console.error(e);
+  };
+
+  recognition.onresult = (event) => {
+    const text = event.results[0][0].transcript.trim();
+    console.log("%c[VOICE HEARD] → " + text, "color: green; font-size:16px");
+    handleVoiceCommand(text);
+  };
+
+  //==============================
+  // ذكاء قراءة الأرقام كما كانت تعمل
+  //==============================
+  function extractNumber(text) {
+    let num = text.replace(/[^\d]/g, "");
+    return num ? parseInt(num, 10) : null;
   }
 
-  // ================== أدوات المساعدة ===================
-  const clientInput = document.getElementById("clientName");
-  const titleInput = document.getElementById("statementTitle");
-
-  const entriesContainer = document.getElementById("entriesContainer");
-
-  function say(msg) {
-    const ut = new SpeechSynthesisUtterance(msg);
-    ut.lang = "ar-SA";
-    speechSynthesis.speak(ut);
-  }
-
-  // تحليل الأرقام الكبيرة من الكلام  
-  function extractNumber(sentence) {
-    const digits = sentence.match(/\d+/g);
-    if (!digits) return null;
-    return Number(digits.join(""));
-  }
-
-  // موافقة العملات
-  function detectCurrency(text) {
-    if (text.includes("يمني") || text.includes("ريال يمني")) return "يمني";
-    if (text.includes("سعودي") || text.includes("ريال سعودي")) return "سعودي";
-    if (text.includes("درهم")) return "درهم";
-    if (text.includes("دولار")) return "دولار";
-    if (text.includes("عماني")) return "عماني";
-    return null;
-  }
-
-  // ================== إضافة بند ===================
-  function addEntryRowVoice(initial = {}) {
-    const row = document.createElement("div");
-    row.className = "entry-row";
-
-    const desc = document.createElement("input");
-    desc.placeholder = "وصف البند";
-    desc.className = "entry-desc";
-
-    const amount = document.createElement("input");
-    amount.type = "number";
-    amount.placeholder = "المبلغ";
-    amount.className = "entry-amount";
-
-    const curr = document.createElement("select");
-    ["يمني","سعودي","درهم","دولار","عماني"].forEach(c=>{
-      const o=document.createElement("option");
-      o.value=c; o.textContent=c; curr.append(o);
-    });
-    curr.className="entry-curr";
-
-    const dir = document.createElement("select");
-    ["له","عليه"].forEach(c=>{
-      const o=document.createElement("option");
-      o.value=c; o.textContent=c; dir.append(o);
-    });
-    dir.className="entry-dir";
-
-    const del=document.createElement("button");
-    del.textContent="حذف";
-    del.className="pill-btn pill-red";
-    del.onclick=()=>row.remove();
-
-    if(initial.desc) desc.value=initial.desc;
-    if(initial.amount) amount.value=initial.amount;
-    if(initial.currency) curr.value=initial.currency;
-    if(initial.direction) dir.value=initial.direction;
-
-    row.append(desc,amount,curr,dir,del);
-    entriesContainer.appendChild(row);
-
-    return row;
-  }
-
-  // ================== أوامر الصوت ===================
+  //==============================
+  // تنفيذ الأوامر الصوتية
+  //==============================
   function handleVoiceCommand(text) {
-    text = text.replace("مساعد بسام", "").trim();
-    const lower = text.toLowerCase();
+    const client = document.getElementById("clientName");
+    const title = document.getElementById("statementTitle");
 
-    // ====== بند جديد ======
-    if (text.includes("بند جديد") || text.includes("اضف بند") || text.includes("إضافة بند")) {
-      addEntryRowVoice();
-      say("تم إضافة بند جديد");
-      return;
-    }
-
-    // ====== وصف البند ======
-    if (text.startsWith("وصف البند")) {
-      const row = entriesContainer.lastElementChild || addEntryRowVoice();
-      const descText = text.replace("وصف البند", "").trim();
-      row.querySelector(".entry-desc").value = descText;
-      say("تم تسجيل وصف البند");
-      return;
-    }
-
-    // ====== المبلغ ======
-    if (text.includes("المبلغ") || text.startsWith("مبلغ")) {
-      const row = entriesContainer.lastElementChild || addEntryRowVoice();
-      const num = extractNumber(text);
-      if (num) {
-        row.querySelector(".entry-amount").value = num;
-        say("تم تسجيل المبلغ");
-      } else {
-        say("لم أفهم المبلغ");
+    //========= إضافة بند جديد =========
+    if (/بند جديد|اضف بند|ضيف بند/.test(text)) {
+      if (typeof addEntryRow === "function") {
+        addEntryRow();
+        speak("تم إضافة بند جديد");
       }
       return;
     }
 
-    // ====== العملة ======
-    const curr = detectCurrency(text);
-    if (curr) {
-      const row = entriesContainer.lastElementChild || addEntryRowVoice();
-      row.querySelector(".entry-curr").value = curr;
-      say("تم تسجيل العملة");
-      return;
-    }
-
-    // ====== له / عليه ======
-    if (text.includes("عليه")) {
-      const row = entriesContainer.lastElementChild || addEntryRowVoice();
-      row.querySelector(".entry-dir").value = "عليه";
-      say("تم ضبطها عليه");
-      return;
-    }
-    if (text.includes("له")) {
-      const row = entriesContainer.lastElementChild || addEntryRowVoice();
-      row.querySelector(".entry-dir").value = "له";
-      say("تم ضبطها له");
-      return;
-    }
-
-    // ====== اسم العميل ======
+    //========= كتابة اسم العميل =========
     if (text.startsWith("اسم العميل")) {
       const name = text.replace("اسم العميل", "").trim();
-      clientInput.value = name;
-      say("تم تسجيل اسم العميل");
+      if (client) client.value = name;
+      speak("سجلت اسم العميل");
       return;
     }
 
-    // ====== عنوان الكشف ======
+    //========= عنوان الكشف =========
     if (text.startsWith("عنوان الكشف")) {
-      const name = text.replace("عنوان الكشف", "").trim();
-      titleInput.value = name;
-      say("تم تسجيل عنوان الكشف");
+      const t = text.replace("عنوان الكشف", "").trim();
+      if (title) title.value = t;
+      speak("تم تسجيل العنوان");
       return;
     }
 
-    // إذا لم يفهم الأمر
-    say("سمعتك تقول: " + text + " لكن لم أفهم الأمر");
+    // ========= وصف البند =========
+    if (text.startsWith("وصف البند") || text.startsWith("الوصف")) {
+      const last = document.querySelector(".entry-desc:last-of-type");
+      const content = text.replace("وصف البند", "").replace("الوصف", "").trim();
+      if (last) {
+        last.value = content;
+        speak("تم تسجيل وصف البند");
+      }
+      return;
+    }
+
+    // ========= مبلغ البند =========
+    if (text.startsWith("المبلغ") || text.startsWith("قيمة")) {
+      const last = document.querySelector(".entry-amount:last-of-type");
+      let num = extractNumber(text);
+      if (num && last) {
+        last.value = num;
+        speak("تم تسجيل المبلغ");
+      } else {
+        speak("لم أفهم المبلغ");
+      }
+      return;
+    }
+
+    // ========= تغيير العملة =========
+    if (/يمني|سعودي|درهم|دولار|عماني/.test(text)) {
+      const last = document.querySelector(".entry-curr:last-of-type");
+      if (last) {
+        if (text.includes("يمني")) last.value = "يمني";
+        if (text.includes("سعودي")) last.value = "سعودي";
+        if (text.includes("درهم")) last.value = "درهم";
+        if (text.includes("دولار")) last.value = "دولار";
+        if (text.includes("عماني")) last.value = "عماني";
+        speak("تم تغيير العملة");
+      }
+      return;
+    }
+
+    // ========= له / عليه =========
+    if (text.includes("له")) {
+      const last = document.querySelector(".entry-dir:last-of-type");
+      if (last) last.value = "له";
+      speak("تم تحديد له");
+      return;
+    }
+
+    if (text.includes("عليه")) {
+      const last = document.querySelector(".entry-dir:last-of-type");
+      if (last) last.value = "عليه";
+      speak("تم تحديد عليه");
+      return;
+    }
+
+    // لو ما فهم الأمر
+    speak("سمعتك تقول " + text);
+  }
+
+  //==============================
+  // الرد الصوتي
+  //==============================
+  function speak(message) {
+    const utter = new SpeechSynthesisUtterance(message);
+    utter.lang = "ar-SA";
+    window.speechSynthesis.speak(utter);
   }
 })();
