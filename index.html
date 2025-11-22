@@ -249,6 +249,18 @@
         </div>
       </div>
 
+      <!-- أزرار النسخة الاحتياطية -->
+      <div class="card">
+        <label class="section-title">🗄️ نسخة احتياطية للبيانات</label>
+        <p class="muted">تستطيع تصدير كل الكشوفات في ملف واحد JSON ثم رفعه إلى Google Drive أو إرساله لنفسك، وبعدها استيراده عند الحاجة.</p>
+        <div class="row">
+          <button class="pill-btn pill-green" id="exportBackupBtn" style="flex:1;">📤 تصدير نسخة احتياطية</button>
+          <button class="pill-btn pill-gray" id="importBackupBtn" style="flex:1;">📥 استيراد نسخة احتياطية</button>
+        </div>
+        <!-- حقل اختيار ملف النسخة الاحتياطية (مخفي) -->
+        <input type="file" id="backupFileInput" accept="application/json" style="display:none;">
+      </div>
+
       <div class="footer-hint">
         إذا لم يظهر زر التثبيت، استخدم "إضافة إلى الشاشة الرئيسية" من المتصفح.
       </div>
@@ -493,6 +505,7 @@
       whatsAppBox.textContent=txt;
     }
 
+    // ====== طباعة كـ PDF مع "إجمال هذا الكشف" في أسفل الصفحة ======
     function printAsPdf(){
       const name  = clientNameInput.value.trim() || "العميل";
       const date  = dateInput.value || new Date().toISOString().slice(0,10);
@@ -590,6 +603,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
       w.print();
     }
 
+    // ====== PWA / تثبيت التطبيق ======
     const installButton=document.getElementById("installButton");
 
     window.addEventListener("beforeinstallprompt", e=>{
@@ -609,10 +623,92 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
       navigator.serviceWorker.register("./sw.js");
     }
 
+    // ====== النسخة الاحتياطية: تصدير / استيراد ======
+    const exportBtn = document.getElementById("exportBackupBtn");
+    const importBtn = document.getElementById("importBackupBtn");
+    const backupInput = document.getElementById("backupFileInput");
+
+    exportBtn.onclick = exportBackup;
+    importBtn.onclick = () => backupInput.click();
+
+    backupInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const obj = JSON.parse(ev.target.result);
+          if (!obj.clients) throw new Error("bad format");
+          state.data = obj;
+          saveData();
+          alert("تم استيراد النسخة الاحتياطية بنجاح.");
+          renderStatementsList();
+          renderClientsList();
+          renderTotalsForCurrentClient();
+          updatePreviewText();
+        } catch (err) {
+          console.error(err);
+          alert("ملف النسخة الاحتياطية غير صالح.");
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    });
+
+    function exportBackup() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY) || JSON.stringify(state.data);
+        const blob = new Blob([raw], { type: "application/json" });
+        const fileName = "voice-ledger-backup-" + new Date().toISOString().slice(0,10) + ".json";
+
+        // تنزيل الملف
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        // مشاركة (لرفعها إلى Google Drive عبر واجهة أندرويد لو حاب)
+        if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: "application/json" })] })) {
+          const file = new File([blob], fileName, { type: "application/json" });
+          navigator.share({
+            title: "نسخة احتياطية دفتر كشف الحساب",
+            text: "ملف النسخة الاحتياطية للتطبيق.",
+            files: [file]
+          }).catch(() => {});
+        } else if (navigator.share) {
+          navigator.share({
+            title: "نسخة احتياطية دفتر كشف الحساب",
+            text: "تم تنزيل ملف النسخة الاحتياطية، يمكنك رفعه إلى Google Drive."
+          }).catch(() => {});
+        }
+
+        alert("تم إنشاء النسخة الاحتياطية. احفظ الملف في Google Drive أو أي مكان آمن.");
+      } catch (e) {
+        console.error(e);
+        alert("حصل خطأ أثناء إنشاء النسخة الاحتياطية.");
+      }
+    }
+
+    // ====== تهيئة أولية + سؤال الاستيراد لو ما في بيانات ======
+    const hadDataBefore = !!localStorage.getItem(STORAGE_KEY);
     loadData();
     dateInput.value=new Date().toISOString().slice(0,10);
     addEntryRow();
     updatePreviewText();
+    renderStatementsList();
+    renderClientsList();
+    renderTotalsForCurrentClient();
+
+    if (!hadDataBefore) {
+      setTimeout(() => {
+        if (confirm("هل لديك نسخة احتياطية محفوظة وتريد استيرادها الآن؟")) {
+          backupInput.click();
+        }
+      }, 800);
+    }
   </script>
 </body>
 </html>
