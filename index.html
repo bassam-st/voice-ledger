@@ -200,7 +200,6 @@
         </div>
 
         <div id="entriesContainer" class="entries"></div>
-
         <div class="row">
           <div>
             <label>الإجمالي (اختياري):</label>
@@ -249,20 +248,18 @@
         </div>
       </div>
 
-      <!-- أزرار النسخة الاحتياطية -->
       <div class="card">
         <label class="section-title">🗄️ نسخة احتياطية للبيانات</label>
-        <p class="muted">تستطيع تصدير كل الكشوفات في ملف واحد JSON ثم رفعه إلى Google Drive أو إرساله لنفسك، وبعدها استيراده عند الحاجة.</p>
+        <p class="muted">تستطيع تصدير كل الكشوفات في ملف JSON ثم رفعه إلى Google Drive أو إرساله لنفسك، وبعدها استيراده.</p>
         <div class="row">
           <button class="pill-btn pill-green" id="exportBackupBtn" style="flex:1;">📤 تصدير نسخة احتياطية</button>
           <button class="pill-btn pill-gray" id="importBackupBtn" style="flex:1;">📥 استيراد نسخة احتياطية</button>
         </div>
-        <!-- حقل اختيار ملف النسخة الاحتياطية (مخفي) -->
         <input type="file" id="backupFileInput" accept="application/json" style="display:none;">
       </div>
 
       <div class="footer-hint">
-        إذا لم يظهر زر التثبيت، استخدم "إضافة إلى الشاشة الرئيسية" من المتصفح.
+        إذا لم يظهر زر التثبيت، استخدم "إضافة إلى الشاشة الرئيسية" من إعدادات المتصفح.
       </div>
 
     </div>
@@ -327,18 +324,6 @@
     const totalsBoxEl=document.getElementById("totalsBox");
     const clientsListEl=document.getElementById("clientsList");
 
-    // ====== دوال مساعدة للفواصل ======
-    function formatWithCommas(value) {
-      const digits = String(value || "")
-        .replace(/[^\d]/g, ""); // فقط الأرقام
-      if (!digits) return "";
-      return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-
-    function stripCommas(value) {
-      return String(value || "").replace(/,/g, "");
-    }
-
     document.getElementById("addEntryBtn").onclick=()=>addEntryRow();
     document.getElementById("copyLastEntriesBtn").onclick=copyLastEntries;
     document.getElementById("saveStatementBtn").onclick=saveCurrentStatement;
@@ -349,30 +334,41 @@
 
     function addEntryRow(init){
       const row=document.createElement("div"); row.className="entry-row";
-      const desc=input("text","وصف البند"); desc.className="entry-desc";
-      // نوع "text" حتى نسمح بالفواصل، مع تنسيق يدوي
-      const amount=input("text","المبلغ"); amount.className="entry-amount";
-      const curr=select(["يمني","سعودي","درهم","دولار","عماني"]); curr.className="entry-curr";
-      // نجعل "عليه" هي الافتراضية
-      const dir=select(["عليه","له"]); dir.className="entry-dir";
+
+      const desc=input("text","وصف البند"); 
+      desc.className="entry-desc";
+
+      const amount=document.createElement("input");
+      amount.type="tel";           /* ← لتغيير الكيبورد مباشرة للأرقام */
+      amount.inputMode="numeric";  /* ← يدعم كل أجهزة أندرويد */
+      amount.placeholder="المبلغ";
+      amount.className="entry-amount";
+
+      amount.addEventListener("input",()=>{
+        let raw = amount.value.replace(/[^\d]/g,"");
+        if(raw){
+          amount.value = Number(raw).toLocaleString("en-US");
+        }
+        updatePreviewText();
+      });
+
+      const curr=select(["يمني","سعودي","درهم","دولار","عماني"]);
+      curr.className="entry-curr";
+
+      const dir=select(["عليه","له"]);   /* ← عليه الافتراضي */
+      dir.className="entry-dir";
+
       const del=button("حذف","pill-btn pill-red entry-del");
       del.onclick=()=>confirm("حذف البند؟")&&row.remove();
 
       if(init){
-        desc.value = init.desc || "";
-        amount.value = init.amount ? formatWithCommas(init.amount) : "";
-        curr.value = init.currency;
-        dir.value  = init.direction || "عليه";
+        desc.value=init.desc||"";
+        amount.value=Number(init.amount).toLocaleString("en-US");
+        curr.value=init.currency;
+        dir.value=init.direction;
       }
 
-      // تنسيق المبلغ أثناء الكتابة (من المستخدم أو من المساعد الصوتي)
-      amount.addEventListener("input", () => {
-        const raw = stripCommas(amount.value).replace(/[^\d]/g, "");
-        amount.value = formatWithCommas(raw);
-        updatePreviewText();
-      });
-
-      [desc, amount, curr, dir].forEach(e=>e.addEventListener("input",updatePreviewText));
+      [desc,curr,dir].forEach(e=>e.addEventListener("input",updatePreviewText));
       row.append(desc,amount,curr,dir,del);
       entriesContainer.appendChild(row);
     }
@@ -383,355 +379,12 @@
 
     function getEntries(){
       return [...entriesContainer.querySelectorAll(".entry-row")].map(r=>{
-        const desc = r.querySelector(".entry-desc").value.trim();
-        const amountRaw = stripCommas(r.querySelector(".entry-amount").value);
-        const amountNum = +amountRaw || 0;
-        const currency = r.querySelector(".entry-curr").value;
-        const direction = r.querySelector(".entry-dir").value;
-        return { desc, amount: amountNum, currency, direction };
-      }).filter(e=>e.desc || e.amount);
+        const amountRaw = r.querySelector(".entry-amount").value.replace(/,/g,"");
+        return {
+          desc:r.querySelector(".entry-desc").value.trim(),
+          amount:+amountRaw||0,
+          currency:r.querySelector(".entry-curr").value,
+          direction:r.querySelector(".entry-dir").value
+        };
+      }).filter(e=>e.desc||e.amount);
     }
-
-    function ensureClient(n){ if(!state.data.clients[n]) state.data.clients[n]={statements:[]}; }
-
-    function saveCurrentStatement(){
-      const name=clientNameInput.value.trim(); if(!name){ alert("اكتب اسم العميل"); return; }
-      ensureClient(name);
-      const st={
-        id:state.currentStatementId||("st_"+Date.now()),
-        date:dateInput.value,
-        title:titleInput.value.trim(),
-        entries:getEntries(),
-        manualTotal:manualTotalInput.value.trim(),
-        extraNotes:extraNotesInput.value.trim()
-      };
-      if(!st.entries.length){ alert("أضف بندًا واحدًا على الأقل"); return; }
-
-      const list=state.data.clients[name].statements;
-      const idx=list.findIndex(s=>s.id===st.id);
-      if(idx>=0) list[idx]=st; else list.unshift(st);
-
-      saveData();
-      state.currentClient=name;
-      state.currentStatementId=st.id;
-      alert("تم حفظ الكشف");
-      renderStatementsList();
-      renderTotalsForCurrentClient();
-      updatePreviewText();
-    }
-
-    function resetForm(keepName){
-      state.currentStatementId=null;
-      if(keepName) clientNameInput.value=keepName;
-      dateInput.value=new Date().toISOString().slice(0,10);
-      titleInput.value="";
-      manualTotalInput.value="";
-      extraNotesInput.value="";
-      entriesContainer.innerHTML="";
-      addEntryRow();
-      updatePreviewText();
-      renderStatementsList();
-      renderTotalsForCurrentClient();
-    }
-
-    function copyLastEntries(){
-      const name=clientNameInput.value.trim();
-      const c=state.data.clients[name];
-      if(!c||!c.statements.length) return alert("لا يوجد كشف سابق");
-      entriesContainer.innerHTML="";
-      c.statements[0].entries.forEach(e=>
-        addEntryRow({desc:e.desc,amount:0,currency:e.currency,direction:e.direction})
-      );
-      updatePreviewText();
-    }
-
-    function renderStatementsList(){
-      const name=clientNameInput.value.trim();
-      statementsListEl.innerHTML="";
-      const c=state.data.clients[name];
-      if(!c||!c.statements.length){
-        statementsListEl.textContent="لا توجد كشوفات";
-        return;
-      }
-      c.statements.forEach(st=>{
-        const d=document.createElement("div"); d.className="saved-item";
-        d.innerHTML=`<span>${st.title}</span><span class="date">${st.date}</span>`;
-        d.onclick=()=>confirm("فتح هذا الكشف؟")&&loadStatement(name,st.id);
-        statementsListEl.appendChild(d);
-      });
-    }
-
-    function loadStatement(name,id){
-      const st=state.data.clients[name].statements.find(s=>s.id===id);
-      if(!st) return;
-      state.currentClient=name;
-      state.currentStatementId=id;
-      clientNameInput.value=name;
-      dateInput.value=st.date;
-      titleInput.value=st.title;
-      manualTotalInput.value=st.manualTotal||"";
-      extraNotesInput.value=st.extraNotes||"";
-      entriesContainer.innerHTML="";
-      st.entries.forEach(e=>addEntryRow(e));
-      updatePreviewText();
-      renderStatementsList();
-      renderTotalsForCurrentClient();
-    }
-
-    function renderClientsList(){
-      clientsListEl.innerHTML="";
-      const names=Object.keys(state.data.clients);
-      if(!names.length){ clientsListEl.textContent="لا يوجد عملاء بعد"; return; }
-      names.forEach(n=>{
-        const d=document.createElement("div"); d.className="saved-item";
-        const last=state.data.clients[n].statements[0];
-        d.innerHTML=`<span>${n}</span><span class="date">${last?last.date:""}</span>`;
-        d.onclick=()=>{ showScreen("s"); loadStatement(n,last.id); };
-        clientsListEl.appendChild(d);
-      });
-    }
-
-    function computeTotals(name){
-      const c=state.data.clients[name]; if(!c) return {};
-      const t={};
-      c.statements.forEach(s=>s.entries.forEach(e=>{
-        if(!t[e.currency]) t[e.currency]={lah:0,alaih:0};
-        if(e.direction==="له") t[e.currency].lah+=e.amount;
-        else t[e.currency].alaih+=e.amount;
-      }));
-      return t;
-    }
-
-    function renderTotalsForCurrentClient(){
-      const n=clientNameInput.value.trim();
-      if(!state.data.clients[n]){ totalsBoxEl.textContent="لا توجد بيانات"; return; }
-      const t=computeTotals(n); let txt="";
-      Object.keys(t).forEach(c=>{
-        const diff=t[c].lah - t[c].alaih;
-        txt+=`${c}:\nله: ${t[c].lah}\nعليه: ${t[c].alaih}\nالصافي: ${diff}\n\n`;
-      });
-      totalsBoxEl.textContent = txt || "لا توجد بيانات";
-    }
-
-    function updatePreviewText(){
-      const n=clientNameInput.value.trim()||"العميل";
-      const d=dateInput.value||"";
-      const ti=titleInput.value||"";
-      let txt=`${n}\nالتاريخ: ${d}\n----------------\n${ti}\n`;
-      getEntries().forEach((e,i)=>
-        txt+=`\n${i+1}- ${e.desc} ${formatWithCommas(e.amount)} ${e.currency} (${e.direction})`
-      );
-      if(manualTotalInput.value)
-        txt+=`\n----------------\nالإجمالي: ${manualTotalInput.value}`;
-      if(extraNotesInput.value)
-        txt+=`\n\nملاحظات:\n${extraNotesInput.value}`;
-      whatsAppBox.textContent=txt;
-    }
-
-    // ====== طباعة كـ PDF مع "إجمال هذا الكشف" في أسفل الصفحة ======
-    function printAsPdf(){
-      const name  = clientNameInput.value.trim() || "العميل";
-      const date  = dateInput.value || new Date().toISOString().slice(0,10);
-      const title = titleInput.value || "";
-      const entries = getEntries();
-      const manual  = manualTotalInput.value.trim();
-
-      let autoTotalsHtml = "";
-      if (!manual) {
-        const res = {};
-        entries.forEach(e=>{
-          if (!res[e.currency]) res[e.currency] = { lah:0, alaih:0 };
-          if (e.direction === "له")  res[e.currency].lah   += e.amount;
-          else                       res[e.currency].alaih += e.amount;
-        });
-
-        Object.keys(res).forEach(c=>{
-          const diff = res[c].lah - res[c].alaih;
-          if (diff !== 0) {
-            const dir = diff > 0 ? "له" : "عليه";
-            autoTotalsHtml += `<li>${Math.abs(diff).toLocaleString()} ${c} (${dir})</li>`;
-          }
-        });
-
-        if (!autoTotalsHtml) {
-          autoTotalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
-        }
-      }
-
-      const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
-
-      const w = window.open("", "_blank");
-      w.document.write(`
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8">
-<title>كشف - ${name}</title>
-<style>
-body{
-  font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
-  margin:20px;
-}
-h2{font-size:1.2rem;margin-bottom:4px;}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-}
-th,td{
-  border:1px solid #ddd;
-  padding:6px;
-  text-align:center;
-  font-size:.85rem;
-}
-th{background:#eee;}
-.total-box{
-  margin-top:15px;
-  font-size:.9rem;
-}
-.total-box ul{
-  padding-right:20px;
-  margin:6px 0 0;
-}
-</style>
-</head>
-<body>
-<h2>كشف حساب</h2>
-<div>العميل: ${name}</div>
-<div>التاريخ: ${date}</div>
-<div>العنوان: ${title}</div>
-
-<table>
-<tr><th>#</th><th>الوصف</th><th>المبلغ</th><th>العملة</th><th>له/عليه</th></tr>
-${entries.map((e,i)=>`
-<tr>
-<td>${i+1}</td>
-<td>${e.desc}</td>
-<td>${formatWithCommas(e.amount)}</td>
-<td>${e.currency}</td>
-<td>${e.direction}</td>
-</tr>`).join("")}
-</table>
-
-<div class="total-box">
-<strong>إجمال هذا الكشف:</strong>
-<ul>
-${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
-</ul>
-</div>
-
-<strong>ملاحظات:</strong><br>${notes}
-</body>
-</html>`);
-      w.document.close();
-      w.print();
-    }
-
-    // ====== PWA / تثبيت التطبيق ======
-    const installButton=document.getElementById("installButton");
-
-    window.addEventListener("beforeinstallprompt", e=>{
-      e.preventDefault();
-      state.deferredPrompt=e;
-      installButton.style.display="inline-flex";
-    });
-
-    installButton.onclick=async()=>{
-      if(!state.deferredPrompt) return;
-      state.deferredPrompt.prompt();
-      state.deferredPrompt=null;
-      installButton.style.display="none";
-    };
-
-    if("serviceWorker" in navigator){
-      navigator.serviceWorker.register("./sw.js");
-    }
-
-    // ====== النسخة الاحتياطية: تصدير / استيراد ======
-    const exportBtn = document.getElementById("exportBackupBtn");
-    const importBtn = document.getElementById("importBackupBtn");
-    const backupInput = document.getElementById("backupFileInput");
-
-    exportBtn.onclick = exportBackup;
-    importBtn.onclick = () => backupInput.click();
-
-    backupInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const obj = JSON.parse(ev.target.result);
-          if (!obj.clients) throw new Error("bad format");
-          state.data = obj;
-          saveData();
-          alert("تم استيراد النسخة الاحتياطية بنجاح.");
-          renderStatementsList();
-          renderClientsList();
-          renderTotalsForCurrentClient();
-          updatePreviewText();
-        } catch (err) {
-          console.error(err);
-          alert("ملف النسخة الاحتياطية غير صالح.");
-        }
-      };
-      reader.readAsText(file, "utf-8");
-    });
-
-    function exportBackup() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY) || JSON.stringify(state.data);
-        const blob = new Blob([raw], { type: "application/json" });
-        const fileName = "voice-ledger-backup-" + new Date().toISOString().slice(0,10) + ".json";
-
-        // تنزيل الملف
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-
-        // مشاركة (لرفعها إلى Google Drive عبر واجهة أندرويد لو حاب)
-        if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: "application/json" })] })) {
-          const file = new File([blob], fileName, { type: "application/json" });
-          navigator.share({
-            title: "نسخة احتياطية دفتر كشف الحساب",
-            text: "ملف النسخة الاحتياطية للتطبيق.",
-            files: [file]
-          }).catch(() => {});
-        } else if (navigator.share) {
-          navigator.share({
-            title: "نسخة احتياطية دفتر كشف الحساب",
-            text: "تم تنزيل ملف النسخة الاحتياطية، يمكنك رفعه إلى Google Drive."
-          }).catch(() => {});
-        }
-
-        alert("تم إنشاء النسخة الاحتياطية. احفظ الملف في Google Drive أو أي مكان آمن.");
-      } catch (e) {
-        console.error(e);
-        alert("حصل خطأ أثناء إنشاء النسخة الاحتياطية.");
-      }
-    }
-
-    // ====== تهيئة أولية + سؤال الاستيراد لو ما في بيانات ======
-    const hadDataBefore = !!localStorage.getItem(STORAGE_KEY);
-    loadData();
-    dateInput.value=new Date().toISOString().slice(0,10);
-    addEntryRow();
-    updatePreviewText();
-    renderStatementsList();
-    renderClientsList();
-    renderTotalsForCurrentClient();
-
-    if (!hadDataBefore) {
-      setTimeout(() => {
-        if (confirm("هل لديك نسخة احتياطية محفوظة وتريد استيرادها الآن؟")) {
-          backupInput.click();
-        }
-      }, 800);
-    }
-  </script>
-</body>
-</html>
