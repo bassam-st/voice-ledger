@@ -288,7 +288,7 @@
 
       <div class="card">
         <label class="section-title">🧾 تقرير عميل محدد</label>
-        <p class="muted">اختر عميلًا لعرض إجمالي له / عليه والصافي لكل عملة.</p>
+        <p class="muted">اختر عميلًا لعرض إجمالي له / عليه والصافي لكل عملة، ثم يمكنك نسخ التقرير أو إرساله.</p>
         <div class="row">
           <select id="reportClientSelect">
             <option value="">اختر عميلًا...</option>
@@ -296,6 +296,13 @@
         </div>
         <div id="clientReportBox" class="totals-box">
           لم يتم اختيار عميل بعد.
+        </div>
+        <div class="row" style="margin-top:6px;">
+          <button class="pill-btn pill-gray" id="copyClientReportBtn" style="flex:1;">📋 نسخ تقرير العميل</button>
+          <button class="pill-btn pill-green" id="shareClientReportBtn" style="flex:1;">🟢 واتساب تقرير العميل</button>
+        </div>
+        <div class="row" style="margin-top:6px;">
+          <button class="pill-btn pill-gray" id="printClientReportBtn" style="flex:1;">🖨️ PDF تقرير العميل</button>
         </div>
       </div>
     </div>
@@ -307,7 +314,13 @@
   <!-- سكربت التطبيق الرئيسي -->
   <script>
     const STORAGE_KEY = "voiceLedgerData_v1";
-    const state = { data:{clients:{}}, currentClient:"", currentStatementId:null, deferredPrompt:null };
+    const state = { 
+      data:{clients:{}}, 
+      currentClient:"", 
+      currentStatementId:null, 
+      deferredPrompt:null,
+      lastClientReportText:""
+    };
 
     function loadData(){
       try{
@@ -370,6 +383,10 @@
     const reportClientSelect=document.getElementById("reportClientSelect");
     const clientReportBox=document.getElementById("clientReportBox");
 
+    const copyClientReportBtn = document.getElementById("copyClientReportBtn");
+    const shareClientReportBtn = document.getElementById("shareClientReportBtn");
+    const printClientReportBtn = document.getElementById("printClientReportBtn");
+
     document.getElementById("addEntryBtn").onclick=()=>addEntryRow();
     document.getElementById("copyLastEntriesBtn").onclick=copyLastEntries;
     document.getElementById("saveStatementBtn").onclick=saveCurrentStatement;
@@ -383,6 +400,101 @@
     }
     if (reportClientSelect) {
       reportClientSelect.addEventListener("change", renderClientReport);
+    }
+
+    if (copyClientReportBtn) {
+      copyClientReportBtn.onclick = () => {
+        if (!state.lastClientReportText) {
+          alert("لا يوجد تقرير عميل حالياً.");
+          return;
+        }
+        navigator.clipboard.writeText(state.lastClientReportText)
+          .then(()=>alert("تم نسخ تقرير العميل إلى الحافظة."))
+          .catch(()=>alert("تعذر نسخ التقرير."));
+      };
+    }
+
+    if (shareClientReportBtn) {
+      shareClientReportBtn.onclick = () => {
+        if (!state.lastClientReportText) {
+          alert("لا يوجد تقرير عميل حالياً.");
+          return;
+        }
+        const text = state.lastClientReportText;
+        const url = "https://wa.me/?text=" + encodeURIComponent(text);
+        window.open(url, "_blank");
+      };
+    }
+
+    if (printClientReportBtn) {
+      printClientReportBtn.onclick = () => {
+        const name = reportClientSelect.value;
+        if (!name) {
+          alert("اختر عميلًا أولاً.");
+          return;
+        }
+        const c = state.data.clients[name];
+        if (!c || !c.statements.length) {
+          alert("لا توجد كشوفات لهذا العميل.");
+          return;
+        }
+        const totals = computeTotals(name);
+
+        const w = window.open("", "_blank");
+        w.document.write(`
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تقرير عميل - ${name}</title>
+<style>
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  margin:20px;
+}
+h2{font-size:1.2rem;margin-bottom:4px;}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+th,td{
+  border:1px solid #ddd;
+  padding:6px;
+  text-align:center;
+  font-size:.85rem;
+}
+th{background:#eee;}
+</style>
+</head>
+<body>
+<h2>تقرير حساب عميل</h2>
+<div>العميل: ${name}</div>
+<div>عدد الكشوفات: ${c.statements.length}</div>
+
+<table>
+<tr>
+  <th>العملة</th>
+  <th>له</th>
+  <th>عليه</th>
+  <th>الصافي</th>
+</tr>
+${Object.keys(totals).map(currency=>{
+  const v = totals[currency];
+  const diff = v.lah - v.alaih;
+  return `
+<tr>
+  <td>${currency}</td>
+  <td>${v.lah}</td>
+  <td>${v.alaih}</td>
+  <td>${diff}</td>
+</tr>`;
+}).join("")}
+</table>
+</body>
+</html>`);
+        w.document.close();
+        w.print();
+      };
     }
 
     function addEntryRow(init){
@@ -539,7 +651,7 @@
         return; 
       }
 
-      const term = (clientSearchInput.value || "").trim().toLowerCase();
+      const term = (clientSearchInput && clientSearchInput.value || "").trim().toLowerCase();
       const filtered = term 
         ? names.filter(n => n.toLowerCase().includes(term))
         : names;
@@ -560,7 +672,6 @@
         clientsListEl.appendChild(d);
       });
 
-      // تحديث قائمة العملاء في التقارير
       fillReportClientsSelect();
     }
 
@@ -610,7 +721,7 @@
       const result = {
         clientsCount: 0,
         statementsCount: 0,
-        perCurrency: {}  // currency -> {lah, alaih}
+        perCurrency: {}
       };
 
       const names = Object.keys(state.data.clients);
@@ -663,7 +774,6 @@
       const oldValue = reportClientSelect.value;
       const names = Object.keys(state.data.clients);
 
-      // إعادة تعبئة القائمة
       reportClientSelect.innerHTML = '<option value="">اختر عميلًا...</option>';
       names.forEach(n=>{
         const opt = document.createElement("option");
@@ -681,12 +791,14 @@
       const name = reportClientSelect.value;
       if(!name){
         clientReportBox.textContent = "لم يتم اختيار عميل بعد.";
+        state.lastClientReportText = "";
         return;
       }
 
       const c = state.data.clients[name];
       if(!c || !c.statements.length){
         clientReportBox.textContent = "لا توجد كشوفات لهذا العميل.";
+        state.lastClientReportText = "";
         return;
       }
 
@@ -699,9 +811,10 @@
       });
 
       clientReportBox.textContent = txt;
+      state.lastClientReportText = txt;
     }
 
-    // ====== طباعة PDF ======
+    // ====== طباعة كشف واحد كـ PDF ======
     function printAsPdf(){
       const name  = clientNameInput.value.trim() || "العميل";
       const date  = dateInput.value || new Date().toISOString().slice(0,10);
