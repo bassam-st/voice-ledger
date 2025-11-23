@@ -59,7 +59,7 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr); /* ثلاثة تبويبات: كشوفات / عملاء / تقارير */
       background: #e5e7eb;
       border-radius: 999px;
       padding: 3px;
@@ -168,6 +168,7 @@
     <div class="tabs">
       <div class="tab active" id="tabStatements">الكشوفات</div>
       <div class="tab" id="tabClients">العملاء</div>
+      <div class="tab" id="tabReports">التقارير</div>
     </div>
 
     <!-- شاشة الكشوفات -->
@@ -273,7 +274,6 @@
         <label class="section-title">👥 العملاء</label>
         <p class="muted">إختر عميلًا لعرض كشوفاته.</p>
 
-        <!-- خانة البحث عن العميل -->
         <div class="row">
           <input type="text"
                  id="clientSearchInput"
@@ -281,6 +281,17 @@
         </div>
 
         <div id="clientsList" class="saved-list"></div>
+      </div>
+    </div>
+
+    <!-- شاشة التقارير -->
+    <div id="screenReports" style="display:none;">
+      <div class="card">
+        <label class="section-title">📈 التقارير العامة</label>
+        <p class="muted">نظرة سريعة على إجمالي الحسابات لجميع العملاء.</p>
+        <div id="reportsSummary" class="totals-box">
+          لا توجد بيانات بعد.
+        </div>
       </div>
     </div>
 
@@ -304,24 +315,39 @@
 
     const tabStatements=document.getElementById("tabStatements");
     const tabClients=document.getElementById("tabClients");
+    const tabReports=document.getElementById("tabReports");
     const screenStatements=document.getElementById("screenStatements");
     const screenClients=document.getElementById("screenClients");
+    const screenReports=document.getElementById("screenReports");
 
     tabStatements.onclick=()=>showScreen("s");
     tabClients.onclick=()=>showScreen("c");
+    tabReports.onclick=()=>showScreen("r");
 
     function showScreen(t){
       if(t==="s"){
         screenStatements.style.display="";
         screenClients.style.display="none";
+        screenReports.style.display="none";
         tabStatements.classList.add("active");
         tabClients.classList.remove("active");
-      } else {
+        tabReports.classList.remove("active");
+      } else if (t === "c") {
         screenClients.style.display="";
         screenStatements.style.display="none";
+        screenReports.style.display="none";
         tabClients.classList.add("active");
         tabStatements.classList.remove("active");
+        tabReports.classList.remove("active");
         renderClientsList();
+      } else {
+        screenReports.style.display="";
+        screenStatements.style.display="none";
+        screenClients.style.display="none";
+        tabReports.classList.add("active");
+        tabStatements.classList.remove("active");
+        tabClients.classList.remove("active");
+        renderReports();
       }
     }
 
@@ -336,6 +362,8 @@
     const totalsBoxEl=document.getElementById("totalsBox");
     const clientsListEl=document.getElementById("clientsList");
     const clientSearchInput=document.getElementById("clientSearchInput");
+    const reportsSummaryEl=document.getElementById("reportsSummary");
+    const backupInput = document.getElementById("backupFileInput");
 
     document.getElementById("addEntryBtn").onclick=()=>addEntryRow();
     document.getElementById("copyLastEntriesBtn").onclick=copyLastEntries;
@@ -404,6 +432,7 @@
       alert("تم حفظ الكشف");
       renderStatementsList();
       renderTotalsForCurrentClient();
+      renderReports();
       updatePreviewText();
     }
 
@@ -419,6 +448,7 @@
       updatePreviewText();
       renderStatementsList();
       renderTotalsForCurrentClient();
+      renderReports();
     }
 
     function copyLastEntries(){
@@ -463,6 +493,7 @@
       updatePreviewText();
       renderStatementsList();
       renderTotalsForCurrentClient();
+      renderReports();
     }
 
     function renderClientsList(){
@@ -515,6 +546,51 @@
         txt+=`${c}:\nله: ${t[c].lah}\nعليه: ${t[c].alaih}\nالصافي: ${diff}\n\n`;
       });
       totalsBoxEl.textContent = txt || "لا توجد بيانات";
+    }
+
+    // تقارير عامة لكل العملاء
+    function renderReports(){
+      const clients = state.data.clients || {};
+      const names = Object.keys(clients);
+      if (!names.length){
+        reportsSummaryEl.textContent = "لا توجد بيانات بعد.";
+        return;
+      }
+
+      let totalStatements = 0;
+      const totalsByCurrency = {};
+
+      names.forEach(name=>{
+        const c = clients[name];
+        totalStatements += c.statements.length;
+        c.statements.forEach(st=>{
+          st.entries.forEach(e=>{
+            if (!totalsByCurrency[e.currency]) {
+              totalsByCurrency[e.currency] = {lah:0, alaih:0};
+            }
+            if (e.direction === "له") {
+              totalsByCurrency[e.currency].lah += e.amount;
+            } else {
+              totalsByCurrency[e.currency].alaih += e.amount;
+            }
+          });
+        });
+      });
+
+      let text = "";
+      text += `عدد العملاء: ${names.length}\n`;
+      text += `عدد الكشوفات: ${totalStatements}\n\n`;
+
+      Object.keys(totalsByCurrency).forEach(cur=>{
+        const t = totalsByCurrency[cur];
+        const diff = t.lah - t.alaih;
+        text += `${cur}:\n`;
+        text += `له: ${t.lah}\n`;
+        text += `عليه: ${t.alaih}\n`;
+        text += `الصافي: ${diff}\n\n`;
+      });
+
+      reportsSummaryEl.textContent = text || "لا توجد بيانات بعد.";
     }
 
     function updatePreviewText(){
@@ -653,7 +729,6 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
     // ====== النسخة الاحتياطية: تصدير / استيراد ======
     const exportBtn = document.getElementById("exportBackupBtn");
     const importBtn = document.getElementById("importBackupBtn");
-    const backupInput = document.getElementById("backupFileInput");
 
     exportBtn.onclick = exportBackup;
     importBtn.onclick = () => backupInput.click();
@@ -672,6 +747,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
           renderStatementsList();
           renderClientsList();
           renderTotalsForCurrentClient();
+          renderReports();
           updatePreviewText();
         } catch (err) {
           console.error(err);
@@ -717,7 +793,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
       }
     }
 
-    // ربط البحث بعد تعريف الدالة
+    // ربط البحث في العملاء
     if (clientSearchInput) {
       clientSearchInput.addEventListener("input", renderClientsList);
     }
@@ -731,6 +807,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
     renderStatementsList();
     renderClientsList();
     renderTotalsForCurrentClient();
+    renderReports();
 
     if (!hadDataBefore) {
       setTimeout(() => {
