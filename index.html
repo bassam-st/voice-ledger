@@ -59,7 +59,7 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr; /* ← أضفنا تبويب التقارير */
       background: #e5e7eb;
       border-radius: 999px;
       padding: 3px;
@@ -70,6 +70,7 @@
       padding: 8px 4px;
       border-radius: 999px;
       cursor: pointer;
+      font-size: .85rem;
     }
     .tab.active { background: var(--green); color: #fff; }
 
@@ -145,6 +146,36 @@
     }
 
     .footer-hint { text-align:center; font-size:.7rem; color:var(--text-muted); }
+
+    /* كروت التقارير */
+    .report-box {
+      font-size: .8rem;
+      white-space: pre-wrap;
+    }
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+      margin-top: 6px;
+    }
+    .report-table th,
+    .report-table td {
+      border: 1px solid #e5e7eb;
+      padding: 4px 6px;
+      text-align: center;
+    }
+    .report-table th {
+      background:#f3f4f6;
+      font-weight: 600;
+    }
+    .search-result {
+      background:#f9fafb;
+      border-radius:10px;
+      border:1px solid #e5e7eb;
+      padding:6px 8px;
+      margin-bottom:6px;
+      font-size:.8rem;
+    }
   </style>
 </head>
 <body>
@@ -168,8 +199,10 @@
     <div class="tabs">
       <div class="tab active" id="tabStatements">الكشوفات</div>
       <div class="tab" id="tabClients">العملاء</div>
+      <div class="tab" id="tabReports">التقارير</div>
     </div>
 
+    <!-- شاشة الكشوف -->
     <div id="screenStatements">
       <div class="card">
 
@@ -249,7 +282,6 @@
         </div>
       </div>
 
-      <!-- أزرار النسخة الاحتياطية -->
       <div class="card">
         <label class="section-title">🗄️ نسخة احتياطية للبيانات</label>
         <p class="muted">تستطيع تصدير كل الكشوفات في ملف JSON ثم رفعه إلى Google Drive أو إرساله لنفسك، وبعدها استيراده.</p>
@@ -266,11 +298,43 @@
 
     </div>
 
+    <!-- شاشة العملاء -->
     <div id="screenClients" style="display:none;">
       <div class="card">
         <label class="section-title">👥 العملاء</label>
         <p class="muted">إختر عميلًا لعرض كشوفاته.</p>
         <div id="clientsList" class="saved-list"></div>
+      </div>
+    </div>
+
+    <!-- شاشة التقارير الجديدة -->
+    <div id="screenReports" style="display:none;">
+      <div class="card">
+        <label class="section-title">📊 ملخص جميع العملاء حسب العملة</label>
+        <p class="muted">إجمالي (له / عليه / الصافي) لكل عملة في كل الكشوفات.</p>
+        <div id="globalTotalsBox" class="report-box">
+          لا توجد بيانات بعد.
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="section-title">🏅 أعلى 5 عملاء (عليهم رصيد)</label>
+        <p class="muted">يتم حساب الرصيد على العميل = (عليه - له) لكل عميل وأكبر عملة.</p>
+        <div id="topClientsBox" class="report-box">
+          لا توجد بيانات بعد.
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="section-title">🔍 البحث في الكشوفات</label>
+        <p class="muted">ابحث باسم العميل، أو عنوان الكشف، أو وصف البند، أو الملاحظات.</p>
+        <div class="row">
+          <input type="text" id="searchText" placeholder="مثال: أحمد أو رسوم تحسين أو بيان شحنة 5">
+        </div>
+        <div class="row">
+          <button class="pill-btn pill-green" id="searchBtn" style="flex:1;">بحث</button>
+        </div>
+        <div id="searchResults" class="report-box"></div>
       </div>
     </div>
 
@@ -294,24 +358,40 @@
 
     const tabStatements=document.getElementById("tabStatements");
     const tabClients=document.getElementById("tabClients");
+    const tabReports=document.getElementById("tabReports");
+
     const screenStatements=document.getElementById("screenStatements");
     const screenClients=document.getElementById("screenClients");
+    const screenReports=document.getElementById("screenReports");
 
     tabStatements.onclick=()=>showScreen("s");
     tabClients.onclick=()=>showScreen("c");
+    tabReports.onclick=()=>showScreen("r");
 
     function showScreen(t){
       if(t==="s"){
         screenStatements.style.display="";
         screenClients.style.display="none";
+        screenReports.style.display="none";
         tabStatements.classList.add("active");
         tabClients.classList.remove("active");
-      } else {
-        screenClients.style.display="";
+        tabReports.classList.remove("active");
+      } else if (t==="c") {
         screenStatements.style.display="none";
-        tabClients.classList.add("active");
+        screenClients.style.display="";
+        screenReports.style.display="none";
         tabStatements.classList.remove("active");
+        tabClients.classList.add("active");
+        tabReports.classList.remove("active");
         renderClientsList();
+      } else if (t==="r") {
+        screenStatements.style.display="none";
+        screenClients.style.display="none";
+        screenReports.style.display="";
+        tabStatements.classList.remove("active");
+        tabClients.classList.remove("active");
+        tabReports.classList.add("active");
+        renderGlobalReport();
       }
     }
 
@@ -326,6 +406,13 @@
     const totalsBoxEl=document.getElementById("totalsBox");
     const clientsListEl=document.getElementById("clientsList");
 
+    // عناصر التقارير
+    const globalTotalsBox = document.getElementById("globalTotalsBox");
+    const topClientsBox   = document.getElementById("topClientsBox");
+    const searchTextInput = document.getElementById("searchText");
+    const searchBtn       = document.getElementById("searchBtn");
+    const searchResultsEl = document.getElementById("searchResults");
+
     document.getElementById("addEntryBtn").onclick=()=>addEntryRow();
     document.getElementById("copyLastEntriesBtn").onclick=copyLastEntries;
     document.getElementById("saveStatementBtn").onclick=saveCurrentStatement;
@@ -334,24 +421,26 @@
     document.getElementById("shareWhatsappBtn").onclick=()=>window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
     document.getElementById("printPdfBtn").onclick=printAsPdf;
 
-    function addEntryRow(init){
-      const row=document.createElement("div"); 
-      row.className="entry-row";
+    if (searchBtn) {
+      searchBtn.onclick = runSearch;
+      searchTextInput && searchTextInput.addEventListener("keydown",(e)=>{
+        if(e.key==="Enter"){ e.preventDefault(); runSearch(); }
+      });
+    }
 
-      const desc=input("text","وصف البند"); 
+    function addEntryRow(init){
+      const row=document.createElement("div"); row.className="entry-row";
+
+      const desc=input("text","وصف البند");
       desc.className="entry-desc";
 
-      // ← هنا التعديل: خانة المبلغ تستخدم كيبورد أرقام
-      const amount=document.createElement("input");
-      amount.type="tel";
-      amount.inputMode="numeric";
-      amount.placeholder="المبلغ";
+      const amount=input("number","المبلغ");
       amount.className="entry-amount";
 
       const curr=select(["يمني","سعودي","درهم","دولار","عماني"]);
       curr.className="entry-curr";
 
-      const dir=select(["له","عليه"]);
+      const dir=select(["عليه","له"]);   // عليه الافتراضي
       dir.className="entry-dir";
 
       const del=button("حذف","pill-btn pill-red entry-del");
@@ -376,7 +465,7 @@
     function getEntries(){
       return [...entriesContainer.querySelectorAll(".entry-row")].map(r=>({
         desc:r.querySelector(".entry-desc").value.trim(),
-        amount:+(r.querySelector(".entry-amount").value.replace(/,/g,""))||0,
+        amount:+(r.querySelector(".entry-amount").value||0),
         currency:r.querySelector(".entry-curr").value,
         direction:r.querySelector(".entry-dir").value
       })).filter(e=>e.desc||e.amount);
@@ -408,6 +497,7 @@
       renderStatementsList();
       renderTotalsForCurrentClient();
       updatePreviewText();
+      renderGlobalReport(); // تحديث التقارير بعد الحفظ
     }
 
     function resetForm(keepName){
@@ -430,7 +520,7 @@
       if(!c||!c.statements.length) return alert("لا يوجد كشف سابق");
       entriesContainer.innerHTML="";
       c.statements[0].entries.forEach(e=>
-        addEntryRow({desc:e.desc,amount:e.amount,currency:e.currency,direction:e.direction})
+        addEntryRow({desc:e.desc,amount:0,currency:e.currency,direction:e.direction})
       );
       updatePreviewText();
     }
@@ -445,7 +535,7 @@
       }
       c.statements.forEach(st=>{
         const d=document.createElement("div"); d.className="saved-item";
-        d.innerHTML=`<span>${st.title}</span><span class="date">${st.date}</span>`;
+        d.innerHTML=`<span>${st.title || "(بدون عنوان)"}</span><span class="date">${st.date || ""}</span>`;
         d.onclick=()=>confirm("فتح هذا الكشف؟")&&loadStatement(name,st.id);
         statementsListEl.appendChild(d);
       });
@@ -457,8 +547,8 @@
       state.currentClient=name;
       state.currentStatementId=id;
       clientNameInput.value=name;
-      dateInput.value=st.date;
-      titleInput.value=st.title;
+      dateInput.value=st.date || "";
+      titleInput.value=st.title || "";
       manualTotalInput.value=st.manualTotal||"";
       extraNotesInput.value=st.extraNotes||"";
       entriesContainer.innerHTML="";
@@ -476,7 +566,7 @@
         const d=document.createElement("div"); d.className="saved-item";
         const last=state.data.clients[n].statements[0];
         d.innerHTML=`<span>${n}</span><span class="date">${last?last.date:""}</span>`;
-        d.onclick=()=>{ showScreen("s"); loadStatement(n,last.id); };
+        d.onclick=()=>{ showScreen("s"); loadStatement(n,last && last.id); };
         clientsListEl.appendChild(d);
       });
     }
@@ -498,7 +588,7 @@
       const t=computeTotals(n); let txt="";
       Object.keys(t).forEach(c=>{
         const diff=t[c].lah - t[c].alaih;
-        txt+=`${c}:\nله: ${t[c].lah}\nعليه: ${t[c].alaih}\nالصافي: ${diff}\n\n`;
+        txt+=`${c}:\nله: ${t[c].lah}\nعليه: ${t[c].alaih}\nالصافي (له - عليه): ${diff}\n\n`;
       });
       totalsBoxEl.textContent = txt || "لا توجد بيانات";
     }
@@ -518,7 +608,144 @@
       whatsAppBox.textContent=txt;
     }
 
-    // ====== طباعة كـ PDF مع "إجمال هذا الكشف" في أسفل الصفحة ======
+    // ====== تقارير عامة لكل العملاء ======
+    function computeGlobalTotals(){
+      const result = {}; // currency -> { lah, alaih }
+      const clients = state.data.clients || {};
+      Object.keys(clients).forEach(name=>{
+        clients[name].statements.forEach(st=>{
+          st.entries.forEach(e=>{
+            if(!result[e.currency]) result[e.currency] = { lah:0, alaih:0 };
+            if(e.direction==="له") result[e.currency].lah += e.amount;
+            else result[e.currency].alaih += e.amount;
+          });
+        });
+      });
+      return result;
+    }
+
+    function computeClientBalances(){
+      const clients = state.data.clients || {};
+      const arr = []; // { client, currency, lah, alaih, onClient }
+      Object.keys(clients).forEach(name=>{
+        const perCurr = {};
+        clients[name].statements.forEach(st=>{
+          st.entries.forEach(e=>{
+            if(!perCurr[e.currency]) perCurr[e.currency] = { lah:0, alaih:0 };
+            if(e.direction==="له") perCurr[e.currency].lah += e.amount;
+            else perCurr[e.currency].alaih += e.amount;
+          });
+        });
+        Object.keys(perCurr).forEach(curr=>{
+          const lah = perCurr[curr].lah;
+          const alaih = perCurr[curr].alaih;
+          const onClient = alaih - lah; // رصيد على العميل
+          if(onClient !== 0) {
+            arr.push({ client:name, currency:curr, lah, alaih, onClient });
+          }
+        });
+      });
+      return arr;
+    }
+
+    function renderGlobalReport(){
+      // 1) ملخص العملات
+      const totals = computeGlobalTotals();
+      if(!Object.keys(totals).length){
+        globalTotalsBox.textContent = "لا توجد بيانات بعد.";
+      } else {
+        let html = '<table class="report-table"><tr><th>العملة</th><th>له</th><th>عليه</th><th>الصافي (له - عليه)</th></tr>';
+        Object.keys(totals).forEach(curr=>{
+          const lah   = totals[curr].lah;
+          const alaih = totals[curr].alaih;
+          const diff  = lah - alaih;
+          html += `<tr>
+            <td>${curr}</td>
+            <td>${lah}</td>
+            <td>${alaih}</td>
+            <td>${diff}</td>
+          </tr>`;
+        });
+        html += "</table>";
+        globalTotalsBox.innerHTML = html;
+      }
+
+      // 2) أعلى 5 عملاء عليهم رصيد
+      const balances = computeClientBalances()
+        .filter(b => b.onClient > 0) // نعرض فقط من "عليه" أكبر من "له"
+        .sort((a,b)=> b.onClient - a.onClient)
+        .slice(0,5);
+
+      if(!balances.length){
+        topClientsBox.textContent = "لا يوجد عملاء عليهم أرصدة موجبة حالياً.";
+      } else {
+        let txt = "";
+        balances.forEach((b,i)=>{
+          txt += `${i+1}) ${b.client}\n`;
+          txt += `   عليه: ${b.alaih} ${b.currency} - له: ${b.lah} ${b.currency}\n`;
+          txt += `   رصيد على العميل: ${b.onClient} ${b.currency}\n\n`;
+        });
+        topClientsBox.textContent = txt;
+      }
+    }
+
+    // ====== البحث في الكشوفات ======
+    function runSearch(){
+      const q = (searchTextInput.value || "").trim();
+      searchResultsEl.innerHTML = "";
+      if(!q){
+        searchResultsEl.textContent = "اكتب كلمة للبحث أولاً.";
+        return;
+      }
+      const qLower = q.toLowerCase();
+
+      const clients = state.data.clients || {};
+      const results = [];
+
+      Object.keys(clients).forEach(name=>{
+        clients[name].statements.forEach(st=>{
+          const baseInfo = (name + " " + (st.title||"") + " " + (st.extraNotes||"")).toLowerCase();
+          st.entries.forEach(e=>{
+            const entryInfo = (e.desc || "").toLowerCase();
+            if(
+              baseInfo.includes(qLower) ||
+              entryInfo.includes(qLower)
+            ){
+              results.push({
+                client:name,
+                date:st.date,
+                title:st.title,
+                desc:e.desc,
+                amount:e.amount,
+                currency:e.currency,
+                direction:e.direction
+              });
+            }
+          });
+        });
+      });
+
+      if(!results.length){
+        searchResultsEl.textContent = "لا توجد نتائج مطابقة.";
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+      results.forEach(r=>{
+        const d = document.createElement("div");
+        d.className = "search-result";
+        d.innerHTML = `
+<strong>${r.client}</strong> — <span>${r.date || ""}</span><br>
+<span class="muted">${r.title || "(بدون عنوان)"}</span><br>
+<b>البند:</b> ${r.desc || ""}<br>
+<b>المبلغ:</b> ${r.amount} ${r.currency} (${r.direction})
+        `;
+        frag.appendChild(d);
+      });
+      searchResultsEl.appendChild(frag);
+    }
+
+    // ====== طباعة كـ PDF مع "إجمال هذا الكشف" ======
     function printAsPdf(){
       const name  = clientNameInput.value.trim() || "العميل";
       const date  = dateInput.value || new Date().toISOString().slice(0,10);
@@ -658,6 +885,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
           renderStatementsList();
           renderClientsList();
           renderTotalsForCurrentClient();
+          renderGlobalReport();
           updatePreviewText();
         } catch (err) {
           console.error(err);
@@ -712,6 +940,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
     renderStatementsList();
     renderClientsList();
     renderTotalsForCurrentClient();
+    renderGlobalReport();
 
     if (!hadDataBefore) {
       setTimeout(() => {
