@@ -135,9 +135,16 @@
 
     .saved-list { max-height:220px; overflow-y:auto; }
     .saved-item {
-      background:#ecfdf3; border-radius:999px; padding:6px 10px; margin-bottom:4px;
-      display:flex; justify-content:space-between; align-items:center; cursor:pointer;
-      border:1px solid #bbf7d0; font-size:.8rem;
+      background:#ecfdf3;
+      border-radius:999px;
+      padding:6px 10px;
+      margin-bottom:4px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      cursor:pointer;
+      border:1px solid #bbf7d0;
+      font-size:.8rem;
       gap:6px;
     }
     .saved-item .date { color:var(--text-muted); font-size:.75rem; }
@@ -149,17 +156,6 @@
     }
 
     .footer-hint { text-align:center; font-size:.7rem; color:var(--text-muted); }
-
-    .badge {
-      display:inline-flex;
-      align-items:center;
-      gap:4px;
-      font-size:.78rem;
-      border-radius:999px;
-      padding:3px 8px;
-      background:#e5e7eb;
-      color:#374151;
-    }
 
     .search-input {
       border-radius:999px;
@@ -230,17 +226,13 @@
             <label>عنوان الكشف:</label>
             <input type="text" id="statementTitle" placeholder="مثال: بيان شحنة، تسوية حساب...">
           </div>
-        </div>
-
-        <!-- رقم البيان + رقم القاطرة -->
-        <div class="row">
           <div>
-            <label>رقم البيان (اختياري):</label>
-            <input type="text" id="statementNumber" placeholder="مثال: 123/2025">
+            <label>رقم البيان:</label>
+            <input type="text" id="manifestNumber" placeholder="مثال: 49813">
           </div>
           <div>
-            <label>رقم القاطرة (اختياري):</label>
-            <input type="text" id="truckNumber" placeholder="مثال: رقم الشاحنة أو القاطرة">
+            <label>رقم القاطرة:</label>
+            <input type="text" id="truckNumber" placeholder="مثال: رقم السيارة أو القاطرة">
           </div>
         </div>
 
@@ -270,7 +262,6 @@
 
         <div class="row">
           <button class="pill-btn pill-green" id="saveStatementBtn" style="flex:1;">💾 حفظ الكشف</button>
-          <button class="pill-btn pill-gray" id="newStatementSameClientBtn" style="flex:1;">+ كشف جديد مع نفس العميل</button>
         </div>
 
       </div>
@@ -293,11 +284,11 @@
         <label class="section-title">📁 سجل الكشوفات:</label>
         <p class="muted">اضغط لفتح كشف سابق أو تعديله. يمكنك البحث برقم البيان أو رقم القاطرة أو العنوان.</p>
 
-        <!-- بحث في سجل الكشوفات -->
         <div class="row">
           <div class="search-wrapper">
             <span>🔍</span>
-            <input id="statementsSearchInput" class="search-input" type="text" placeholder="ابحث برقم البيان أو رقم القاطرة أو العنوان">
+            <input id="statementsSearchInput" class="search-input" type="text"
+                   placeholder="بحث في العنوان / رقم البيان / رقم القاطرة">
           </div>
         </div>
 
@@ -446,35 +437,30 @@
       }
     }
 
-    const clientNameInput    = document.getElementById("clientName");
-    const dateInput          = document.getElementById("statementDate");
-    const titleInput         = document.getElementById("statementTitle");
-    const statementNumberInput = document.getElementById("statementNumber");
-    const truckNumberInput     = document.getElementById("truckNumber");
-    const entriesContainer   = document.getElementById("entriesContainer");
-    const manualTotalInput   = document.getElementById("manualTotal");
-    const extraNotesInput    = document.getElementById("extraNotes");
-    const whatsAppBox        = document.getElementById("whatsAppText");
-    const statementsListEl   = document.getElementById("statementsList");
-    const totalsBoxEl        = document.getElementById("totalsBox");
-    const clientsListEl      = document.getElementById("clientsList");
-    const clientsSearchInput = document.getElementById("clientsSearchInput");
+    const clientNameInput   = document.getElementById("clientName");
+    const dateInput         = document.getElementById("statementDate");
+    const titleInput        = document.getElementById("statementTitle");
+    const manifestInput     = document.getElementById("manifestNumber");
+    const truckInput        = document.getElementById("truckNumber");
+    const entriesContainer  = document.getElementById("entriesContainer");
+    const manualTotalInput  = document.getElementById("manualTotal");
+    const extraNotesInput   = document.getElementById("extraNotes");
+    const whatsAppBox       = document.getElementById("whatsAppText");
+    const statementsListEl  = document.getElementById("statementsList");
+    const totalsBoxEl       = document.getElementById("totalsBox");
+    const clientsListEl     = document.getElementById("clientsList");
+    const clientsSearchInput    = document.getElementById("clientsSearchInput");
     const statementsSearchInput = document.getElementById("statementsSearchInput");
 
-    document.getElementById("addEntryBtn").onclick              = () => addEntryRow();
-    document.getElementById("copyLastEntriesBtn").onclick       = copyLastEntries;
-    document.getElementById("saveStatementBtn").onclick         = saveCurrentStatement;
-    document.getElementById("newStatementSameClientBtn").onclick= () => resetForm(clientNameInput.value);
-    document.getElementById("copyTextBtn").onclick              = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
-    document.getElementById("shareWhatsappBtn").onclick         = () => window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
-    document.getElementById("printPdfBtn").onclick              = printAsPdf;
+    document.getElementById("addEntryBtn").onclick        = () => addEntryRow();
+    document.getElementById("copyLastEntriesBtn").onclick = copyLastEntries;
+    document.getElementById("saveStatementBtn").onclick   = saveCurrentStatement;
+    document.getElementById("copyTextBtn").onclick        = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
+    document.getElementById("shareWhatsappBtn").onclick   = () => window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
+    document.getElementById("printPdfBtn").onclick        = printAsPdf;
 
-    if(clientsSearchInput){
-      clientsSearchInput.addEventListener("input", renderClientsList);
-    }
-    if(statementsSearchInput){
-      statementsSearchInput.addEventListener("input", renderStatementsList);
-    }
+    clientsSearchInput.addEventListener("input", renderClientsList);
+    statementsSearchInput.addEventListener("input", renderStatementsList);
 
     // عناصر التقارير
     const reportClientSelect       = document.getElementById("reportClientSelect");
@@ -555,12 +541,13 @@
       const name = clientNameInput.value.trim();
       if(!name){ alert("اكتب اسم العميل"); return; }
       ensureClient(name);
+
       const st = {
         id: state.currentStatementId || ("st_"+Date.now()),
         date: dateInput.value,
         title: titleInput.value.trim(),
-        statementNumber: statementNumberInput.value.trim(),
-        truckNumber: truckNumberInput.value.trim(),
+        manifestNumber: manifestInput.value.trim(),
+        truckNumber: truckInput.value.trim(),
         entries: getEntries(),
         manualTotal: manualTotalInput.value.trim(),
         extraNotes: extraNotesInput.value.trim()
@@ -584,12 +571,12 @@
     function resetForm(keepName){
       state.currentStatementId = null;
       if(keepName) clientNameInput.value = keepName;
-      dateInput.value          = new Date().toISOString().slice(0,10);
-      titleInput.value         = "";
-      statementNumberInput.value = "";
-      truckNumberInput.value     = "";
-      manualTotalInput.value   = "";
-      extraNotesInput.value    = "";
+      dateInput.value        = new Date().toISOString().slice(0,10);
+      titleInput.value       = "";
+      manifestInput.value    = "";
+      truckInput.value       = "";
+      manualTotalInput.value = "";
+      extraNotesInput.value  = "";
       entriesContainer.innerHTML = "";
       addEntryRow();
       updatePreviewText();
@@ -616,49 +603,30 @@
         statementsListEl.textContent = "لا توجد كشوفات";
         return;
       }
-      const search = (statementsSearchInput && statementsSearchInput.value || "").trim().toLowerCase();
+      const search = (statementsSearchInput.value || "").trim().toLowerCase();
 
-      c.statements
-        .filter(st=>{
-          if(!search) return true;
-          const title  = (st.title || "").toLowerCase();
-          const snum   = (st.statementNumber || "").toLowerCase();
-          const truck  = (st.truckNumber || "").toLowerCase();
-          return title.includes(search) || snum.includes(search) || truck.includes(search);
-        })
-        .forEach(st=>{
-          const d = document.createElement("div");
-          d.className = "saved-item";
+      c.statements.forEach(st=>{
+        const haystack =
+          (st.title || "").toLowerCase() + " " +
+          (st.manifestNumber || "").toLowerCase() + " " +
+          (st.truckNumber || "").toLowerCase();
 
-          const left = document.createElement("div");
-          left.style.display = "flex";
-          left.style.flexDirection = "column";
-          left.style.gap = "2px";
+        if(search && !haystack.includes(search)) return;
 
-          const titleSpan = document.createElement("span");
-          titleSpan.textContent = st.title || "بدون عنوان";
-          left.appendChild(titleSpan);
+        const d = document.createElement("div");
+        d.className = "saved-item";
+        const mainTitle = st.title || "بدون عنوان";
+        const extra =
+          [st.manifestNumber, st.truckNumber]
+            .filter(Boolean)
+            .join(" • ");
 
-          if(st.statementNumber || st.truckNumber){
-            const badge = document.createElement("span");
-            badge.className = "badge";
-            let parts = [];
-            if(st.statementNumber) parts.push(`بيان: ${st.statementNumber}`);
-            if(st.truckNumber) parts.push(`قاطرة: ${st.truckNumber}`);
-            badge.textContent = parts.join(" | ");
-            left.appendChild(badge);
-          }
-
-          const dateSpan = document.createElement("span");
-          dateSpan.className = "date";
-          dateSpan.textContent = st.date || "";
-
-          d.appendChild(left);
-          d.appendChild(dateSpan);
-
-          d.onclick = () => confirm("فتح هذا الكشف؟") && loadStatement(name, st.id);
-          statementsListEl.appendChild(d);
-        });
+        d.innerHTML =
+          `<span>${mainTitle}${extra ? " — " + extra : ""}</span>`+
+          `<span class="date">${st.date || ""}</span>`;
+        d.onclick = () => confirm("فتح هذا الكشف؟") && loadStatement(name, st.id);
+        statementsListEl.appendChild(d);
+      });
 
       if(!statementsListEl.children.length){
         statementsListEl.textContent = "لا توجد كشوفات حسب البحث الحالي.";
@@ -670,13 +638,13 @@
       if(!st) return;
       state.currentClient = name;
       state.currentStatementId = id;
-      clientNameInput.value    = name;
-      dateInput.value          = st.date || "";
-      titleInput.value         = st.title || "";
-      statementNumberInput.value = st.statementNumber || "";
-      truckNumberInput.value     = st.truckNumber || "";
-      manualTotalInput.value   = st.manualTotal || "";
-      extraNotesInput.value    = st.extraNotes || "";
+      clientNameInput.value  = name;
+      dateInput.value        = st.date || "";
+      titleInput.value       = st.title || "";
+      manifestInput.value    = st.manifestNumber || "";
+      truckInput.value       = st.truckNumber || "";
+      manualTotalInput.value = st.manualTotal || "";
+      extraNotesInput.value  = st.extraNotes || "";
       entriesContainer.innerHTML = "";
       st.entries.forEach(e => addEntryRow(e));
       updatePreviewText();
@@ -751,15 +719,8 @@
         const lah   = t[c].lah;
         const alaih = t[c].alaih;
         const diff  = lah - alaih;
-        let line    = "";
-        if(diff > 0){
-          line = `الصافي له: ${diff}`;
-        }else if(diff < 0){
-          line = `الصافي عليه: ${Math.abs(diff)}`;
-        }else{
-          line = `الصافي: 0`;
-        }
-        txt += `${c}:\nله: ${lah}\nعليه: ${alaih}\n${line}\n\n`;
+        const dir   = diff>0 ? "له" : (diff<0 ? "عليه" : "لا شيء");
+        txt += `${c}:\nله: ${lah}\nعليه: ${alaih}\nالصافي: ${Math.abs(diff)} (${dir})\n\n`;
       });
       totalsBoxEl.textContent = txt || "لا توجد بيانات";
     }
@@ -768,16 +729,16 @@
       const n  = clientNameInput.value.trim() || "العميل";
       const d  = dateInput.value || "";
       const ti = titleInput.value || "";
+      const mn = manifestInput.value || "";
+      const tn = truckInput.value || "";
 
-      let txt = `${n}\nالتاريخ: ${d}`;
-      if(statementNumberInput.value.trim()){
-        txt += `\nرقم البيان: ${statementNumberInput.value.trim()}`;
-      }
-      if(truckNumberInput.value.trim()){
-        txt += `\nرقم القاطرة: ${truckNumberInput.value.trim()}`;
-      }
-      txt += `\n----------------\n${ti}\n`;
+      let header = `${n}\nالتاريخ: ${d}\n`;
+      if(ti) header += `العنوان: ${ti}\n`;
+      if(mn) header += `رقم البيان: ${mn}\n`;
+      if(tn) header += `رقم القاطرة: ${tn}\n`;
+      header += "----------------\n";
 
+      let txt = header;
       getEntries().forEach((e,i)=>
         txt += `\n${i+1}- ${e.desc} ${e.amount.toLocaleString("en-US")} ${e.currency} (${e.direction})`
       );
@@ -793,10 +754,16 @@
       const name    = clientNameInput.value.trim() || "العميل";
       const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
       const title   = titleInput.value || "";
-      const stNum   = statementNumberInput.value.trim();
-      const truck   = truckNumberInput.value.trim();
+      const manifest= manifestInput.value || "";
+      const truck   = truckInput.value || "";
       const entries = getEntries();
       const manual  = manualTotalInput.value.trim();
+
+      // حجم الخط حسب عدد البنود
+      const rowsCount = entries.length;
+      let fontPx = 13;
+      if (rowsCount > 25) fontPx = 11;
+      if (rowsCount > 40) fontPx = 10;
 
       let autoTotalsHtml = "";
       if (!manual) {
@@ -825,11 +792,17 @@
 <meta charset="utf-8">
 <title>كشف - ${name}</title>
 <style>
+@page {
+  size: A4;
+  margin: 12mm;
+}
 body{
   font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
-  margin:20px;
+  margin:0;
+  font-size:${fontPx}px;
 }
 h2{font-size:1.2rem;margin-bottom:4px;}
+.header-line{margin-bottom:4px;}
 table{
   width:100%;
   border-collapse:collapse;
@@ -839,12 +812,13 @@ th,td{
   border:1px solid #ddd;
   padding:6px;
   text-align:center;
-  font-size:.85rem;
+  font-size:inherit;
 }
 th{background:#eee;}
+tr{page-break-inside:avoid;}
 .total-box{
   margin-top:15px;
-  font-size:.9rem;
+  font-size:inherit;
 }
 .total-box ul{
   padding-right:20px;
@@ -853,12 +827,13 @@ th{background:#eee;}
 </style>
 </head>
 <body>
+<!-- مكان الشعار لاحقاً: تستطيع إضافة <img src="..." style="max-height:60px;"> هنا -->
 <h2>كشف حساب</h2>
-<div>العميل: ${name}</div>
-<div>التاريخ: ${dateVal}</div>
-<div>العنوان: ${title}</div>
-${stNum ? `<div>رقم البيان: ${stNum}</div>` : ""}
-${truck ? `<div>رقم القاطرة: ${truck}</div>` : ""}
+<div class="header-line">العميل: ${name}</div>
+<div class="header-line">التاريخ: ${dateVal}</div>
+${title ? `<div class="header-line">العنوان: ${title}</div>` : ""}
+${manifest ? `<div class="header-line">رقم البيان: ${manifest}</div>` : ""}
+${truck ? `<div class="header-line">رقم القاطرة: ${truck}</div>` : ""}
 
 <table>
 <tr><th>#</th><th>الوصف</th><th>المبلغ</th><th>العملة</th><th>له/عليه</th></tr>
@@ -879,7 +854,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
 </ul>
 </div>
 
-<strong>ملاحظات:</strong><br>${notes}
+<strong>ملاحظات:</strong><br>${notes || "لا يوجد"}
 </body>
 </html>`);
       w.document.close();
@@ -921,7 +896,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
         const lah   = totals[c].lah;
         const alaih = totals[c].alaih;
         const diff  = lah - alaih;
-        const dir   = diff>0 ? "له" : (diff<0 ? "عليه" : "لا شيء");
+        const dir   = diff>0 ? "له" : (diff<0 ? "عليه" : "لا شيء";
         body += `${c}:\nله: ${lah}\nعليه: ${alaih}\nالصافي: ${Math.abs(diff)} (${dir})\n\n`;
       });
 
@@ -940,10 +915,12 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
 <meta charset="utf-8">
 <title>تقرير - ${name}</title>
 <style>
+@page { size: A4; margin: 12mm; }
 body{
   font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
-  margin:20px;
+  margin:0;
   white-space:pre-wrap;
+  font-size:13px;
 }
 </style>
 </head>
