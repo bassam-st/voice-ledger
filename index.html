@@ -135,19 +135,10 @@
 
     .saved-list { max-height:220px; overflow-y:auto; }
     .saved-item {
-      background:#ecfdf3;
-      border-radius:999px;
-      padding:6px 10px;
-      margin-bottom:4px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      cursor:pointer;
-      border:1px solid #bbf7d0;
-      font-size:.8rem;
-      gap:6px;
+      background:#ecfdf3; border-radius:999px; padding:6px 10px; margin-bottom:4px;
+      display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+      border:1px solid #bbf7d0; font-size:.8rem;
     }
-    .saved-item .date { color:var(--text-muted); font-size:.75rem; }
 
     .totals-box {
       background:#f0fdf4; border-radius:var(--radius-md);
@@ -156,6 +147,17 @@
     }
 
     .footer-hint { text-align:center; font-size:.7rem; color:var(--text-muted); }
+
+    .badge {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      font-size:.78rem;
+      border-radius:999px;
+      padding:3px 8px;
+      background:#e5e7eb;
+      color:#374151;
+    }
 
     .search-input {
       border-radius:999px;
@@ -226,14 +228,6 @@
             <label>عنوان الكشف:</label>
             <input type="text" id="statementTitle" placeholder="مثال: بيان شحنة، تسوية حساب...">
           </div>
-          <div>
-            <label>رقم البيان:</label>
-            <input type="text" id="manifestNumber" placeholder="مثال: 49813">
-          </div>
-          <div>
-            <label>رقم القاطرة:</label>
-            <input type="text" id="truckNumber" placeholder="مثال: رقم السيارة أو القاطرة">
-          </div>
         </div>
 
         <label class="section-title">🧾 البنود التفصيلية</label>
@@ -262,6 +256,7 @@
 
         <div class="row">
           <button class="pill-btn pill-green" id="saveStatementBtn" style="flex:1;">💾 حفظ الكشف</button>
+          <button class="pill-btn pill-gray" id="newStatementSameClientBtn" style="flex:1;">+ كشف جديد مع نفس العميل</button>
         </div>
 
       </div>
@@ -282,16 +277,7 @@
 
       <div class="card">
         <label class="section-title">📁 سجل الكشوفات:</label>
-        <p class="muted">اضغط لفتح كشف سابق أو تعديله. يمكنك البحث برقم البيان أو رقم القاطرة أو العنوان.</p>
-
-        <div class="row">
-          <div class="search-wrapper">
-            <span>🔍</span>
-            <input id="statementsSearchInput" class="search-input" type="text"
-                   placeholder="بحث في العنوان / رقم البيان / رقم القاطرة">
-          </div>
-        </div>
-
+        <p class="muted">اضغط لفتح كشف سابق أو تعديله.</p>
         <div id="statementsList" class="saved-list"></div>
       </div>
 
@@ -437,30 +423,27 @@
       }
     }
 
-    const clientNameInput   = document.getElementById("clientName");
-    const dateInput         = document.getElementById("statementDate");
-    const titleInput        = document.getElementById("statementTitle");
-    const manifestInput     = document.getElementById("manifestNumber");
-    const truckInput        = document.getElementById("truckNumber");
-    const entriesContainer  = document.getElementById("entriesContainer");
-    const manualTotalInput  = document.getElementById("manualTotal");
-    const extraNotesInput   = document.getElementById("extraNotes");
-    const whatsAppBox       = document.getElementById("whatsAppText");
-    const statementsListEl  = document.getElementById("statementsList");
-    const totalsBoxEl       = document.getElementById("totalsBox");
-    const clientsListEl     = document.getElementById("clientsList");
-    const clientsSearchInput    = document.getElementById("clientsSearchInput");
-    const statementsSearchInput = document.getElementById("statementsSearchInput");
+    const clientNameInput = document.getElementById("clientName");
+    const dateInput       = document.getElementById("statementDate");
+    const titleInput      = document.getElementById("statementTitle");
+    const entriesContainer= document.getElementById("entriesContainer");
+    const manualTotalInput= document.getElementById("manualTotal");
+    const extraNotesInput = document.getElementById("extraNotes");
+    const whatsAppBox     = document.getElementById("whatsAppText");
+    const statementsListEl= document.getElementById("statementsList");
+    const totalsBoxEl     = document.getElementById("totalsBox");
+    const clientsListEl   = document.getElementById("clientsList");
+    const clientsSearchInput = document.getElementById("clientsSearchInput");
 
-    document.getElementById("addEntryBtn").onclick        = () => addEntryRow();
-    document.getElementById("copyLastEntriesBtn").onclick = copyLastEntries;
-    document.getElementById("saveStatementBtn").onclick   = saveCurrentStatement;
-    document.getElementById("copyTextBtn").onclick        = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
-    document.getElementById("shareWhatsappBtn").onclick   = () => window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
-    document.getElementById("printPdfBtn").onclick        = printAsPdf;
+    document.getElementById("addEntryBtn").onclick              = () => addEntryRow();
+    document.getElementById("copyLastEntriesBtn").onclick       = copyLastEntries;
+    document.getElementById("saveStatementBtn").onclick         = saveCurrentStatement;
+    document.getElementById("newStatementSameClientBtn").onclick= () => resetForm(clientNameInput.value);
+    document.getElementById("copyTextBtn").onclick              = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
+    document.getElementById("shareWhatsappBtn").onclick         = () => window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
+    document.getElementById("printPdfBtn").onclick              = printAsPdf;
 
     clientsSearchInput.addEventListener("input", renderClientsList);
-    statementsSearchInput.addEventListener("input", renderStatementsList);
 
     // عناصر التقارير
     const reportClientSelect       = document.getElementById("reportClientSelect");
@@ -541,13 +524,10 @@
       const name = clientNameInput.value.trim();
       if(!name){ alert("اكتب اسم العميل"); return; }
       ensureClient(name);
-
       const st = {
         id: state.currentStatementId || ("st_"+Date.now()),
         date: dateInput.value,
         title: titleInput.value.trim(),
-        manifestNumber: manifestInput.value.trim(),
-        truckNumber: truckInput.value.trim(),
         entries: getEntries(),
         manualTotal: manualTotalInput.value.trim(),
         extraNotes: extraNotesInput.value.trim()
@@ -571,12 +551,10 @@
     function resetForm(keepName){
       state.currentStatementId = null;
       if(keepName) clientNameInput.value = keepName;
-      dateInput.value        = new Date().toISOString().slice(0,10);
-      titleInput.value       = "";
-      manifestInput.value    = "";
-      truckInput.value       = "";
-      manualTotalInput.value = "";
-      extraNotesInput.value  = "";
+      dateInput.value       = new Date().toISOString().slice(0,10);
+      titleInput.value      = "";
+      manualTotalInput.value= "";
+      extraNotesInput.value = "";
       entriesContainer.innerHTML = "";
       addEntryRow();
       updatePreviewText();
@@ -603,34 +581,15 @@
         statementsListEl.textContent = "لا توجد كشوفات";
         return;
       }
-      const search = (statementsSearchInput.value || "").trim().toLowerCase();
-
       c.statements.forEach(st=>{
-        const haystack =
-          (st.title || "").toLowerCase() + " " +
-          (st.manifestNumber || "").toLowerCase() + " " +
-          (st.truckNumber || "").toLowerCase();
-
-        if(search && !haystack.includes(search)) return;
-
         const d = document.createElement("div");
         d.className = "saved-item";
-        const mainTitle = st.title || "بدون عنوان";
-        const extra =
-          [st.manifestNumber, st.truckNumber]
-            .filter(Boolean)
-            .join(" • ");
-
         d.innerHTML =
-          `<span>${mainTitle}${extra ? " — " + extra : ""}</span>`+
+          `<span>${st.title || "بدون عنوان"}</span>`+
           `<span class="date">${st.date || ""}</span>`;
         d.onclick = () => confirm("فتح هذا الكشف؟") && loadStatement(name, st.id);
         statementsListEl.appendChild(d);
       });
-
-      if(!statementsListEl.children.length){
-        statementsListEl.textContent = "لا توجد كشوفات حسب البحث الحالي.";
-      }
     }
 
     function loadStatement(name,id){
@@ -638,13 +597,11 @@
       if(!st) return;
       state.currentClient = name;
       state.currentStatementId = id;
-      clientNameInput.value  = name;
-      dateInput.value        = st.date || "";
-      titleInput.value       = st.title || "";
-      manifestInput.value    = st.manifestNumber || "";
-      truckInput.value       = st.truckNumber || "";
-      manualTotalInput.value = st.manualTotal || "";
-      extraNotesInput.value  = st.extraNotes || "";
+      clientNameInput.value = name;
+      dateInput.value       = st.date;
+      titleInput.value      = st.title;
+      manualTotalInput.value= st.manualTotal || "";
+      extraNotesInput.value = st.extraNotes || "";
       entriesContainer.innerHTML = "";
       st.entries.forEach(e => addEntryRow(e));
       updatePreviewText();
@@ -670,21 +627,9 @@
           d.innerHTML =
             `<span>${n}</span>`+
             `<span class="date">${last ? (last.date || "") : ""}</span>`;
-          d.onclick = () => {
-            showScreen("s");
-            if(last) loadStatement(n, last.id);
-            else {
-              clientNameInput.value = n;
-              renderStatementsList();
-              renderTotalsForCurrentClient();
-            }
-          };
+          d.onclick = () => { showScreen("s"); loadStatement(n, last.id); };
           clientsListEl.appendChild(d);
         });
-
-      if(!clientsListEl.children.length){
-        clientsListEl.textContent = "لا يوجد عملاء حسب البحث الحالي.";
-      }
     }
 
     function computeTotalsForClient(name, fromDate, toDate){
@@ -716,11 +661,8 @@
       const t = computeTotalsForClient(n);
       let txt = "";
       Object.keys(t).forEach(c=>{
-        const lah   = t[c].lah;
-        const alaih = t[c].alaih;
-        const diff  = lah - alaih;
-        const dir   = diff>0 ? "له" : (diff<0 ? "عليه" : "لا شيء");
-        txt += `${c}:\nله: ${lah}\nعليه: ${alaih}\nالصافي: ${Math.abs(diff)} (${dir})\n\n`;
+        const diff = t[c].lah - t[c].alaih;
+        txt += `${c}:\nله: ${t[c].lah}\nعليه: ${t[c].alaih}\nالصافي: ${diff}\n\n`;
       });
       totalsBoxEl.textContent = txt || "لا توجد بيانات";
     }
@@ -729,16 +671,7 @@
       const n  = clientNameInput.value.trim() || "العميل";
       const d  = dateInput.value || "";
       const ti = titleInput.value || "";
-      const mn = manifestInput.value || "";
-      const tn = truckInput.value || "";
-
-      let header = `${n}\nالتاريخ: ${d}\n`;
-      if(ti) header += `العنوان: ${ti}\n`;
-      if(mn) header += `رقم البيان: ${mn}\n`;
-      if(tn) header += `رقم القاطرة: ${tn}\n`;
-      header += "----------------\n";
-
-      let txt = header;
+      let txt = `${n}\nالتاريخ: ${d}\n----------------\n${ti}\n`;
       getEntries().forEach((e,i)=>
         txt += `\n${i+1}- ${e.desc} ${e.amount.toLocaleString("en-US")} ${e.currency} (${e.direction})`
       );
@@ -754,16 +687,8 @@
       const name    = clientNameInput.value.trim() || "العميل";
       const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
       const title   = titleInput.value || "";
-      const manifest= manifestInput.value || "";
-      const truck   = truckInput.value || "";
       const entries = getEntries();
       const manual  = manualTotalInput.value.trim();
-
-      // حجم الخط حسب عدد البنود
-      const rowsCount = entries.length;
-      let fontPx = 13;
-      if (rowsCount > 25) fontPx = 11;
-      if (rowsCount > 40) fontPx = 10;
 
       let autoTotalsHtml = "";
       if (!manual) {
@@ -792,17 +717,11 @@
 <meta charset="utf-8">
 <title>كشف - ${name}</title>
 <style>
-@page {
-  size: A4;
-  margin: 12mm;
-}
 body{
   font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
-  margin:0;
-  font-size:${fontPx}px;
+  margin:20px;
 }
 h2{font-size:1.2rem;margin-bottom:4px;}
-.header-line{margin-bottom:4px;}
 table{
   width:100%;
   border-collapse:collapse;
@@ -812,13 +731,12 @@ th,td{
   border:1px solid #ddd;
   padding:6px;
   text-align:center;
-  font-size:inherit;
+  font-size:.85rem;
 }
 th{background:#eee;}
-tr{page-break-inside:avoid;}
 .total-box{
   margin-top:15px;
-  font-size:inherit;
+  font-size:.9rem;
 }
 .total-box ul{
   padding-right:20px;
@@ -827,13 +745,10 @@ tr{page-break-inside:avoid;}
 </style>
 </head>
 <body>
-<!-- مكان الشعار لاحقاً: تستطيع إضافة <img src="..." style="max-height:60px;"> هنا -->
 <h2>كشف حساب</h2>
-<div class="header-line">العميل: ${name}</div>
-<div class="header-line">التاريخ: ${dateVal}</div>
-${title ? `<div class="header-line">العنوان: ${title}</div>` : ""}
-${manifest ? `<div class="header-line">رقم البيان: ${manifest}</div>` : ""}
-${truck ? `<div class="header-line">رقم القاطرة: ${truck}</div>` : ""}
+<div>العميل: ${name}</div>
+<div>التاريخ: ${dateVal}</div>
+<div>العنوان: ${title}</div>
 
 <table>
 <tr><th>#</th><th>الوصف</th><th>المبلغ</th><th>العملة</th><th>له/عليه</th></tr>
@@ -854,7 +769,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
 </ul>
 </div>
 
-<strong>ملاحظات:</strong><br>${notes || "لا يوجد"}
+<strong>ملاحظات:</strong><br>${notes}
 </body>
 </html>`);
       w.document.close();
@@ -896,7 +811,7 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
         const lah   = totals[c].lah;
         const alaih = totals[c].alaih;
         const diff  = lah - alaih;
-        const dir   = diff>0 ? "له" : (diff<0 ? "عليه" : "لا شيء";
+        const dir   = diff>0 ? "له" : (diff<0 ? "عليه" : "لا شيء");
         body += `${c}:\nله: ${lah}\nعليه: ${alaih}\nالصافي: ${Math.abs(diff)} (${dir})\n\n`;
       });
 
@@ -915,12 +830,10 @@ ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
 <meta charset="utf-8">
 <title>تقرير - ${name}</title>
 <style>
-@page { size: A4; margin: 12mm; }
 body{
   font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
-  margin:0;
+  margin:20px;
   white-space:pre-wrap;
-  font-size:13px;
 }
 </style>
 </head>
