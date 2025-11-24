@@ -388,6 +388,7 @@
 
   <!-- ملف المساعد الصوتي -->
   <script src="voice.js"></script>
+
   <!-- سكربت التطبيق الرئيسي -->
   <script>
     const STORAGE_KEY = "voiceLedgerData_v1";
@@ -736,7 +737,7 @@
       whatsAppBox.textContent = txt;
     }
 
-    // ====== طباعة كشف واحد PDF (A4 + فتح about:blank بدون طباعة تلقائية) ======
+    // ====== طباعة كشف واحد PDF (A4 + تكبير الخط حسب طول الكشف) ======
     function printAsPdf(){
       const name    = clientNameInput.value.trim() || "العميل";
       const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
@@ -746,23 +747,17 @@
       const entries = getEntries();
       const manual  = manualTotalInput.value.trim();
 
-      const rows = entries.length || 1;
-      let bodyFont  = 14;
-      let tableFont = 13;
-
-      if (rows <= 8) {        // كشف صغير
-        bodyFont  = 16;
-        tableFont = 15;
-      } else if (rows <= 15){ // متوسط
-        bodyFont  = 14;
-        tableFont = 13;
-      } else if (rows <= 25){ // كبير
-        bodyFont  = 12;
-        tableFont = 11;
-      } else {                // كبير جداً
-        bodyFont  = 10;
-        tableFont = 9;
+      // نحدد حجم الخط حسب عدد البنود
+      const rowsCount = entries.length;
+      let baseFont = 16;
+      if (rowsCount > 25) {
+        baseFont = 11;
+      } else if (rowsCount > 18) {
+        baseFont = 12;
+      } else if (rowsCount > 12) {
+        baseFont = 14;
       }
+      const tableFont = baseFont - 1;
 
       let autoTotalsHtml = "";
       if (!manual) {
@@ -795,26 +790,37 @@
     size: A4;
     margin: 15mm;
   }
-  body{
-    font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  html, body{
     margin:0;
     padding:0;
-    font-size:${bodyFont}px;
+    background:#ffffff;
   }
-  .page{
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
     width:210mm;
-    min-height:297mm;
     margin:0 auto;
+    box-sizing:border-box;
+    color:#111827;
+    font-size:${baseFont}px;
   }
   h2{
-    font-size:${bodyFont + 2}px;
-    margin:0 0 6px;
+    font-size:${baseFont + 2}px;
+    margin:0 0 6px 0;
+    text-align:center;
   }
-  .header-line{ margin-bottom:4px; }
+  .header-line{
+    margin:2px 0;
+    font-size:${baseFont}px;
+  }
   table{
     width:100%;
     border-collapse:collapse;
     margin-top:10px;
+    page-break-inside:auto;
+  }
+  tr{
+    page-break-inside:avoid;
+    page-break-after:auto;
   }
   th,td{
     border:1px solid #ddd;
@@ -822,19 +828,25 @@
     text-align:center;
     font-size:${tableFont}px;
   }
-  th{background:#eee;}
+  th{
+    background:#f3f4f6;
+    font-weight:600;
+  }
   .total-box{
     margin-top:12px;
-    font-size:${bodyFont}px;
+    font-size:${baseFont}px;
   }
   .total-box ul{
-    padding-right:18px;
+    padding-right:20px;
     margin:6px 0 0;
+  }
+  .notes{
+    margin-top:10px;
+    font-size:${baseFont}px;
   }
 </style>
 </head>
 <body>
-<div class="page">
   <h2>كشف حساب</h2>
   <div class="header-line">العميل: ${name}</div>
   <div class="header-line">التاريخ: ${dateVal}</div>
@@ -843,7 +855,13 @@
   ${stNum ? `<div class="header-line">رقم البيان: ${stNum}</div>` : ""}
 
   <table>
-    <tr><th>#</th><th>الوصف</th><th>المبلغ</th><th>العملة</th><th>له/عليه</th></tr>
+    <tr>
+      <th>#</th>
+      <th>الوصف</th>
+      <th>المبلغ</th>
+      <th>العملة</th>
+      <th>له/عليه</th>
+    </tr>
     ${entries.map((e,i)=>`
     <tr>
       <td>${i+1}</td>
@@ -861,12 +879,19 @@
     </ul>
   </div>
 
-  <strong>ملاحظات:</strong><br>${notes || "لا توجد ملاحظات."}
-</div>
+  <div class="notes">
+    <strong>ملاحظات:</strong><br>${notes || "لا توجد ملاحظات."}
+  </div>
 </body>
 </html>`);
       w.document.close();
-      // لا نستدعي window.print() هنا، تطبع من المتصفح يدويًا.
+      w.focus();
+      w.onload = function () {
+        try {
+          this.focus();
+          this.print();
+        } catch (e) {}
+      };
     }
 
     // ====== تقارير العملاء ======
