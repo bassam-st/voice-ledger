@@ -737,8 +737,164 @@
       whatsAppBox.textContent = txt;
     }
 
-    // ====== طباعة كشف واحد PDF ======
-    function printAsPdf(){
+    // ====== طباعة كشف واحد PDF (A4 + تكبير الخط حسب طول الكشف) ======
+function printAsPdf(){
+  const name    = clientNameInput.value.trim() || "العميل";
+  const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
+  const title   = titleInput.value || "";
+  const truck   = truckNumberInput.value.trim();
+  const stNum   = statementNumberInput.value.trim();
+  const entries = getEntries();
+  const manual  = manualTotalInput.value.trim();
+
+  // نحدد حجم الخط حسب عدد البنود
+  const rowsCount = entries.length;
+  let baseFont = 16;   // للصفحات الصغيرة يكون كبير
+  if (rowsCount > 25) {
+    baseFont = 11;
+  } else if (rowsCount > 18) {
+    baseFont = 12;
+  } else if (rowsCount > 12) {
+    baseFont = 14;
+  }
+  const tableFont = baseFont - 1;
+
+  let autoTotalsHtml = "";
+  if (!manual) {
+    const res = {};
+    entries.forEach(e=>{
+      if (!res[e.currency]) res[e.currency] = { lah:0, alaih:0 };
+      if (e.direction === "له")  res[e.currency].lah   += e.amount;
+      else                       res[e.currency].alaih += e.amount;
+    });
+    Object.keys(res).forEach(c=>{
+      const diff = res[c].lah - res[c].alaih;
+      if (diff !== 0) {
+        const dir = diff > 0 ? "له" : "عليه";
+        autoTotalsHtml += `<li>${Math.abs(diff).toLocaleString()} ${c} (${dir})</li>`;
+      }
+    });
+    if (!autoTotalsHtml) autoTotalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
+  }
+
+  const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
+
+  const w = window.open("", "_blank");
+  w.document.write(`
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>كشف - ${name}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+  html, body{
+    margin:0;
+    padding:0;
+    background:#ffffff;
+  }
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+    width:210mm;
+    margin:0 auto;
+    box-sizing:border-box;
+    color:#111827;
+    font-size:${baseFont}px;
+  }
+  h2{
+    font-size:${baseFont + 2}px;
+    margin:0 0 6px 0;
+    text-align:center;
+  }
+  .header-line{
+    margin:2px 0;
+    font-size:${baseFont}px;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+    page-break-inside:auto;
+  }
+  tr{
+    page-break-inside:avoid;
+    page-break-after:auto;
+  }
+  th,td{
+    border:1px solid #ddd;
+    padding:4px 6px;
+    text-align:center;
+    font-size:${tableFont}px;
+  }
+  th{
+    background:#f3f4f6;
+    font-weight:600;
+  }
+  .total-box{
+    margin-top:12px;
+    font-size:${baseFont}px;
+  }
+  .total-box ul{
+    padding-right:20px;
+    margin:6px 0 0;
+  }
+  .notes{
+    margin-top:10px;
+    font-size:${baseFont}px;
+  }
+</style>
+</head>
+<body>
+  <h2>كشف حساب</h2>
+  <div class="header-line">العميل: ${name}</div>
+  <div class="header-line">التاريخ: ${dateVal}</div>
+  <div class="header-line">العنوان: ${title}</div>
+  ${truck ? `<div class="header-line">رقم القاطرة: ${truck}</div>` : ""}
+  ${stNum ? `<div class="header-line">رقم البيان: ${stNum}</div>` : ""}
+
+  <table>
+    <tr>
+      <th>#</th>
+      <th>الوصف</th>
+      <th>المبلغ</th>
+      <th>العملة</th>
+      <th>له/عليه</th>
+    </tr>
+    ${entries.map((e,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${e.desc}</td>
+      <td>${e.amount.toLocaleString("en-US")}</td>
+      <td>${e.currency}</td>
+      <td>${e.direction}</td>
+    </tr>`).join("")}
+  </table>
+
+  <div class="total-box">
+    <strong>إجمال هذا الكشف:</strong>
+    <ul>
+      ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
+    </ul>
+  </div>
+
+  <div class="notes">
+    <strong>ملاحظات:</strong><br>${notes || "لا توجد ملاحظات."}
+  </div>
+</body>
+</html>`);
+  w.document.close();
+
+  // ننتظر تحميل الصفحة ثم نفتح نافذة الطباعة
+  w.focus();
+  w.onload = function () {
+    try {
+      this.focus();
+      this.print();
+    } catch (e) {}
+  };
+}
       const name    = clientNameInput.value.trim() || "العميل";
       const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
       const title   = titleInput.value || "";
