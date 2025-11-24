@@ -738,49 +738,49 @@
     }
 
     // ====== طباعة كشف واحد PDF (A4 + تكبير الخط حسب طول الكشف) ======
-function printAsPdf(){
-  const name    = clientNameInput.value.trim() || "العميل";
-  const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
-  const title   = titleInput.value || "";
-  const truck   = truckNumberInput.value.trim();
-  const stNum   = statementNumberInput.value.trim();
-  const entries = getEntries();
-  const manual  = manualTotalInput.value.trim();
+    function printAsPdf(){
+      const name    = clientNameInput.value.trim() || "العميل";
+      const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
+      const title   = titleInput.value || "";
+      const truck   = truckNumberInput.value.trim();
+      const stNum   = statementNumberInput.value.trim();
+      const entries = getEntries();
+      const manual  = manualTotalInput.value.trim();
 
-  // نحدد حجم الخط حسب عدد البنود
-  const rowsCount = entries.length;
-  let baseFont = 16;   // للصفحات الصغيرة يكون كبير
-  if (rowsCount > 25) {
-    baseFont = 11;
-  } else if (rowsCount > 18) {
-    baseFont = 12;
-  } else if (rowsCount > 12) {
-    baseFont = 14;
-  }
-  const tableFont = baseFont - 1;
-
-  let autoTotalsHtml = "";
-  if (!manual) {
-    const res = {};
-    entries.forEach(e=>{
-      if (!res[e.currency]) res[e.currency] = { lah:0, alaih:0 };
-      if (e.direction === "له")  res[e.currency].lah   += e.amount;
-      else                       res[e.currency].alaih += e.amount;
-    });
-    Object.keys(res).forEach(c=>{
-      const diff = res[c].lah - res[c].alaih;
-      if (diff !== 0) {
-        const dir = diff > 0 ? "له" : "عليه";
-        autoTotalsHtml += `<li>${Math.abs(diff).toLocaleString()} ${c} (${dir})</li>`;
+      // نحدد حجم الخط حسب عدد البنود
+      const rowsCount = entries.length;
+      let baseFont = 16;
+      if (rowsCount > 25) {
+        baseFont = 11;
+      } else if (rowsCount > 18) {
+        baseFont = 12;
+      } else if (rowsCount > 12) {
+        baseFont = 14;
       }
-    });
-    if (!autoTotalsHtml) autoTotalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
-  }
+      const tableFont = baseFont - 1;
 
-  const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
+      let autoTotalsHtml = "";
+      if (!manual) {
+        const res = {};
+        entries.forEach(e=>{
+          if (!res[e.currency]) res[e.currency] = { lah:0, alaih:0 };
+          if (e.direction === "له")  res[e.currency].lah   += e.amount;
+          else                       res[e.currency].alaih += e.amount;
+        });
+        Object.keys(res).forEach(c=>{
+          const diff = res[c].lah - res[c].alaih;
+          if (diff !== 0) {
+            const dir = diff > 0 ? "له" : "عليه";
+            autoTotalsHtml += `<li>${Math.abs(diff).toLocaleString()} ${c} (${dir})</li>`;
+          }
+        });
+        if (!autoTotalsHtml) autoTotalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
+      }
 
-  const w = window.open("", "_blank");
-  w.document.write(`
+      const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
+
+      const w = window.open("", "_blank");
+      w.document.write(`
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -884,114 +884,13 @@ function printAsPdf(){
   </div>
 </body>
 </html>`);
-  w.document.close();
-
-  // ننتظر تحميل الصفحة ثم نفتح نافذة الطباعة
-  w.focus();
-  w.onload = function () {
-    try {
-      this.focus();
-      this.print();
-    } catch (e) {}
-  };
-}
-      const name    = clientNameInput.value.trim() || "العميل";
-      const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
-      const title   = titleInput.value || "";
-      const truck   = truckNumberInput.value.trim();
-      const stNum   = statementNumberInput.value.trim();
-      const entries = getEntries();
-      const manual  = manualTotalInput.value.trim();
-
-      let autoTotalsHtml = "";
-      if (!manual) {
-        const res = {};
-        entries.forEach(e=>{
-          if (!res[e.currency]) res[e.currency] = { lah:0, alaih:0 };
-          if (e.direction === "له")  res[e.currency].lah   += e.amount;
-          else                       res[e.currency].alaih += e.amount;
-        });
-        Object.keys(res).forEach(c=>{
-          const diff = res[c].lah - res[c].alaih;
-          if (diff !== 0) {
-            const dir = diff > 0 ? "له" : "عليه";
-            autoTotalsHtml += `<li>${Math.abs(diff).toLocaleString()} ${c} (${dir})</li>`;
-          }
-        });
-        if (!autoTotalsHtml) autoTotalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
-      }
-
-      const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
-
-      const w = window.open("", "_blank");
-      w.document.write(`
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8">
-<title>كشف - ${name}</title>
-<style>
-body{
-  font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
-  margin:20px;
-}
-h2{font-size:1.2rem;margin-bottom:4px;}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-}
-th,td{
-  border:1px solid #ddd;
-  padding:6px;
-  text-align:center;
-  font-size:.85rem;
-}
-th{background:#eee;}
-.total-box{
-  margin-top:15px;
-  font-size:.9rem;
-}
-.total-box ul{
-  padding-right:20px;
-  margin:6px 0 0;
-}
-</style>
-</head>
-<body>
-<h2>كشف حساب</h2>
-<div>العميل: ${name}</div>
-<div>التاريخ: ${dateVal}</div>
-<div>العنوان: ${title}</div>
-${truck ? `<div>رقم القاطرة: ${truck}</div>` : ""}
-${stNum ? `<div>رقم البيان: ${stNum}</div>` : ""}
-
-<table>
-<tr><th>#</th><th>الوصف</th><th>المبلغ</th><th>العملة</th><th>له/عليه</th></tr>
-${entries.map((e,i)=>`
-<tr>
-<td>${i+1}</td>
-<td>${e.desc}</td>
-<td>${e.amount.toLocaleString("en-US")}</td>
-<td>${e.currency}</td>
-<td>${e.direction}</td>
-</tr>`).join("")}
-</table>
-
-<div class="total-box">
-<strong>إجمال هذا الكشف:</strong>
-<ul>
-${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
-</ul>
-</div>
-
-<strong>ملاحظات:</strong><br>${notes}
-</body>
-</html>`);
       w.document.close();
       w.focus();
       w.onload = function () {
-        this.focus();
-        this.print();
+        try {
+          this.focus();
+          this.print();
+        } catch (e) {}
       };
     }
 
@@ -1177,4 +1076,3 @@ body{
   </script>
 </body>
 </html>
-```0
