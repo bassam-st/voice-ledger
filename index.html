@@ -182,6 +182,17 @@
       font-size:.8rem;
       white-space:pre-wrap;
     }
+
+    /* حاوية مؤقتة لإنشاء PDF للمشاركة */
+    #pdfTempContainer {
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: 794px; /* قريب من عرض A4 بالبيكسل */
+      background: #ffffff;
+      padding: 20px;
+      z-index: -1;
+    }
   </style>
 </head>
 <body>
@@ -280,6 +291,7 @@
 
         <div class="row" style="margin-top:6px;">
           <button class="pill-btn pill-gray" id="printPdfBtn" style="flex:1;">🖨️ حفظ / طباعة PDF</button>
+          <button class="pill-btn pill-green" id="sharePdfBtn" style="flex:1;">📄 مشاركة PDF</button>
         </div>
       </div>
 
@@ -386,6 +398,13 @@
 
   </div>
 
+  <!-- حاوية مؤقتة لإنشاء PDF للمشاركة -->
+  <div id="pdfTempContainer" style="display:none;"></div>
+
+  <!-- مكتبات توليد PDF (مجانية) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <!-- ملف المساعد الصوتي -->
   <script src="voice.js"></script>
 
@@ -462,6 +481,7 @@
     document.getElementById("copyTextBtn").onclick              = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
     document.getElementById("shareWhatsappBtn").onclick         = () => window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
     document.getElementById("printPdfBtn").onclick              = printAsPdf;
+    document.getElementById("sharePdfBtn").onclick              = sharePdf;
 
     clientsSearchInput.addEventListener("input", renderClientsList);
     statementsSearchInput.addEventListener("input", renderStatementsList);
@@ -737,7 +757,69 @@
       whatsAppBox.textContent = txt;
     }
 
-    // ====== طباعة كشف واحد PDF (A4 + إجمالي له/عليه/الصافي لكل عملة) ======
+    // ====== بناء HTML خاص للطباعة / المشاركة ======
+    function buildPrintInnerHtml(name, dateVal, title, truck, stNum, entries, totalsPerCurrency, notes, baseFont, tableFont){
+      let rowsHtml = entries.map((e,i)=>`
+        <tr>
+          <td>${i+1}</td>
+          <td>${e.desc}</td>
+          <td>${e.amount.toLocaleString("en-US")}</td>
+          <td>${e.currency}</td>
+          <td>${e.direction}</td>
+        </tr>`).join("");
+
+      let totalsRows = "";
+      Object.keys(totalsPerCurrency).forEach(c=>{
+        const t = totalsPerCurrency[c];
+        const diff = t.lah - t.alaih;
+        const dir  = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء");
+        totalsRows += `
+        <tr>
+          <td>${c}</td>
+          <td>${t.lah.toLocaleString("en-US")}</td>
+          <td>${t.alaih.toLocaleString("en-US")}</td>
+          <td>${Math.abs(diff).toLocaleString("en-US")} (${dir})</td>
+        </tr>`;
+      });
+
+      return `
+  <h2>كشف حساب</h2>
+  <div class="header-line">العميل: ${name}</div>
+  <div class="header-line">التاريخ: ${dateVal}</div>
+  <div class="header-line">العنوان: ${title}</div>
+  ${truck ? `<div class="header-line">رقم القاطرة: ${truck}</div>` : ""}
+  ${stNum ? `<div class="header-line">رقم البيان: ${stNum}</div>` : ""}
+
+  <table>
+    <tr>
+      <th>#</th>
+      <th>الوصف</th>
+      <th>المبلغ</th>
+      <th>العملة</th>
+      <th>له/عليه</th>
+    </tr>
+    ${rowsHtml}
+  </table>
+
+  <div class="totals-summary">
+    <strong>ملخّص الأرصدة لهذا الكشف:</strong>
+    <table class="totals-table">
+      <tr>
+        <th>العملة</th>
+        <th>إجمالي له</th>
+        <th>إجمالي عليه</th>
+        <th>الصافي</th>
+      </tr>
+      ${totalsRows}
+    </table>
+  </div>
+
+  <div class="notes">
+    <strong>ملاحظات:</strong><br>${notes || "لا توجد ملاحظات."}
+  </div>`;
+    }
+
+    // ====== طباعة كشف واحد PDF (A4 + ملخّص له/عليه/الصافي) ======
     function printAsPdf(){
       const name    = clientNameInput.value.trim() || "العميل";
       const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
@@ -745,59 +827,34 @@
       const truck   = truckNumberInput.value.trim();
       const stNum   = statementNumberInput.value.trim();
       const entries = getEntries();
-      const manual  = manualTotalInput.value.trim();
 
-      if (!entries.length) {
-        alert("لا يوجد بنود في الكشف للطباعة.");
-        return;
-      }
-
-      // نحدد حجم الخط حسب عدد البنود
       const rowsCount = entries.length;
-      let baseFont = 16;
+      let baseFont = 17;          // أكبر قليلاً ليكون أوضح
       if (rowsCount > 25) {
-        baseFont = 11;
-      } else if (rowsCount > 18) {
         baseFont = 12;
+      } else if (rowsCount > 18) {
+        baseFont = 13;
       } else if (rowsCount > 12) {
-        baseFont = 14;
+        baseFont = 15;
       }
       const tableFont = baseFont - 1;
 
-      // نحسب الإجمالي له/عليه لكل عملة
-      const totalsMap = {};
-      entries.forEach(e => {
-        if (!totalsMap[e.currency]) {
-          totalsMap[e.currency] = { lah: 0, alaih: 0 };
+      // حساب إجمالي له / عليه لكل عملة
+      const totalsPerCurrency = {};
+      entries.forEach(e=>{
+        if (!totalsPerCurrency[e.currency]) {
+          totalsPerCurrency[e.currency] = { lah:0, alaih:0 };
         }
-        if (e.direction === "له") {
-          totalsMap[e.currency].lah += e.amount;
-        } else {
-          totalsMap[e.currency].alaih += e.amount;
-        }
+        if (e.direction === "له") totalsPerCurrency[e.currency].lah += e.amount;
+        else                      totalsPerCurrency[e.currency].alaih += e.amount;
       });
-
-      let totalsRowsHtml = "";
-      Object.keys(totalsMap).forEach(c => {
-        const lah   = totalsMap[c].lah;
-        const alaih = totalsMap[c].alaih;
-        const diff  = lah - alaih;
-        const dirLabel = diff > 0 ? "له" : (diff < 0 ? "عليه" : "-");
-        totalsRowsHtml += `
-          <tr>
-            <td>${c}</td>
-            <td>${lah.toLocaleString("en-US")}</td>
-            <td>${alaih.toLocaleString("en-US")}</td>
-            <td>${Math.abs(diff).toLocaleString("en-US")}</td>
-            <td>${dirLabel}</td>
-          </tr>`;
-      });
-
-      const manualLineHtml = manual
-        ? `<div class="manual-total">الإجمالي المدخل يدويًا: ${manual}</div>`
-        : "";
 
       const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
+
+      const inner = buildPrintInnerHtml(
+        name, dateVal, title, truck, stNum, entries,
+        totalsPerCurrency, notes, baseFont, tableFont
+      );
 
       const w = window.open("", "_blank");
       w.document.write(`
@@ -808,7 +865,7 @@
 <style>
   @page {
     size: A4;
-    margin: 15mm;
+    margin: 12mm 15mm;
   }
   html, body{
     margin:0;
@@ -816,7 +873,7 @@
     background:#ffffff;
   }
   body{
-    font-family:Tahoma, "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
     width:210mm;
     margin:0 auto;
     box-sizing:border-box;
@@ -852,28 +909,12 @@
     background:#f3f4f6;
     font-weight:600;
   }
-  .total-box{
-    margin-top:12px;
+  .totals-summary{
+    margin-top:14px;
     font-size:${baseFont}px;
   }
-  .totals-table{
-    width:100%;
-    border-collapse:collapse;
+  .totals-summary table{
     margin-top:6px;
-  }
-  .totals-table th,
-  .totals-table td{
-    border:1px solid #ddd;
-    padding:4px 6px;
-    text-align:center;
-    font-size:${tableFont}px;
-  }
-  .totals-table th{
-    background:#e5e7eb;
-  }
-  .manual-total{
-    margin-top:4px;
-    margin-bottom:4px;
   }
   .notes{
     margin-top:10px;
@@ -882,54 +923,7 @@
 </style>
 </head>
 <body>
-  <h2>كشف حساب</h2>
-  <div class="header-line">العميل: ${name}</div>
-  <div class="header-line">التاريخ: ${dateVal}</div>
-  <div class="header-line">العنوان: ${title}</div>
-  ${truck ? `<div class="header-line">رقم القاطرة: ${truck}</div>` : ""}
-  ${stNum ? `<div class="header-line">رقم البيان: ${stNum}</div>` : ""}
-
-  <table>
-    <tr>
-      <th>#</th>
-      <th>الوصف</th>
-      <th>المبلغ</th>
-      <th>العملة</th>
-      <th>له/عليه</th>
-    </tr>
-    ${entries.map((e,i)=>`
-    <tr>
-      <td>${i+1}</td>
-      <td>${e.desc}</td>
-      <td>${e.amount.toLocaleString("en-US")}</td>
-      <td>${e.currency}</td>
-      <td>${e.direction}</td>
-    </tr>`).join("")}
-  </table>
-
-  <div class="total-box">
-    <strong>ملخص الأرصدة لهذا الكشف:</strong>
-    ${manualLineHtml}
-    ${
-      totalsRowsHtml
-        ? `
-    <table class="totals-table">
-      <tr>
-        <th>العملة</th>
-        <th>إجمالي له</th>
-        <th>إجمالي عليه</th>
-        <th>الصافي</th>
-        <th>له / عليه</th>
-      </tr>
-      ${totalsRowsHtml}
-    </table>`
-        : `<div class="no-totals">لا يوجد رصيد مسجل في البنود.</div>`
-    }
-  </div>
-
-  <div class="notes">
-    <strong>ملاحظات:</strong><br>${notes || "لا توجد ملاحظات."}
-  </div>
+${inner}
 </body>
 </html>`);
       w.document.close();
@@ -940,6 +934,131 @@
           this.print();
         } catch (e) {}
       };
+    }
+
+    // ====== مشاركة الكشف كـ PDF مباشرة (واتساب وغيره) ======
+    async function sharePdf(){
+      const entries = getEntries();
+      if (!entries.length){
+        alert("لا يوجد بنود في الكشف الحالي.");
+        return;
+      }
+
+      const name    = clientNameInput.value.trim() || "العميل";
+      const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
+      const title   = titleInput.value || "";
+      const truck   = truckNumberInput.value.trim();
+      const stNum   = statementNumberInput.value.trim();
+
+      const rowsCount = entries.length;
+      let baseFont = 15;
+      if (rowsCount > 25) {
+        baseFont = 12;
+      } else if (rowsCount > 18) {
+        baseFont = 13;
+      } else if (rowsCount > 12) {
+        baseFont = 14;
+      }
+      const tableFont = baseFont - 1;
+
+      const totalsPerCurrency = {};
+      entries.forEach(e=>{
+        if (!totalsPerCurrency[e.currency]) {
+          totalsPerCurrency[e.currency] = { lah:0, alaih:0 };
+        }
+        if (e.direction === "له") totalsPerCurrency[e.currency].lah += e.amount;
+        else                      totalsPerCurrency[e.currency].alaih += e.amount;
+      });
+      const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
+
+      const inner = buildPrintInnerHtml(
+        name, dateVal, title, truck, stNum, entries,
+        totalsPerCurrency, notes, baseFont, tableFont
+      );
+
+      const container = document.getElementById("pdfTempContainer");
+      container.style.display = "block";
+      container.innerHTML = `
+      <style>
+        body{margin:0;}
+        h2{
+          font-size:${baseFont + 2}px;
+          margin:0 0 6px 0;
+          text-align:center;
+        }
+        .header-line{
+          margin:2px 0;
+          font-size:${baseFont}px;
+        }
+        table{
+          width:100%;
+          border-collapse:collapse;
+          margin-top:10px;
+        }
+        th,td{
+          border:1px solid #ddd;
+          padding:4px 6px;
+          text-align:center;
+          font-size:${tableFont}px;
+        }
+        th{
+          background:#f3f4f6;
+          font-weight:600;
+        }
+        .totals-summary{
+          margin-top:14px;
+          font-size:${baseFont}px;
+        }
+        .notes{
+          margin-top:10px;
+          font-size:${baseFont}px;
+        }
+      </style>
+      ${inner}`;
+
+      try{
+        const canvas = await html2canvas(container, {scale:2});
+        const imgData = canvas.toDataURL("image/jpeg", 0.98);
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p","pt","a4");
+        const pageWidth  = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const imgWidth = pageWidth - 40;   // هوامش
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+
+        pdf.addImage(imgData, "JPEG", 20, 20, imgWidth, imgHeight);
+
+        const blob = pdf.output("blob");
+        const fileName = `statement-${name}-${dateVal}.pdf`;
+        const file = new File([blob], fileName, { type: "application/pdf" });
+
+        if (navigator.canShare && navigator.canShare({ files:[file] })) {
+          await navigator.share({
+            title: "كشف حساب",
+            text: "كشف حساب بصيغة PDF من تطبيق بسّام.",
+            files: [file]
+          });
+        } else {
+          // إذا لم يدعم المشاركة بالملف، ننزله فقط
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          alert("تم تنزيل ملف PDF، يمكنك إرساله للعميل من مدير الملفات.");
+        }
+      } catch(err){
+        console.error(err);
+        alert("حصل خطأ أثناء إنشاء ملف PDF للمشاركة.");
+      } finally {
+        container.style.display = "none";
+        container.innerHTML = "";
+      }
     }
 
     // ====== تقارير العملاء ======
