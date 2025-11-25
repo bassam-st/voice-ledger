@@ -182,17 +182,6 @@
       font-size:.8rem;
       white-space:pre-wrap;
     }
-
-    /* حاوية مؤقتة لإنشاء PDF للمشاركة */
-    #pdfTempContainer {
-      position: fixed;
-      left: -9999px;
-      top: 0;
-      width: 794px; /* قريب من عرض A4 بالبيكسل */
-      background: #ffffff;
-      padding: 20px;
-      z-index: -1;
-    }
   </style>
 </head>
 <body>
@@ -307,6 +296,18 @@
           </div>
         </div>
 
+        <div class="row" style="margin-top:4px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:.8rem;">
+            <input type="checkbox" id="multiSelectToggle" style="width:16px;height:16px;margin:0;">
+            تفعيل تحديد عدة كشوف
+          </label>
+          <button class="pill-btn pill-green" id="shareMultiPdfBtn" style="flex:1;">📑 مشاركة الكشوف المحددة PDF</button>
+        </div>
+
+        <p class="muted" id="multiSelectHint" style="display:none; margin-top:4px;">
+          بعد تفعيل الخيار، اضغط على الكشوف في القائمة لتحديدها (✔)، ثم اضغط زر "مشاركة الكشوف المحددة PDF".
+        </p>
+
         <div id="statementsList" class="saved-list"></div>
       </div>
 
@@ -398,8 +399,9 @@
 
   </div>
 
-  <!-- حاوية مؤقتة لإنشاء PDF للمشاركة -->
-  <div id="pdfTempContainer" style="display:none;"></div>
+  <!-- حاويات مخفية لتوليد PDF -->
+  <div id="singlePdfContainer" style="position:fixed; left:-99999px; top:0; width:800px; background:#ffffff;"></div>
+  <div id="multiPdfContainer"  style="position:fixed; left:-99999px; top:0; width:800px; background:#ffffff;"></div>
 
   <!-- مكتبات توليد PDF (مجانية) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -411,7 +413,7 @@
   <!-- سكربت التطبيق الرئيسي -->
   <script>
     const STORAGE_KEY = "voiceLedgerData_v1";
-    const state = { data:{clients:{}}, currentClient:"", currentStatementId:null, deferredPrompt:null };
+    const state = { data:{clients:{}}, currentClient:"", currentStatementId:null, deferredPrompt:null, multiSelectEnabled:false, selectedStatements:[] };
 
     function loadData(){
       try{
@@ -474,6 +476,12 @@
     const clientsSearchInput   = document.getElementById("clientsSearchInput");
     const statementsSearchInput= document.getElementById("statementsSearchInput");
 
+    const multiSelectToggle = document.getElementById("multiSelectToggle");
+    const shareMultiPdfBtn  = document.getElementById("shareMultiPdfBtn");
+    const multiSelectHint   = document.getElementById("multiSelectHint");
+    const singlePdfContainer= document.getElementById("singlePdfContainer");
+    const multiPdfContainer = document.getElementById("multiPdfContainer");
+
     document.getElementById("addEntryBtn").onclick              = () => addEntryRow();
     document.getElementById("copyLastEntriesBtn").onclick       = copyLastEntries;
     document.getElementById("saveStatementBtn").onclick         = saveCurrentStatement;
@@ -481,8 +489,7 @@
     document.getElementById("copyTextBtn").onclick              = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
     document.getElementById("shareWhatsappBtn").onclick         = () => window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
     document.getElementById("printPdfBtn").onclick              = printAsPdf;
-    document.getElementById("sharePdfBtn").onclick              = sharePdf;
-
+    document.getElementById("sharePdfBtn").onclick              = () => sharePdf();
     clientsSearchInput.addEventListener("input", renderClientsList);
     statementsSearchInput.addEventListener("input", renderStatementsList);
 
@@ -495,6 +502,15 @@
     document.getElementById("copyReportBtn").onclick           = () => navigator.clipboard.writeText(reportBox.textContent || "");
     document.getElementById("shareReportWhatsappBtn").onclick  = () => window.open("https://wa.me/?text="+encodeURIComponent(reportBox.textContent || ""));
     document.getElementById("printReportPdfBtn").onclick       = printReportPdf;
+
+    multiSelectToggle.addEventListener("change", () => {
+      state.multiSelectEnabled = multiSelectToggle.checked;
+      state.selectedStatements = [];
+      multiSelectHint.style.display = state.multiSelectEnabled ? "block" : "none";
+      renderStatementsList();
+    });
+
+    shareMultiPdfBtn.onclick = () => shareSelectedStatementsPdf();
 
     // ====== البند ======
     function addEntryRow(init){
@@ -626,7 +642,10 @@
         statementsListEl.textContent = "لا توجد كشوفات";
         return;
       }
+
       const q = (statementsSearchInput.value || "").trim().toLowerCase();
+      const multiMode   = state.multiSelectEnabled;
+      const selectedIds = new Set(state.selectedStatements);
 
       c.statements
         .filter(st=>{
@@ -642,19 +661,73 @@
         .forEach(st=>{
           const d = document.createElement("div");
           d.className = "saved-item";
+
+          const titleSpan = document.createElement("span");
           const labelExtra = [
             st.truckNumber ? `ق:${st.truckNumber}` : "",
             st.statementNumber ? `ب:${st.statementNumber}` : ""
           ].filter(Boolean).join(" • ");
-          d.innerHTML =
-            `<span>${st.title || "بدون عنوان"}${labelExtra ? " — " + labelExtra : ""}</span>`+
-            `<span class="date">${st.date || ""}</span>`;
-          d.onclick = () => confirm("فتح هذا الكشف؟") && loadStatement(name, st.id);
+          titleSpan.textContent =
+            (st.title || "بدون عنوان") + (labelExtra ? " — " + labelExtra : "");
+
+          const dateSpan = document.createElement("span");
+          dateSpan.className = "date";
+          dateSpan.textContent = st.date || "";
+
+          if (multiMode) {
+            const wrap = document.createElement("div");
+            wrap.style.display = "flex";
+            wrap.style.alignItems = "center";
+            wrap.style.gap = "6px";
+
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.style.margin = "0";
+            checkbox.checked = selectedIds.has(st.id);
+
+            checkbox.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              toggleStatementSelection(st.id, checkbox.checked);
+              d.style.background = checkbox.checked ? "#bbf7d0" : "#ecfdf3";
+            });
+
+            wrap.appendChild(checkbox);
+            wrap.appendChild(titleSpan);
+
+            d.appendChild(wrap);
+            d.appendChild(dateSpan);
+
+            if (checkbox.checked) d.style.background = "#bbf7d0";
+
+            d.onclick = () => {
+              const newVal = !checkbox.checked;
+              checkbox.checked = newVal;
+              toggleStatementSelection(st.id, newVal);
+              d.style.background = newVal ? "#bbf7d0" : "#ecfdf3";
+            };
+          } else {
+            d.appendChild(titleSpan);
+            d.appendChild(dateSpan);
+            d.onclick = () => {
+              if (confirm("فتح هذا الكشف؟")) loadStatement(name, st.id);
+            };
+          }
+
           statementsListEl.appendChild(d);
         });
 
       if(!statementsListEl.childElementCount){
         statementsListEl.textContent = "لا توجد نتائج مطابقة لبحثك.";
+      }
+    }
+
+    function toggleStatementSelection(id, isSelected){
+      const arr = state.selectedStatements;
+      const idx = arr.indexOf(id);
+      if (isSelected) {
+        if (idx === -1) arr.push(id);
+      } else {
+        if (idx !== -1) arr.splice(idx, 1);
       }
     }
 
@@ -757,89 +830,10 @@
       whatsAppBox.textContent = txt;
     }
 
-    // ====== بناء HTML خاص للطباعة / المشاركة ======
-    function buildPrintInnerHtml(name, dateVal, title, truck, stNum, entries, totalsPerCurrency, notes, baseFont, tableFont){
-      let rowsHtml = entries.map((e,i)=>`
-        <tr>
-          <td>${i+1}</td>
-          <td>${e.desc}</td>
-          <td>${e.amount.toLocaleString("en-US")}</td>
-          <td>${e.currency}</td>
-          <td>${e.direction}</td>
-        </tr>`).join("");
+    // ====== بناء بلوك HTML لكشف واحد (نستخدمه في PDF) ======
+    function buildStatementHtmlBlock(st, name){
+      const entries = st.entries || [];
 
-      let totalsRows = "";
-      Object.keys(totalsPerCurrency).forEach(c=>{
-        const t = totalsPerCurrency[c];
-        const diff = t.lah - t.alaih;
-        const dir  = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء");
-        totalsRows += `
-        <tr>
-          <td>${c}</td>
-          <td>${t.lah.toLocaleString("en-US")}</td>
-          <td>${t.alaih.toLocaleString("en-US")}</td>
-          <td>${Math.abs(diff).toLocaleString("en-US")} (${dir})</td>
-        </tr>`;
-      });
-
-      return `
-  <h2>كشف حساب</h2>
-  <div class="header-line">العميل: ${name}</div>
-  <div class="header-line">التاريخ: ${dateVal}</div>
-  <div class="header-line">العنوان: ${title}</div>
-  ${truck ? `<div class="header-line">رقم القاطرة: ${truck}</div>` : ""}
-  ${stNum ? `<div class="header-line">رقم البيان: ${stNum}</div>` : ""}
-
-  <table>
-    <tr>
-      <th>#</th>
-      <th>الوصف</th>
-      <th>المبلغ</th>
-      <th>العملة</th>
-      <th>له/عليه</th>
-    </tr>
-    ${rowsHtml}
-  </table>
-
-  <div class="totals-summary">
-    <strong>ملخّص الأرصدة لهذا الكشف:</strong>
-    <table class="totals-table">
-      <tr>
-        <th>العملة</th>
-        <th>إجمالي له</th>
-        <th>إجمالي عليه</th>
-        <th>الصافي</th>
-      </tr>
-      ${totalsRows}
-    </table>
-  </div>
-
-  <div class="notes">
-    <strong>ملاحظات:</strong><br>${notes || "لا توجد ملاحظات."}
-  </div>`;
-    }
-
-    // ====== طباعة كشف واحد PDF (A4 + ملخّص له/عليه/الصافي) ======
-    function printAsPdf(){
-      const name    = clientNameInput.value.trim() || "العميل";
-      const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
-      const title   = titleInput.value || "";
-      const truck   = truckNumberInput.value.trim();
-      const stNum   = statementNumberInput.value.trim();
-      const entries = getEntries();
-
-      const rowsCount = entries.length;
-      let baseFont = 17;          // أكبر قليلاً ليكون أوضح
-      if (rowsCount > 25) {
-        baseFont = 12;
-      } else if (rowsCount > 18) {
-        baseFont = 13;
-      } else if (rowsCount > 12) {
-        baseFont = 15;
-      }
-      const tableFont = baseFont - 1;
-
-      // حساب إجمالي له / عليه لكل عملة
       const totalsPerCurrency = {};
       entries.forEach(e=>{
         if (!totalsPerCurrency[e.currency]) {
@@ -849,12 +843,89 @@
         else                      totalsPerCurrency[e.currency].alaih += e.amount;
       });
 
-      const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
+      let totalsRows = "";
+      Object.keys(totalsPerCurrency).forEach(c=>{
+        const t = totalsPerCurrency[c];
+        const diff = t.lah - t.alaih;
+        const dir = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء");
+        totalsRows += `
+          <tr>
+            <td style="border:1px solid #ddd; padding:3px; text-align:center;">${c}</td>
+            <td style="border:1px solid #ddd; padding:3px; text-align:center;">${t.lah.toLocaleString("en-US")}</td>
+            <td style="border:1px solid #ddd; padding:3px; text-align:center;">${t.alaih.toLocaleString("en-US")}</td>
+            <td style="border:1px solid #ddd; padding:3px; text-align:center;">${Math.abs(diff).toLocaleString("en-US")} (${dir})</td>
+          </tr>`;
+      });
 
-      const inner = buildPrintInnerHtml(
-        name, dateVal, title, truck, stNum, entries,
-        totalsPerCurrency, notes, baseFont, tableFont
-      );
+      const notesHtml = (st.extraNotes || "").replace(/\n/g,"<br>");
+
+      return `
+        <div style="width:100%; padding:16px 24px; box-sizing:border-box; font-family:system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif; color:#111827; direction:rtl; page-break-after:always;">
+          <h2 style="text-align:center; margin:0 0 6px;">كشف حساب</h2>
+          <div style="margin:2px 0;">العميل: ${name}</div>
+          <div style="margin:2px 0;">التاريخ: ${st.date || ""}</div>
+          <div style="margin:2px 0;">العنوان: ${st.title || ""}</div>
+          ${st.truckNumber ? `<div style="margin:2px 0;">رقم القاطرة: ${st.truckNumber}</div>` : ""}
+          ${st.statementNumber ? `<div style="margin:2px 0;">رقم البيان: ${st.statementNumber}</div>` : ""}
+
+          <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+            <thead>
+              <tr>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">#</th>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">الوصف</th>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">المبلغ</th>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">العملة</th>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">له/عليه</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${entries.map((e,i)=>`
+                <tr>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:center;">${i+1}</td>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:right;">${e.desc}</td>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:center;">${e.amount.toLocaleString("en-US")}</td>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:center;">${e.currency}</td>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:center;">${e.direction}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+
+          <div style="margin-top:8px; font-size:0.9rem;">
+            <strong>ملخص الأرصدة لهذا الكشف:</strong>
+            <table style="width:100%; border-collapse:collapse; margin-top:4px;">
+              <thead>
+                <tr>
+                  <th style="border:1px solid #ddd; padding:3px; background:#f3f4f6;">العملة</th>
+                  <th style="border:1px solid #ddd; padding:3px; background:#f3f4f6;">إجمال له</th>
+                  <th style="border:1px solid #ddd; padding:3px; background:#f3f4f6;">إجمال عليه</th>
+                  <th style="border:1px solid #ddd; padding:3px; background:#f3f4f6;">الصافي</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${totalsRows || `<tr><td colspan="4" style="border:1px solid #ddd; padding:3px; text-align:center;">لا توجد بيانات.</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+
+          ${notesHtml ? `<div style="margin-top:8px;">ملاحظات:<br>${notesHtml}</div>` : ""}
+        </div>
+      `;
+    }
+
+    // ====== طباعة كشف واحد PDF عبر نافذة المتصفح (كما كان سابقاً) ======
+    function printAsPdf(){
+      const name    = clientNameInput.value.trim() || "العميل";
+      const st = {
+        date: dateInput.value || new Date().toISOString().slice(0,10),
+        title: titleInput.value || "",
+        truckNumber: truckNumberInput.value.trim(),
+        statementNumber: statementNumberInput.value.trim(),
+        entries: getEntries(),
+        extraNotes: extraNotesInput.value
+      };
+
+      const html = buildStatementHtmlBlock(st, name);
 
       const w = window.open("", "_blank");
       w.document.write(`
@@ -863,201 +934,160 @@
 <meta charset="utf-8">
 <title>كشف - ${name}</title>
 <style>
-  @page {
-    size: A4;
-    margin: 12mm 15mm;
-  }
-  html, body{
-    margin:0;
-    padding:0;
-    background:#ffffff;
-  }
-  body{
-    font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
-    width:210mm;
-    margin:0 auto;
-    box-sizing:border-box;
-    color:#111827;
-    font-size:${baseFont}px;
-  }
-  h2{
-    font-size:${baseFont + 2}px;
-    margin:0 0 6px 0;
-    text-align:center;
-  }
-  .header-line{
-    margin:2px 0;
-    font-size:${baseFont}px;
-  }
-  table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:10px;
-    page-break-inside:auto;
-  }
-  tr{
-    page-break-inside:avoid;
-    page-break-after:auto;
-  }
-  th,td{
-    border:1px solid #ddd;
-    padding:4px 6px;
-    text-align:center;
-    font-size:${tableFont}px;
-  }
-  th{
-    background:#f3f4f6;
-    font-weight:600;
-  }
-  .totals-summary{
-    margin-top:14px;
-    font-size:${baseFont}px;
-  }
-  .totals-summary table{
-    margin-top:6px;
-  }
-  .notes{
-    margin-top:10px;
-    font-size:${baseFont}px;
-  }
+  @page { size:A4; margin:10mm; }
+  body { margin:0; padding:0; background:#ffffff; }
 </style>
 </head>
 <body>
-${inner}
+  ${html}
 </body>
 </html>`);
       w.document.close();
       w.focus();
       w.onload = function () {
-        try {
-          this.focus();
-          this.print();
-        } catch (e) {}
+        try { this.print(); } catch(e) {}
       };
     }
 
-    // ====== مشاركة الكشف كـ PDF مباشرة (واتساب وغيره) ======
+    // ====== مشاركة كشف واحد PDF كملف ======
     async function sharePdf(){
-      const entries = getEntries();
-      if (!entries.length){
-        alert("لا يوجد بنود في الكشف الحالي.");
+      const name = clientNameInput.value.trim() || "العميل";
+      const st = {
+        date: dateInput.value || new Date().toISOString().slice(0,10),
+        title: titleInput.value || "",
+        truckNumber: truckNumberInput.value.trim(),
+        statementNumber: statementNumberInput.value.trim(),
+        entries: getEntries(),
+        extraNotes: extraNotesInput.value
+      };
+      if (!st.entries.length){
+        alert("أضف بنودًا للكشف أولاً.");
         return;
       }
 
-      const name    = clientNameInput.value.trim() || "العميل";
-      const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
-      const title   = titleInput.value || "";
-      const truck   = truckNumberInput.value.trim();
-      const stNum   = statementNumberInput.value.trim();
+      singlePdfContainer.innerHTML = buildStatementHtmlBlock(st, name);
+      singlePdfContainer.style.display = "block";
 
-      const rowsCount = entries.length;
-      let baseFont = 15;
-      if (rowsCount > 25) {
-        baseFont = 12;
-      } else if (rowsCount > 18) {
-        baseFont = 13;
-      } else if (rowsCount > 12) {
-        baseFont = 14;
+      const canvas = await html2canvas(singlePdfContainer, { scale: 2 });
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p","mm","a4");
+      const pageWidth  = 210;
+      const pageHeight = 297;
+      const imgWidth   = pageWidth;
+      const imgHeight  = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position   = 0;
+
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
       }
-      const tableFont = baseFont - 1;
 
-      const totalsPerCurrency = {};
-      entries.forEach(e=>{
-        if (!totalsPerCurrency[e.currency]) {
-          totalsPerCurrency[e.currency] = { lah:0, alaih:0 };
-        }
-        if (e.direction === "له") totalsPerCurrency[e.currency].lah += e.amount;
-        else                      totalsPerCurrency[e.currency].alaih += e.amount;
-      });
-      const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
+      singlePdfContainer.style.display = "none";
 
-      const inner = buildPrintInnerHtml(
-        name, dateVal, title, truck, stNum, entries,
-        totalsPerCurrency, notes, baseFont, tableFont
+      const pdfBlob = pdf.output("blob");
+      const pdfFile = new File(
+        [pdfBlob],
+        `statement-${name}-${new Date().toISOString().slice(0,10)}.pdf`,
+        { type: "application/pdf" }
       );
 
-      const container = document.getElementById("pdfTempContainer");
-      container.style.display = "block";
-      container.innerHTML = `
-      <style>
-        body{margin:0;}
-        h2{
-          font-size:${baseFont + 2}px;
-          margin:0 0 6px 0;
-          text-align:center;
-        }
-        .header-line{
-          margin:2px 0;
-          font-size:${baseFont}px;
-        }
-        table{
-          width:100%;
-          border-collapse:collapse;
-          margin-top:10px;
-        }
-        th,td{
-          border:1px solid #ddd;
-          padding:4px 6px;
-          text-align:center;
-          font-size:${tableFont}px;
-        }
-        th{
-          background:#f3f4f6;
-          font-weight:600;
-        }
-        .totals-summary{
-          margin-top:14px;
-          font-size:${baseFont}px;
-        }
-        .notes{
-          margin-top:10px;
-          font-size:${baseFont}px;
-        }
-      </style>
-      ${inner}`;
+      if (navigator.canShare && navigator.canShare({ files:[pdfFile] })) {
+        navigator.share({
+          title: "كشف حساب PDF",
+          text: "كشف حساب العميل.",
+          files: [pdfFile]
+        }).catch(()=>{});
+      } else {
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = pdfFile.name;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
 
-      try{
-        const canvas = await html2canvas(container, {scale:2});
-        const imgData = canvas.toDataURL("image/jpeg", 0.98);
+    // ====== مشاركة عدة كشوف PDF في ملف واحد ======
+    async function shareSelectedStatementsPdf(){
+      const name = clientNameInput.value.trim();
+      if (!name) {
+        alert("اكتب اسم العميل أولاً.");
+        return;
+      }
+      if (!state.multiSelectEnabled || !state.selectedStatements.length) {
+        alert("فعّل تحديد عدة كشوف ثم اختر كشوف من القائمة.");
+        return;
+      }
 
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF("p","pt","a4");
-        const pageWidth  = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
+      const client = state.data.clients[name];
+      if (!client) {
+        alert("لا توجد كشوف لهذا العميل.");
+        return;
+      }
 
-        const imgWidth = pageWidth - 40;   // هوامش
-        const imgHeight = canvas.height * imgWidth / canvas.width;
+      multiPdfContainer.innerHTML = "";
+      multiPdfContainer.style.display = "block";
 
-        pdf.addImage(imgData, "JPEG", 20, 20, imgWidth, imgHeight);
+      state.selectedStatements.forEach((id) => {
+        const st = client.statements.find(s => s.id === id);
+        if (!st) return;
+        multiPdfContainer.insertAdjacentHTML("beforeend", buildStatementHtmlBlock(st, name));
+      });
 
-        const blob = pdf.output("blob");
-        const fileName = `statement-${name}-${dateVal}.pdf`;
-        const file = new File([blob], fileName, { type: "application/pdf" });
+      const canvas = await html2canvas(multiPdfContainer, { scale: 2 });
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
 
-        if (navigator.canShare && navigator.canShare({ files:[file] })) {
-          await navigator.share({
-            title: "كشف حساب",
-            text: "كشف حساب بصيغة PDF من تطبيق بسّام.",
-            files: [file]
-          });
-        } else {
-          // إذا لم يدعم المشاركة بالملف، ننزله فقط
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-          alert("تم تنزيل ملف PDF، يمكنك إرساله للعميل من مدير الملفات.");
-        }
-      } catch(err){
-        console.error(err);
-        alert("حصل خطأ أثناء إنشاء ملف PDF للمشاركة.");
-      } finally {
-        container.style.display = "none";
-        container.innerHTML = "";
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p","mm","a4");
+      const pageWidth  = 210;
+      const pageHeight = 297;
+      const imgWidth   = pageWidth;
+      const imgHeight  = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position   = 0;
+
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      multiPdfContainer.style.display = "none";
+
+      const pdfBlob = pdf.output("blob");
+      const pdfFile = new File(
+        [pdfBlob],
+        `statements-${name}-${new Date().toISOString().slice(0,10)}.pdf`,
+        { type: "application/pdf" }
+      );
+
+      if (navigator.canShare && navigator.canShare({ files:[pdfFile] })) {
+        navigator.share({
+          title: "مجموعة كشوف حساب PDF",
+          text: "الكشوف المحددة لهذا العميل.",
+          files: [pdfFile]
+        }).catch(()=>{});
+      } else {
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = pdfFile.name;
+        a.click();
+        URL.revokeObjectURL(url);
       }
     }
 
@@ -1129,8 +1159,7 @@ body{
       w.document.close();
       w.focus();
       w.onload = function () {
-        this.focus();
-        this.print();
+        try { this.print(); } catch(e) {}
       };
     }
 
