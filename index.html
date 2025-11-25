@@ -737,7 +737,23 @@
       whatsAppBox.textContent = txt;
     }
 
-    // ====== طباعة كشف واحد PDF (A4 + تكبير الخط حسب طول الكشف) ======
+    // ====== حساب إجمالي له / عليه / الصافي للكشف الحالي فقط ======
+    function computeStatementTotalsForEntries(entries) {
+      const totals = {};
+      entries.forEach(e => {
+        if (!totals[e.currency]) {
+          totals[e.currency] = { lah: 0, alaih: 0 };
+        }
+        if (e.direction === "له") {
+          totals[e.currency].lah += e.amount;
+        } else {
+          totals[e.currency].alaih += e.amount;
+        }
+      });
+      return totals;
+    }
+
+    // ====== طباعة كشف واحد PDF (A4 + إجمالي له / عليه / الصافي) ======
     function printAsPdf(){
       const name    = clientNameInput.value.trim() || "العميل";
       const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
@@ -746,6 +762,11 @@
       const stNum   = statementNumberInput.value.trim();
       const entries = getEntries();
       const manual  = manualTotalInput.value.trim();
+
+      if (!entries.length) {
+        alert("لا توجد بنود في الكشف للطباعة.");
+        return;
+      }
 
       // نحدد حجم الخط حسب عدد البنود
       const rowsCount = entries.length;
@@ -759,22 +780,31 @@
       }
       const tableFont = baseFont - 1;
 
-      let autoTotalsHtml = "";
-      if (!manual) {
-        const res = {};
-        entries.forEach(e=>{
-          if (!res[e.currency]) res[e.currency] = { lah:0, alaih:0 };
-          if (e.direction === "له")  res[e.currency].lah   += e.amount;
-          else                       res[e.currency].alaih += e.amount;
+      // إجماليات الكشف الحالي
+      const statementTotals = computeStatementTotalsForEntries(entries);
+
+      // تجهيز نص الإجماليات
+      let totalsHtml = "";
+      if (manual) {
+        totalsHtml = `<li>${manual}</li>`;
+      } else {
+        Object.keys(statementTotals).forEach(c => {
+          const lah   = statementTotals[c].lah;
+          const alaih = statementTotals[c].alaih;
+          const diff  = lah - alaih;
+          const dir   = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء";
+          totalsHtml += `
+            <li>
+              العملة: ${c}<br>
+              له: ${lah.toLocaleString("en-US")}<br>
+              عليه: ${alaih.toLocaleString("en-US")}<br>
+              الصافي: ${Math.abs(diff).toLocaleString("en-US")} (${dir})
+            </li>
+          `;
         });
-        Object.keys(res).forEach(c=>{
-          const diff = res[c].lah - res[c].alaih;
-          if (diff !== 0) {
-            const dir = diff > 0 ? "له" : "عليه";
-            autoTotalsHtml += `<li>${Math.abs(diff).toLocaleString()} ${c} (${dir})</li>`;
-          }
-        });
-        if (!autoTotalsHtml) autoTotalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
+        if (!totalsHtml) {
+          totalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
+        }
       }
 
       const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
@@ -873,9 +903,9 @@
   </table>
 
   <div class="total-box">
-    <strong>إجمال هذا الكشف:</strong>
+    <strong>إجماليات هذا الكشف:</strong>
     <ul>
-      ${ manual ? `<li>${manual}</li>` : autoTotalsHtml }
+      ${totalsHtml}
     </ul>
   </div>
 
