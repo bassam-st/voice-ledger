@@ -737,23 +737,7 @@
       whatsAppBox.textContent = txt;
     }
 
-    // ====== حساب إجمالي له / عليه / الصافي للكشف الحالي فقط ======
-    function computeStatementTotalsForEntries(entries) {
-      const totals = {};
-      entries.forEach(e => {
-        if (!totals[e.currency]) {
-          totals[e.currency] = { lah: 0, alaih: 0 };
-        }
-        if (e.direction === "له") {
-          totals[e.currency].lah += e.amount;
-        } else {
-          totals[e.currency].alaih += e.amount;
-        }
-      });
-      return totals;
-    }
-
-    // ====== طباعة كشف واحد PDF (A4 + إجمالي له / عليه / الصافي) ======
+    // ====== طباعة كشف واحد PDF (A4 + إجمالي له/عليه/الصافي لكل عملة) ======
     function printAsPdf(){
       const name    = clientNameInput.value.trim() || "العميل";
       const dateVal = dateInput.value || new Date().toISOString().slice(0,10);
@@ -764,7 +748,7 @@
       const manual  = manualTotalInput.value.trim();
 
       if (!entries.length) {
-        alert("لا توجد بنود في الكشف للطباعة.");
+        alert("لا يوجد بنود في الكشف للطباعة.");
         return;
       }
 
@@ -780,32 +764,38 @@
       }
       const tableFont = baseFont - 1;
 
-      // إجماليات الكشف الحالي
-      const statementTotals = computeStatementTotalsForEntries(entries);
-
-      // تجهيز نص الإجماليات
-      let totalsHtml = "";
-      if (manual) {
-        totalsHtml = `<li>${manual}</li>`;
-      } else {
-        Object.keys(statementTotals).forEach(c => {
-          const lah   = statementTotals[c].lah;
-          const alaih = statementTotals[c].alaih;
-          const diff  = lah - alaih;
-          const dir   = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء";
-          totalsHtml += `
-            <li>
-              العملة: ${c}<br>
-              له: ${lah.toLocaleString("en-US")}<br>
-              عليه: ${alaih.toLocaleString("en-US")}<br>
-              الصافي: ${Math.abs(diff).toLocaleString("en-US")} (${dir})
-            </li>
-          `;
-        });
-        if (!totalsHtml) {
-          totalsHtml = "<li>لا يوجد رصيد لهذا الكشف.</li>";
+      // نحسب الإجمالي له/عليه لكل عملة
+      const totalsMap = {};
+      entries.forEach(e => {
+        if (!totalsMap[e.currency]) {
+          totalsMap[e.currency] = { lah: 0, alaih: 0 };
         }
-      }
+        if (e.direction === "له") {
+          totalsMap[e.currency].lah += e.amount;
+        } else {
+          totalsMap[e.currency].alaih += e.amount;
+        }
+      });
+
+      let totalsRowsHtml = "";
+      Object.keys(totalsMap).forEach(c => {
+        const lah   = totalsMap[c].lah;
+        const alaih = totalsMap[c].alaih;
+        const diff  = lah - alaih;
+        const dirLabel = diff > 0 ? "له" : (diff < 0 ? "عليه" : "-");
+        totalsRowsHtml += `
+          <tr>
+            <td>${c}</td>
+            <td>${lah.toLocaleString("en-US")}</td>
+            <td>${alaih.toLocaleString("en-US")}</td>
+            <td>${Math.abs(diff).toLocaleString("en-US")}</td>
+            <td>${dirLabel}</td>
+          </tr>`;
+      });
+
+      const manualLineHtml = manual
+        ? `<div class="manual-total">الإجمالي المدخل يدويًا: ${manual}</div>`
+        : "";
 
       const notes = (extraNotesInput.value || "").replace(/\n/g, "<br>");
 
@@ -826,7 +816,7 @@
     background:#ffffff;
   }
   body{
-    font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+    font-family:Tahoma, "Segoe UI", system-ui, -apple-system, sans-serif;
     width:210mm;
     margin:0 auto;
     box-sizing:border-box;
@@ -866,9 +856,24 @@
     margin-top:12px;
     font-size:${baseFont}px;
   }
-  .total-box ul{
-    padding-right:20px;
-    margin:6px 0 0;
+  .totals-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:6px;
+  }
+  .totals-table th,
+  .totals-table td{
+    border:1px solid #ddd;
+    padding:4px 6px;
+    text-align:center;
+    font-size:${tableFont}px;
+  }
+  .totals-table th{
+    background:#e5e7eb;
+  }
+  .manual-total{
+    margin-top:4px;
+    margin-bottom:4px;
   }
   .notes{
     margin-top:10px;
@@ -903,10 +908,23 @@
   </table>
 
   <div class="total-box">
-    <strong>إجماليات هذا الكشف:</strong>
-    <ul>
-      ${totalsHtml}
-    </ul>
+    <strong>ملخص الأرصدة لهذا الكشف:</strong>
+    ${manualLineHtml}
+    ${
+      totalsRowsHtml
+        ? `
+    <table class="totals-table">
+      <tr>
+        <th>العملة</th>
+        <th>إجمالي له</th>
+        <th>إجمالي عليه</th>
+        <th>الصافي</th>
+        <th>له / عليه</th>
+      </tr>
+      ${totalsRowsHtml}
+    </table>`
+        : `<div class="no-totals">لا يوجد رصيد مسجل في البنود.</div>`
+    }
   </div>
 
   <div class="notes">
