@@ -1,10 +1,10 @@
-// voice.js — مساعد بسّام الصوتي الذكي
+// voice.js — مساعد بسّام الصوتي الذكي (نسخة حوارية متقدمة)
 
 (function () {
   const btn = document.getElementById("voiceAssistantBtn");
   if (!btn) return;
 
-  // دعم التعرف على الصوت
+  // ===== دعم التعرف على الصوت =====
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -15,12 +15,18 @@
   }
 
   const recognition = new SpeechRecognition();
-  recognition.lang = "ar-SA"; // جرّب ar-SA هي الأفضل غالباً للهجة
+  recognition.lang = "ar-SA"; // للهجة السعودية/اليمنية غالباً أفضل
   recognition.interimResults = false;
 
   let listening = false;
 
-  // ====== أدوات مساعدة عامة ======
+  // حالة المحادثة
+  const convo = {
+    mode: "idle",          // "idle" | "adding_entry"
+    step: null,            // "desc" | "amount" | "currency" | "direction"
+  };
+
+  // ===== أدوات مساعدة عامة =====
 
   function say(message) {
     if (!("speechSynthesis" in window)) return;
@@ -52,7 +58,7 @@
       "٦": "6",
       "٧": "7",
       "٨": "8",
-      "٩": "9"
+      "٩": "9",
     };
     return text.replace(/[٠-٩]/g, (d) => map[d] || d);
   }
@@ -62,7 +68,12 @@
     return normalizeDigits(text).toLowerCase().trim();
   }
 
-  // ====== زر التشغيل / الإيقاف ======
+  function resetConversation() {
+    convo.mode = "idle";
+    convo.step = null;
+  }
+
+  // ===== زر التشغيل / الإيقاف =====
   btn.addEventListener("click", () => {
     if (listening) {
       recognition.stop();
@@ -103,32 +114,42 @@
     const text = normalize(rawText);
     console.log("🔎 بعد التطبيع:", text);
 
-    const clientInput = getEl("clientName");
-    const titleInput = getEl("statementTitle");
-    const dateInput = getEl("statementDate");
+    const clientInput  = getEl("clientName");
+    const titleInput   = getEl("statementTitle");
+    const dateInput    = getEl("statementDate");
+    const truckInput   = getEl("truckNumber");
+    const stmtNumInput = getEl("statementNumber");
 
-    // ========= تحية بسيطة =========
+    // ===== أوامر إلغاء عامة =====
+    if (
+      text.includes("الغ") ||     // الغي / الغاء
+      text.includes("إلغاء") ||
+      text.includes("cancel")
+    ) {
+      resetConversation();
+      say("ألغيت العملية الحالية يا بسّام.");
+      return;
+    }
+
+    // ===== تحية بسيطة =====
     if (text.includes("سلام") || text.includes("مرحبا") || text.includes("هلا")) {
       say("هلا يا بسّام، تحت أمرك. قل لي وش تحب أعمل.");
       return;
     }
 
-    // ========= كشف جديد =========
+    // ===== كشف جديد =====
     if (
       text.includes("كشف جديد") ||
       text.includes("افتح كشف") ||
       text.includes("سجل كشف") ||
-      text.includes("كشـف فاضي")
+      text.includes("كشف فاضي")
     ) {
-      // استخدام دالتك resetForm لو موجودة
       if (typeof resetForm === "function") {
         const keepName = clientInput ? clientInput.value : "";
         resetForm(keepName);
       } else {
-        // تفريغ يدوي بسيط
         if (clientInput) clientInput.value = "";
-        if (dateInput)
-          dateInput.value = new Date().toISOString().slice(0, 10);
+        if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
         if (titleInput) titleInput.value = "";
         const extraNotes = getEl("extraNotes");
         if (extraNotes) extraNotes.value = "";
@@ -139,30 +160,12 @@
         }
         if (typeof updatePreviewText === "function") updatePreviewText();
       }
-
+      resetConversation();
       say("حاضر يا بسام، فتحت لك كشف جديد.");
       return;
     }
 
-    // ========= إضافة بند جديد =========
-    if (
-      text.includes("بند جديد") ||
-      text.includes("اضف بند") ||
-      text.includes("أضف بند") ||
-      text.includes("ضيف بند") ||
-      text.includes("زود بند")
-    ) {
-      if (typeof addEntryRow === "function") {
-        addEntryRow();
-        say("تم إضافة بند جديد يا بسّام.");
-      } else {
-        say("ما قدرت أضيف بند، في مشكلة في الصفحة.");
-      }
-      return;
-    }
-
-    // ========= اسم العميل =========
-    // مثال: "اسم العميل محمد أحمد" أو "العميل محمد"
+    // ===== تعيين اسم العميل =====
     if (text.startsWith("اسم العميل") || text.startsWith("العميل ")) {
       let name = text
         .replace("اسم العميل", "")
@@ -181,14 +184,14 @@
       return;
     }
 
-    // ========= عنوان الكشف =========
-    // "عنوان الكشف شحنة فلان" أو "العنوان شحنة فلان"
+    // ===== تعيين عنوان الكشف =====
     if (text.startsWith("عنوان الكشف") || text.startsWith("العنوان")) {
-      const title = text
+      const titleClean = text
         .replace("عنوان الكشف", "")
         .replace("العنوان", "")
         .trim();
-      if (titleInput && title) {
+      if (titleInput && titleClean) {
+        // نستخدم النص الأصلي للحفاظ على الحروف كما هي
         titleInput.value = rawText.replace(/^(عنوان الكشف|العنوان)\s*/i, "");
         if (typeof updatePreviewText === "function") updatePreviewText();
         say("سجلت عنوان الكشف.");
@@ -198,11 +201,180 @@
       return;
     }
 
-    // ========= وصف البند =========
-    // مثال: "وصف البند البيان والتحسين ورسوم أخرى"
+    // ===== رقم القاطرة =====
+    if (
+      text.includes("رقم القاطرة") ||
+      text.includes("رقم القاطره") ||
+      text.startsWith("القاطرة") ||
+      text.startsWith("القاطره")
+    ) {
+      const clean = normalizeDigits(rawText);
+      const digitsOnly = clean.replace(/[^\d]/g, "");
+      if (truckInput && digitsOnly) {
+        truckInput.value = digitsOnly;
+        if (typeof updatePreviewText === "function") updatePreviewText();
+        say("سجلت رقم القاطرة " + digitsOnly);
+      } else {
+        say("ما قدرت أقرأ رقم القاطرة يا بسّام.");
+      }
+      return;
+    }
+
+    // ===== رقم البيان =====
+    if (
+      text.includes("رقم البيان") ||
+      text.startsWith("البيان")
+    ) {
+      const clean = normalizeDigits(rawText);
+      const digitsOnly = clean.replace(/[^\d]/g, "");
+      if (stmtNumInput && digitsOnly) {
+        stmtNumInput.value = digitsOnly;
+        if (typeof updatePreviewText === "function") updatePreviewText();
+        say("سجلت رقم البيان " + digitsOnly);
+      } else {
+        say("ما قدرت أقرأ رقم البيان يا بسّام.");
+      }
+      return;
+    }
+
+    // ======================================================
+    //         وضع المحادثة لإضافة بند (C)
+    // ======================================================
+
+    // بدء محادثة إضافة بند جديد
+    if (
+      text.includes("بند جديد") ||
+      text.includes("اضف بند") ||
+      text.includes("أضف بند") ||
+      text.includes("ضيف بند") ||
+      text.includes("زود بند")
+    ) {
+      if (typeof addEntryRow === "function") {
+        addEntryRow();
+        convo.mode = "adding_entry";
+        convo.step = "desc";
+        say("طيب يا بسّام، ما هو وصف البند؟");
+      } else {
+        say("ما قدرت أضيف بند، في مشكلة في الصفحة.");
+      }
+      return;
+    }
+
+    // لو نحن في وضع إضافة بند، نتعامل حسب الخطوة الحالية
+    if (convo.mode === "adding_entry") {
+      const row = getLastEntryRow();
+      if (!row) {
+        resetConversation();
+        say("ما لقيت البند يا بسّام، أعد المحاولة.");
+        return;
+      }
+
+      // ===== الخطوة 1: الوصف =====
+      if (convo.step === "desc") {
+        // لو قال "وصف البند ..." نزيلها، ولو ما قال نأخذ النص كامل
+        let desc = rawText
+          .replace(/^وصف البند/i, "")
+          .replace(/^وصف/i, "")
+          .trim();
+        if (!desc) desc = rawText.trim();
+
+        const descInput =
+          row.querySelector(".entry-desc") || row.querySelector("input");
+        if (descInput && desc) {
+          descInput.value = desc;
+          if (typeof updatePreviewText === "function") updatePreviewText();
+          convo.step = "amount";
+          say("تمام، كم المبلغ يا بسّام؟");
+        } else {
+          say("ما فهمت وصف البند، كرر الوصف لو سمحت.");
+        }
+        return;
+      }
+
+      // ===== الخطوة 2: المبلغ =====
+      if (convo.step === "amount") {
+        const clean = normalizeDigits(rawText);
+        const digitsOnly = clean.replace(/[^\d]/g, "");
+        const value = Number(digitsOnly || "0");
+        if (value > 0) {
+          const amountInput = row.querySelector(".entry-amount");
+          if (amountInput) {
+            amountInput.value = String(value);
+            if (typeof updatePreviewText === "function") updatePreviewText();
+            convo.step = "currency";
+            say("ما هي العملة؟ يمني، سعودي، درهم، دولار، أو عماني؟");
+          } else {
+            resetConversation();
+            say("ما لقيت خانة المبلغ يا بسّام.");
+          }
+        } else {
+          say("ما فهمت رقم المبلغ، كرر لو سمحت.");
+        }
+        return;
+      }
+
+      // ===== الخطوة 3: العملة =====
+      if (convo.step === "currency") {
+        const currSelect = row.querySelector(".entry-curr");
+        if (!currSelect) {
+          resetConversation();
+          say("ما لقيت خانة العملة يا بسّام.");
+          return;
+        }
+
+        let chosen = null;
+        if (text.includes("يمني") || text.includes("ريال يمني")) chosen = "يمني";
+        else if (text.includes("سعودي") || text.includes("ريال سعودي")) chosen = "سعودي";
+        else if (text.includes("درهم")) chosen = "درهم";
+        else if (text.includes("دولار")) chosen = "دولار";
+        else if (text.includes("عماني") || text.includes("ريال عماني")) chosen = "عماني";
+
+        if (chosen) {
+          currSelect.value = chosen;
+          if (typeof updatePreviewText === "function") updatePreviewText();
+          convo.step = "direction";
+          say("تمام، هل هو له أم عليه؟");
+        } else {
+          say("ما فهمت نوع العملة، قل يمني أو سعودي أو درهم أو دولار أو عماني.");
+        }
+        return;
+      }
+
+      // ===== الخطوة 4: له / عليه =====
+      if (convo.step === "direction") {
+        const dirSelect = row.querySelector(".entry-dir");
+        if (!dirSelect) {
+          resetConversation();
+          say("ما لقيت خانة له أو عليه يا بسّام.");
+          return;
+        }
+
+        if (text.includes("له")) {
+          dirSelect.value = "له";
+        } else if (text.includes("عليه")) {
+          dirSelect.value = "عليه";
+        } else {
+          say("قل له أو عليه يا بسّام.");
+          return;
+        }
+
+        if (typeof updatePreviewText === "function") updatePreviewText();
+        resetConversation();
+        say("تم تسجيل البند يا بسّام. إذا تبي أضيف بند جديد، قل: أضف بند جديد.");
+        return;
+      }
+    }
+
+    // ======================================================
+    //    أوامر تقليدية (خارج وضع المحادثة C)
+    // ======================================================
+
+    // وصف البند (أمر يدوي خارج المحادثة)
     if (text.startsWith("وصف البند") || text.startsWith("وصف ")) {
-      // نستخدم النص الأصلي rawText حتى لا نضيّع التشكيل أو الكلام الكامل
-      let desc = rawText.replace(/^وصف البند/i, "").replace(/^وصف/i, "").trim();
+      let desc = rawText
+        .replace(/^وصف البند/i, "")
+        .replace(/^وصف/i, "")
+        .trim();
       const row = getLastEntryRow();
       if (row && desc) {
         const descInput =
@@ -220,8 +392,7 @@
       return;
     }
 
-    // ========= المبلغ =========
-    // مثال: "المبلغ 245000" أو "ادخل المبلغ 1490000"
+    // المبلغ (أمر يدوي)
     if (
       text.startsWith("المبلغ") ||
       text.startsWith("اكتب المبلغ") ||
@@ -252,8 +423,7 @@
       return;
     }
 
-    // ========= تغيير العملة =========
-    // "العملة يمني" / "خلي العملة سعودي" / "غير العملة دولار"
+    // تغيير العملة (أمر يدوي)
     if (text.includes("العملة") || text.includes("عملة")) {
       const row = getLastEntryRow();
       if (!row) {
@@ -289,7 +459,7 @@
       return;
     }
 
-    // ========= له / عليه =========
+    // له / عليه (أمر يدوي)
     if (
       text.includes("خله له") ||
       text.includes("خليها له") ||
@@ -332,12 +502,12 @@
       return;
     }
 
-    // ========= حفظ الكشف =========
+    // ===== حفظ الكشف =====
     if (
       text.includes("احفظ الكشف") ||
       text.includes("حفظ الكشف") ||
       text.includes("سجل الكشف") ||
-      text.includes("احفظ") && text.includes("الكشف")
+      (text.includes("احفظ") && text.includes("الكشف"))
     ) {
       const saveBtn = getEl("saveStatementBtn");
       if (saveBtn) {
@@ -352,7 +522,7 @@
       return;
     }
 
-    // ========= لو ما فهم الأمر =========
+    // ===== لو ما فهم الأمر =====
     say("سمعتك تقول: " + rawText + " لكن ما فهمت الأمر يا بسّام.");
   }
 })();
