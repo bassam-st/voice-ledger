@@ -14,1266 +14,553 @@
       --green: #16a34a;
       --green-dark: #15803d;
       --red: #dc2626;
-      --bg: #0f172a;
-      --card: #0b1120;
-      --card-soft: #020617;
-      --border: rgba(148,163,184,.35);
-      --muted: #94a3b8;
-      --radius-lg: 18px;
-      --radius-pill: 999px;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --radius-lg: 14px;
+      --radius-md: 10px;
     }
-
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at 0 0, #1f2937 0, #020617 40%);
-      color: #e5e7eb;
-      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
     }
-
-    .page {
-      max-width: 900px;
+    .app-shell {
+      max-width: 950px;
       margin: 0 auto;
-      padding: 16px;
-      padding-bottom: 40px;
+      padding: 16px 10px 40px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.3rem;
+      margin: 8px 0 4px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: .8rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
     }
 
-    .app-card {
-      background: radial-gradient(circle at top left, #1e293b 0, #020617 55%);
-      border-radius: 28px;
-      padding: 16px;
-      box-shadow: 0 24px 80px rgba(15,23,42,.95);
-      border: 1px solid rgba(148,163,184,.4);
-    }
-
-    .app-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .logo-circle {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 30% 20%, rgba(56,189,248,.95), transparent 55%),
-        radial-gradient(circle at 80% 10%, rgba(16,185,129,.9), transparent 55%),
-        radial-gradient(circle at 50% 100%, rgba(56,189,248,.5), transparent 55%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #0f172a;
-      font-weight: 800;
-      font-size: 1.1rem;
-      box-shadow: 0 12px 32px rgba(34,197,94,.45);
-    }
-
-    .app-header-text h1 {
-      margin: 0 0 2px 0;
-      font-size: 1.05rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .pill {
+    .install-bar { text-align: center; margin-bottom: 10px; }
+    #installButton {
+      display: none;
+      background: #0f172a;
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.5);
-      padding: 2px 10px;
-      font-size: .75rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: #cbd5f5;
-      background: rgba(15,23,42,.7);
-    }
-
-    .app-header-text p {
-      margin: 0;
-      font-size: .78rem;
-      color: #9ca3af;
-    }
-
-    .pill span.badge {
-      border-radius: 999px;
-      padding: 0 8px;
-      font-size: .7rem;
-      background: rgba(22,163,74,.1);
-      color: #bbf7d0;
-      border: 1px solid rgba(52,211,153,.58);
-    }
-
-    .section-title {
-      margin: 10px 0 4px 0;
-      font-size: .9rem;
-      color: #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .section-title small {
-      font-size: .7rem;
-      color: #9ca3af;
+      font-size: .8rem;
+      cursor: pointer;
     }
 
     .tabs {
-      display: flex;
-      gap: 6px;
-      margin: 6px 0 10px 0;
-      overflow-x: auto;
-      padding-bottom: 2px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      background: #e5e7eb;
+      border-radius: 999px;
+      padding: 3px;
+      margin-bottom: 12px;
     }
-
     .tab {
-      border-radius: var(--radius-pill);
-      border: 1px solid rgba(148,163,184,.6);
-      padding: 6px 10px;
-      font-size: .75rem;
-      color: #e5e7eb;
-      background: rgba(15,23,42,.9);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .tab span.icon {
-      font-size: 1rem;
-    }
-    .tab small {
-      font-size: .7rem;
-      color: #9ca3af;
-    }
-    .tab.active {
-      background: radial-gradient(circle at top left, #22c55e, #16a34a);
-      border-color: #4ade80;
-      color: #022c22;
-    }
-
-    .tabs::-webkit-scrollbar {
-      height: 3px;
-    }
-    .tabs::-webkit-scrollbar-thumb {
-      background: rgba(148,163,184,.6);
-      border-radius: 999px;
-    }
-
-    .grid {
-      display: grid;
-      gap: 12px;
-    }
-    @media (min-width: 768px) {
-      .grid-cols-2 {
-        grid-template-columns: 1.5fr 1fr;
-      }
-    }
-
-    .surface {
-      background: radial-gradient(circle at top, rgba(15,23,42,.95), #020617);
-      border-radius: 20px;
-      padding: 10px 12px;
-      border: 1px solid rgba(148,163,184,.35);
-      box-shadow: 0 18px 50px rgba(15,23,42,.9);
-    }
-
-    .surface-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-      gap: 8px;
-    }
-
-    .surface-header h2 {
-      margin: 0;
-      font-size: .85rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .surface-header h2 span {
-      font-size: 1rem;
-    }
-
-    .surface-header small {
-      font-size: .7rem;
-      color: #9ca3af;
-    }
-
-    .surface-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    button {
-      font-family: inherit;
-    }
-
-    .btn {
-      border-radius: var(--radius-pill);
-      border: 1px solid rgba(148,163,184,.35);
-      padding: 5px 9px;
-      background: rgba(15,23,42,.9);
-      color: #e5e7eb;
-      font-size: .75rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-    }
-    .btn span.icon {
-      font-size: 1rem;
-    }
-    .btn-primary {
-      background: radial-gradient(circle at top left, #22c55e, #16a34a);
-      border-color: #4ade80;
-      color: #022c22;
-      box-shadow: 0 10px 30px rgba(22,163,74,.75);
-    }
-
-    .btn-ghost {
-      background: rgba(15,23,42,0.7);
-      border-style: dashed;
-      border-color: rgba(148,163,184,.55);
-      color: #e5e7eb;
-    }
-
-    .btn-icon-only {
-      padding: 4px 6px;
-      width: 28px;
-      justify-content: center;
-    }
-
-    .pill-btn {
-      border-radius: var(--radius-pill);
-      border: 1px solid rgba(148,163,184,.4);
-      padding: 7px 10px;
-      font-size: .8rem;
-      background: rgba(15,23,42,.95);
-      color: #e5e7eb;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      cursor: pointer;
-    }
-
-    .pill-green {
-      background: radial-gradient(circle at top left, #22c55e, #16a34a);
-      border-color: #4ade80;
-      color: #052e16;
-      box-shadow: 0 10px 30px rgba(22,163,74,.85);
-    }
-    .pill-gray {
-      background: rgba(15,23,42,.9);
-      border-style: dashed;
-      border-color: rgba(148,163,184,.6);
-      color: #e5e7eb;
-    }
-
-    .field-group {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 8px;
-      margin-bottom: 8px;
-      align-items: center;
-    }
-    @media (max-width: 600px) {
-      .field-group {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    label {
-      font-size: .75rem;
-      color: #9ca3af;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    label span.req {
-      color: #f97316;
-    }
-
-    input[type="text"],
-    input[type="date"],
-    input[type="number"],
-    select,
-    textarea {
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.4);
-      background: radial-gradient(circle at top, rgba(15,23,42,.97), #020617);
-      color: #e5e7eb;
-      padding: 6px 10px;
-      font-size: .8rem;
-      outline: none;
-      width: 100%;
-    }
-
-    textarea {
-      border-radius: 16px;
-      min-height: 60px;
-      resize: vertical;
-    }
-
-    input::placeholder,
-    textarea::placeholder {
-      color: rgba(148,163,184,.7);
-    }
-
-    .entries {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 6px;
-      margin-bottom: 2px;
-      max-height: 240px;
-      overflow-y: auto;
-      padding-right: 2px;
-    }
-
-    .entry-row {
-      display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(0, .9fr) minmax(0, 1fr) minmax(0, .9fr) auto;
-      gap: 4px;
-      align-items: center;
-    }
-    @media (max-width: 720px) {
-      .entry-row {
-        grid-template-columns: minmax(0, 2.3fr) minmax(0, .9fr) minmax(0, .9fr) auto;
-        grid-template-rows: auto auto;
-      }
-      .entry-row select.entry-dir {
-        grid-column: span 2;
-      }
-    }
-
-    .entry-row input[type="number"] {
       text-align: center;
-    }
-
-    .entry-row select,
-    .entry-row input {
-      font-size: .78rem;
-      padding-inline: 6px;
-    }
-
-    .chip {
+      padding: 8px 4px;
       border-radius: 999px;
-      padding: 2px 8px;
-      font-size: .7rem;
-      border: 1px solid rgba(148,163,184,.4);
-      color: #9ca3af;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    #whatsAppText {
-      border-radius: 12px;
-      border: 1px solid rgba(148,163,184,.4);
-      background: radial-gradient(circle at top, rgba(15,23,42,1), #020617);
-      color: #e5e7eb;
-      padding: 8px;
-      font-size: .78rem;
-      white-space: pre-wrap;
-      line-height: 1.5;
-      max-height: 260px;
-      overflow-y: auto;
-    }
-
-    .hint {
-      font-size: .7rem;
-      color: #9ca3af;
-      margin-top: 4px;
-    }
-
-    .stats-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin: 6px 0 0 0;
-    }
-
-    .stat-pill {
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.5);
-      padding: 4px 8px;
-      font-size: .7rem;
-      color: #e5e7eb;
-      background: rgba(15,23,42,.95);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .stat-pill span.label {
-      color: #9ca3af;
-    }
-
-    .section {
-      margin-top: 12px;
-    }
-
-    .section h3 {
-      margin: 0 0 4px 0;
-      font-size: .8rem;
-      color: #e5e7eb;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .section h3 span.icon {
-      font-size: 1rem;
-    }
-
-    .section small {
-      font-size: .7rem;
-      color: #9ca3af;
-    }
-
-    .list {
-      border-radius: 12px;
-      border: 1px solid rgba(148,163,184,.3);
-      background: rgba(15,23,42,.9);
-      max-height: 240px;
-      overflow-y: auto;
-      margin-top: 6px;
-    }
-
-    .list-item {
-      padding: 6px 8px;
-      border-bottom: 1px dashed rgba(51,65,85,.9);
       cursor: pointer;
-      font-size: .78rem;
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
+      font-size: .9rem;
     }
-    .list-item:last-child {
-      border-bottom: none;
-    }
-    .list-item:hover {
-      background: rgba(15,23,42,.96);
+    .tab.active { background: var(--green); color: #fff; }
+
+    .card {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      box-shadow: 0 8px 20px rgba(15,23,42,.06);
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
     }
 
-    .list-item .meta {
-      font-size: .7rem;
-      color: #9ca3af;
-    }
+    label { display: block; font-size: .8rem; color: var(--text-muted); margin-bottom: 3px; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .row > * { flex: 1; }
 
-    .pill-sm {
+    input, select, textarea {
+      width: 100%;
+      padding: 7px 8px;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.5);
-      padding: 1px 6px;
-      font-size: .65rem;
-      color: #e5e7eb;
-      background: rgba(15,23,42,.95);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      font-size: .85rem;
+    }
+    textarea { border-radius: var(--radius-md); min-height: 48px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 1px rgba(34,197,94,.35);
+      background: #fff;
+      outline: none;
+    }
+
+    .entries { display: flex; flex-direction: column; gap: 6px; }
+    .entry-row { display: flex; gap: 6px; align-items: center; }
+    .entry-desc { flex: 4; }
+    .entry-amount { flex: 2.5; }
+    .entry-curr { flex: 1.2; }
+    .entry-dir { flex: 1.2; }
+    .entry-del { flex: 0; }
+
+    @media (max-width: 640px) {
+      .entry-row { flex-wrap: wrap; }
+      .entry-desc { flex: 1 1 100%; }
+      .entry-amount { flex: 1 1 45%; }
+      .entry-curr { flex: 1 1 25%; }
+      .entry-dir { flex: 1 1 25%; }
+    }
+
+    .pill-btn { border-radius: 999px; border: none; cursor: pointer; padding: 7px 14px; font-size: .8rem; }
+    .pill-green { background: var(--green); color:#fff; }
+    .pill-red   { background: var(--red);   color:#fff; }
+    .pill-gray  { background:#e5e7eb; }
+
+    .section-title { font-size:.9rem; font-weight:600; margin-bottom:6px; }
+    .muted { color:var(--text-muted); font-size:.78rem; }
+
+    .whatsapp-box {
+      width:100%; min-height:90px; border-radius:var(--radius-md);
+      padding:8px; font-size:.8rem; border:1px dashed var(--border);
+      background:#f9fafb; white-space:pre-wrap;
+    }
+
+    .saved-list { max-height:220px; overflow-y:auto; }
+    .saved-item {
+      background:#ecfdf3; border-radius:999px; padding:6px 10px; margin-bottom:4px;
+      display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+      border:1px solid #bbf7d0; font-size:.8rem;
     }
 
     .totals-box {
-      border-radius: 12px;
-      border: 1px dashed rgba(148,163,184,.6);
-      background: rgba(15,23,42,.9);
-      padding: 6px 8px;
-      font-size: .78rem;
-      white-space: pre-wrap;
-      margin-top: 6px;
+      background:#f0fdf4; border-radius:var(--radius-md);
+      border:1px solid #bbf7d0; padding:8px 10px; white-space:pre-wrap;
+      font-size:.8rem;
     }
 
-    .clients-list-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
+    .footer-hint { text-align:center; font-size:.7rem; color:var(--text-muted); }
+
+    .badge {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      font-size:.78rem;
+      border-radius:999px;
+      padding:3px 8px;
+      background:#e5e7eb;
+      color:#374151;
     }
 
-    .clients-search {
-      flex: 1;
-      display: flex;
-      gap: 6px;
-      align-items: center;
+    .search-input {
+      border-radius:999px;
+      padding-inline-start:30px;
+      position:relative;
     }
-    .clients-search input {
-      flex: 1;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.4);
-      background: radial-gradient(circle at top, rgba(15,23,42,.97), #020617);
-      color: #e5e7eb;
-      padding: 5px 10px;
-      font-size: .78rem;
-    }
-
-    .badge-sm {
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.5);
-      padding: 2px 6px;
-      font-size: .7rem;
-      color: #e5e7eb;
-      background: rgba(15,23,42,.95);
+    .search-wrapper { position:relative; }
+    .search-wrapper span {
+      position:absolute;
+      inset-inline-start:10px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:.8rem;
+      color:var(--text-muted);
     }
 
-    .voice-chip {
-      border-radius: 999px;
-      border: 1px solid rgba(52,211,153,.6);
-      background: rgba(6,95,70,.2);
-      padding: 2px 8px;
-      font-size: .7rem;
-      color: #a7f3d0;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .voice-chip span.icon {
-      font-size: .9rem;
-    }
-
-    .voice-status {
-      font-size: .7rem;
-      color: #9ca3af;
-      margin-top: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .voice-status span.dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-left: 4px;
-      background: #22c55e;
-      box-shadow: 0 0 0 4px rgba(34,197,94,.4);
-    }
-
-    .voice-status span.dot.idle {
-      background: #64748b;
-      box-shadow: none;
-    }
-
-    .badge-intent {
-      border-radius: 999px;
-      border: 1px solid rgba(129,140,248,.7);
-      padding: 1px 7px;
-      font-size: .65rem;
-      color: #e0e7ff;
-      background: rgba(30,64,175,.8);
-    }
-
-    .badge-sentiment {
-      border-radius: 999px;
-      border: 1px solid rgba(248,250,252,.15);
-      padding: 1px 7px;
-      font-size: .65rem;
-      color: #e5e7eb;
-      background: rgba(15,23,42,.9);
-    }
-
-    .badge-source {
-      border-radius: 999px;
-      border: 1px solid rgba(52,211,153,.6);
-      padding: 1px 7px;
-      font-size: .65rem;
-      color: #a7f3d0;
-      background: rgba(6,95,70,.35);
-    }
-
-    .footer {
-      margin-top: 14px;
-      font-size: .7rem;
-      color: #6b7280;
-      text-align: center;
-    }
-
-    .footer a {
-      color: #93c5fd;
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
-    .intents-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    .intent-pill {
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.5);
-      padding: 2px 8px;
-      font-size: .7rem;
-      color: #e5e7eb;
-      background: rgba(15,23,42,.9);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .intent-pill span.dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .intent-pill span.dot.action { background: #22c55e; }
-    .intent-pill span.dot.query  { background: #38bdf8; }
-    .intent-pill span.dot.smalltalk { background: #facc15; }
-
-    .badge-small {
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.5);
-      padding: 1px 6px;
-      font-size: .65rem;
-      color: #e5e7eb;
-      background: rgba(15,23,42,.95);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .history-list {
-      border-radius: 12px;
-      border: 1px solid rgba(148,163,184,.3);
-      background: rgba(15,23,42,.95);
-      max-height: 200px;
-      overflow-y: auto;
-      margin-top: 6px;
-      font-size: .75rem;
-    }
-
-    .history-item {
-      padding: 6px 8px;
-      border-bottom: 1px dashed rgba(30,64,175,.8);
-      display: flex;
-      justify-content: space-between;
-      gap: 6px;
-    }
-    .history-item:last-child {
-      border-bottom: none;
-    }
-    .history-item .meta {
-      color: #9ca3af;
-      font-size: .68rem;
-    }
-
-    .badge-date {
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.5);
-      padding: 1px 6px;
-      font-size: .65rem;
-      color: #e5e7eb;
-      background: rgba(15,23,42,.95);
-    }
-
-    .badge-amount {
-      border-radius: 999px;
-      border: 1px solid rgba(45,212,191,.7);
-      padding: 1px 6px;
-      font-size: .68rem;
-      color: #ccfbf1;
-      background: rgba(15,23,42,.9);
-    }
-
-    .whatsapp-row {
-      margin-top: 6px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .whatsapp-row .left {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .badge-wa {
-      border-radius: 999px;
-      border: 1px solid rgba(34,197,94,.9);
-      padding: 2px 7px;
-      font-size: .7rem;
-      color: #bbf7d0;
-      background: rgba(22,163,74,.3);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .actions-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 4px;
-      justify-content: flex-end;
-    }
-
-    .tag {
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.4);
-      padding: 1px 7px;
-      font-size: .65rem;
-      color: #cbd5f5;
-      background: rgba(15,23,42,.9);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .tag span.dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #22c55e;
+    .report-box {
+      border-radius:var(--radius-md);
+      border:1px solid var(--border);
+      background:#f9fafb;
+      padding:10px;
+      font-size:.8rem;
+      white-space:pre-wrap;
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="app-card">
-      <div class="app-header">
-        <div class="logo-circle">ب</div>
-        <div class="app-header-text">
-          <h1>
-            دفتر كشف الحساب اليومي
-            <span class="pill">
-              <span>⚙️</span>
-              محرك ذكاء بسيط
-              <span class="badge">تجريبي</span>
-            </span>
-          </h1>
-          <p>سجّل مصروفاتك مع العملاء، طالع كشوفات سريعة، وشاركها عبر الواتساب — مع مساعد صوتي ذكي يفهم لغتك اليومية.</p>
-        </div>
-      </div>
+  <div class="app-shell">
+    <h1>📒 دفتر كشف الحساب اليومي</h1>
+    <p class="subtitle">حفظ كشوفات عملائك في جهازك فقط (بدون إنترنت أو حساب).</p>
 
-      <div class="section-title">
-        <div>
-          واجهة العمل
-          <small>اختَر وضع الاستخدام المناسب</small>
-        </div>
-        <div class="chip">
-          <span>⭐</span> جاهز للعمل اليومي
-        </div>
-      </div>
+    <!-- زر مساعد بسّام الصوتي -->
+    <div style="text-align:center; margin:15px 0;">
+      <button id="voiceAssistantBtn"
+              style="background:#15803d; color:white; padding:12px 22px;
+                     border:none; border-radius:50px; font-size:1.1rem;">
+          🎤 مساعد بسّام الصوتي
+      </button>
+    </div>
 
-      <div class="tabs" id="modeTabs">
-        <button class="tab active" data-mode="statements">
-          <span class="icon">📄</span>
+    <div class="install-bar">
+      <button id="installButton">تثبيت التطبيق 📱</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" id="tabStatements">الكشوفات</div>
+      <div class="tab" id="tabClients">العملاء</div>
+      <div class="tab" id="tabReports">التقارير</div>
+    </div>
+
+    <!-- شاشة الكشوفات -->
+    <div id="screenStatements">
+      <div class="card">
+
+        <div class="row">
           <div>
-            <div>كشف مصروفات جديد</div>
-            <small>تسجيل بيان واحد وارساله للعميل</small>
+            <label>العميل:</label>
+            <input type="text" id="clientName" placeholder="اكتب اسم العميل">
           </div>
-        </button>
-        <button class="tab" data-mode="clients">
-          <span class="icon">👥</span>
           <div>
-            <div>عملاء + كشوفات سابقة</div>
-            <small>إدارة العملاء والبحث في الكشوف</small>
+            <label>التاريخ:</label>
+            <input type="date" id="statementDate">
           </div>
-        </button>
-        <button class="tab" data-mode="reports">
-          <span class="icon">📊</span>
+        </div>
+
+        <div class="row">
           <div>
-            <div>تقرير حساب عميل</div>
-            <small>له / عليه — حسب الفترة</small>
+            <label>عنوان الكشف:</label>
+            <input type="text" id="statementTitle" placeholder="مثال: بيان شحنة، تسوية حساب...">
           </div>
-        </button>
-        <button class="tab" data-mode="voice">
-          <span class="icon">🎙️</span>
           <div>
-            <div>مساعد بسّام الصوتي</div>
-            <small>تسجيل كشف أو استعلام بالصوت</small>
+            <label>رقم القاطرة:</label>
+            <input type="text" id="truckNumber" placeholder="رقم القاطرة (اختياري)">
           </div>
-        </button>
+          <div>
+            <label>رقم البيان:</label>
+            <input type="text" id="statementNumber" placeholder="رقم البيان (اختياري)">
+          </div>
+        </div>
+
+        <label class="section-title">🧾 البنود التفصيلية</label>
+        <p class="muted">يمكنك إضافة بنود متعددة وتحديد (عليه / له) والعملة والمبلغ.</p>
+
+        <div class="row">
+          <button class="pill-btn pill-green" id="addEntryBtn">+ بند جديد</button>
+          <button class="pill-btn pill-gray" id="copyLastEntriesBtn">📋 نسخ البنود من آخر كشف</button>
+        </div>
+
+        <div id="entriesContainer" class="entries"></div>
+
+        <div class="row">
+          <div>
+            <label>الإجمالي (اختياري):</label>
+            <input type="text" id="manualTotal" placeholder="مثال: 2,300 سعودي + 3,326,706 يمني">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>ملاحظات إضافية (اختياري):</label>
+            <textarea id="extraNotes" placeholder="أي ملاحظات تريد ظهورها في نهاية الكشف"></textarea>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="pill-btn pill-green" id="saveStatementBtn" style="flex:1;">💾 حفظ الكشف</button>
+          <button class="pill-btn pill-gray" id="newStatementSameClientBtn" style="flex:1;">+ كشف جديد مع نفس العميل</button>
+        </div>
+
       </div>
 
-      <!-- ====== محتوى الوضع: كشف مصروفات جديد ===== -->
-      <div id="modeStatements" class="mode-panel">
-        <div class="grid grid-cols-2">
-          <div class="surface">
-            <div class="surface-header">
-              <div>
-                <h2><span>🧾</span> بيانات الكشف</h2>
-                <small>أدخل بيانات العميل والبيان، ثم أضف البنود بالتفصيل</small>
-              </div>
-              <div class="surface-toolbar">
-                <button class="btn-ghost btn" id="copyLastClientBtn">
-                  <span class="icon">↩️</span> آخر عميل
-                </button>
-                <button class="btn-ghost btn" id="todayBtn">
-                  <span class="icon">📆</span> تاريخ اليوم
-                </button>
-              </div>
-            </div>
+      <div class="card">
+        <label class="section-title">💬 النص الجاهز للواتساب:</label>
+        <div id="whatsAppText" class="whatsapp-box"></div>
 
-            <div class="field-group">
-              <div class="field">
-                <label>اسم العميل <span class="req">*</span></label>
-                <input type="text" id="clientNameInput" placeholder="مثال: أحمد للتجارة العامة">
-              </div>
-              <div class="field">
-                <label>تاريخ الكشف</label>
-                <input type="date" id="dateInput">
-              </div>
-            </div>
+        <div class="row">
+          <button class="pill-btn pill-gray" id="copyTextBtn" style="flex:1;">📋 نسخ النص</button>
+          <button class="pill-btn pill-green" id="shareWhatsappBtn" style="flex:1;">🟢 مشاركة واتساب</button>
+        </div>
 
-            <div class="field-group">
-              <div class="field">
-                <label>عنوان الكشف</label>
-                <input type="text" id="titleInput" placeholder="مثال: كشف مصروفات بيان رقم ...">
-              </div>
-              <div class="field">
-                <label>رقم القاطرة / الشاحنة</label>
-                <input type="text" id="truckNumberInput" placeholder="اختياري">
-              </div>
-            </div>
-
-            <div class="field-group">
-              <div class="field">
-                <label>رقم البيان الجمركي</label>
-                <input type="text" id="statementNumberInput" placeholder="اختياري">
-              </div>
-              <div class="field">
-                <label>نسخ من كشف سابق لنفس العميل</label>
-                <button class="pill-btn pill-gray" id="copyLastEntriesBtn">
-                  <span>📋</span> نسخ آخر بنود للعميل
-                </button>
-              </div>
-            </div>
-
-            <div class="section">
-              <h3><span class="icon">🧮</span> البنود التفصيلية</h3>
-              <small>أضف سطرًا لكل بند: الوصف + المبلغ + العملة + اتجاه الحساب (له / عليه)</small>
-            </div>
-
-            <div class="entries-header" style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 6px 0;font-size:.75rem;color:#9ca3af;">
-              <div>البنود الحالية</div>
-              <button class="btn btn-primary" id="addEntryBtn">
-                <span class="icon">➕</span> إضافة بند
-              </button>
-            </div>
-
-            <div id="entriesContainer" class="entries"></div>
-
-            <div class="row">
-              <div>
-                <label>الإجمالي (اختياري):</label>
-                <input type="text" id="manualTotal" placeholder="مثال: 2,300 سعودي + 3,326,706 يمني">
-              </div>
-            </div>
-
-            <div class="row">
-              <div>
-                <label>ملاحظات إضافية (اختياري):</label>
-                <textarea id="extraNotes" placeholder="أي ملاحظات تريد ظهورها في نهاية الكشف"></textarea>
-              </div>
-            </div>
-
-            <div class="totals-box" id="currentStatementTotals">
-              لا توجد بنود بعد.
-            </div>
-
-            <div class="row">
-              <button class="pill-btn pill-green" id="saveStatementBtn" style="flex:1;">💾 حفظ الكشف</button>
-              <button class="pill-btn pill-gray" id="newStatementSameClientBtn" style="flex:1;">+ كشف جديد مع نفس العميل</button>
-            </div>
-          </div>
-
-          <div class="surface">
-            <div class="surface-header">
-              <div>
-                <h2><span>📲</span> معاينة الواتساب</h2>
-                <small>النص كما سيظهر عند الإرسال للعميل (يمكن نسخه أو تعديله قبل الإرسال)</small>
-              </div>
-            </div>
-
-            <div id="whatsAppText"></div>
-
-            <div class="whatsapp-row">
-              <div class="left">
-                <span class="badge-wa">
-                  <span>💬</span> جاهز للنسخ إلى الواتساب
-                </span>
-                <span class="hint">اضغط "نسخ النص" ثم الصقه في محادثة العميل</span>
-              </div>
-              <div class="actions-row">
-                <button class="pill-btn" id="copyTextBtn">
-                  <span>📋</span> نسخ النص
-                </button>
-              </div>
-            </div>
-
-            <div class="section" style="margin-top:10px;">
-              <h3><span class="icon">🖨️</span> طباعة / حفظ / مشاركة</h3>
-              <small>أنشئ نسخة PDF لطباعة الكشف أو مشاركته كنص منسق</small>
-            </div>
-
-            <div class="surface-toolbar">
-              <button class="btn" id="printPdfBtn">
-                <span class="icon">🖨️</span> طباعة / حفظ PDF
-              </button>
-              <button class="btn-ghost btn" id="shareTextBtn">
-                <span class="icon">📤</span> مشاركة النص
-              </button>
-            </div>
-          </div>
+        <div class="row" style="margin-top:6px;">
+          <button class="pill-btn pill-gray" id="printPdfBtn" style="flex:1;">🖨️ حفظ / طباعة PDF</button>
+          <button class="pill-btn pill-green" id="sharePdfBtn" style="flex:1;">📄 مشاركة PDF</button>
         </div>
       </div>
 
-      <!-- ====== محتوى الوضع: العملاء والكشوفات السابقة ===== -->
-      <div id="modeClients" class="mode-panel" style="display:none;">
-        <div class="grid grid-cols-2">
-          <div class="surface">
-            <div class="surface-header">
-              <div>
-                <h2><span>👥</span> قائمة العملاء</h2>
-                <small>اختَر عميلًا لمراجعة كشوفاته أو إضافة كشف جديد</small>
-              </div>
-            </div>
+      <div class="card">
+        <label class="section-title">📁 سجل الكشوفات:</label>
+        <p class="muted">اضغط لفتح كشف سابق أو تعديله. يمكنك البحث برقم البيان أو رقم القاطرة أو العنوان.</p>
 
-            <div class="clients-list-header">
-              <div class="clients-search">
-                <input type="text" id="clientsSearchInput" placeholder="بحث بالاسم...">
-              </div>
-              <span class="badge-sm" id="clientsCountBadge">0 عميل</span>
-            </div>
-
-            <div id="clientsList" class="list"></div>
-
-            <div class="hint">
-              اضغط على اسم العميل لاستعراض كشوفاته، أو لبدء كشف جديد باسمه مباشرة.
-            </div>
+        <div class="row">
+          <div class="search-wrapper">
+            <span>🔍</span>
+            <input id="statementsSearchInput" class="search-input" type="text"
+                   placeholder="ابحث برقم البيان أو رقم القاطرة أو العنوان">
           </div>
+        </div>
 
-          <div class="surface">
-            <div class="surface-header">
-              <div>
-                <h2><span>📂</span> كشوفات العميل + الإجماليات</h2>
-                <small>استعراض سريع + مجموع له / عليه لكل عملة</small>
-              </div>
-            </div>
+        <div class="row" style="margin-top:4px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:.8rem;">
+            <input type="checkbox" id="multiSelectToggle" style="width:16px;height:16px;margin:0;">
+            تفعيل تحديد عدة كشوف
+          </label>
+          <button class="pill-btn pill-green" id="shareMultiPdfBtn" style="flex:1;">📑 مشاركة الكشوف المحددة PDF</button>
+        </div>
 
-            <div class="stats-row" id="totalsBox">
-              <!-- تُملأ برمجيًا -->
-            </div>
+        <p class="muted" id="multiSelectHint" style="display:none; margin-top:4px;">
+          بعد تفعيل الخيار، اضغط على الكشوف في القائمة لتحديدها (✔)، ثم اضغط زر "مشاركة الكشوف المحددة PDF".
+        </p>
 
-            <div class="section">
-              <h3><span class="icon">📜</span> الكشوفات السابقة للعميل</h3>
-              <small>اضغط على أي كشف لعرضه أو نسخه أو فتحه للتعديل</small>
-            </div>
+        <div id="statementsList" class="saved-list"></div>
+      </div>
 
-            <div id="statementsList" class="list"></div>
-          </div>
+      <div class="card">
+        <label class="section-title">📊 إجمالي حسابات العميل</label>
+        <div id="totalsBox" class="totals-box">
+          لا توجد بيانات بعد. احفظ أول كشف للعميل.
         </div>
       </div>
 
-      <!-- ====== محتوى الوضع: التقارير ===== -->
-      <div id="modeReports" class="mode-panel" style="display:none;">
-        <div class="grid grid-cols-2">
-          <div class="surface">
-            <div class="surface-header">
-              <div>
-                <h2><span>📊</span> تقرير حساب عميل</h2>
-                <small>احسب "له / عليه" مع ملخص سريع للفترة</small>
-              </div>
-            </div>
-
-            <div class="field-group">
-              <div class="field">
-                <label>اختر العميل</label>
-                <select id="reportClientSelect"></select>
-              </div>
-              <div class="field">
-                <label>نطاق التاريخ (اختياري)</label>
-                <div style="display:flex;gap:4px;align-items:center;">
-                  <input type="date" id="reportFrom" style="flex:1;">
-                  <span style="font-size:.7rem;color:#9ca3af;">إلى</span>
-                  <input type="date" id="reportTo" style="flex:1;">
-                </div>
-              </div>
-            </div>
-
-            <div class="surface-toolbar">
-              <button class="btn btn-primary" id="buildReportBtn">
-                <span class="icon">📈</span> عرض التقرير
-              </button>
-              <button class="btn-ghost btn" id="clearReportBtn">
-                <span class="icon">🧹</span> مسح التقرير
-              </button>
-            </div>
-
-            <div class="hint">
-              يمكن طباعة التقرير أو نسخه عند الحاجة من صندوق النتائج على اليسار.
-            </div>
-          </div>
-
-          <div class="surface">
-            <div class="surface-header">
-              <div>
-                <h2><span>📜</span> نتيجة التقرير</h2>
-                <small>ملخص له / عليه لكل عملة + معلومات الفترة</small>
-              </div>
-            </div>
-
-            <div id="reportBox" class="totals-box">
-              لم يتم اختيار عميل بعد.
-            </div>
-
-            <div class="surface-toolbar" style="margin-top:8px;">
-              <button class="btn" id="copyReportBtn">
-                <span class="icon">📋</span> نسخ التقرير كنص
-              </button>
-            </div>
-          </div>
+      <div class="card">
+        <label class="section-title">🗄️ نسخة احتياطية للبيانات</label>
+        <p class="muted">تستطيع تصدير كل الكشوفات في ملف JSON ثم رفعه إلى Google Drive أو إرساله لنفسك، وبعدها استيراده.</p>
+        <div class="row">
+          <button class="pill-btn pill-green" id="exportBackupBtn" style="flex:1;">📤 تصدير نسخة احتياطية</button>
+          <button class="pill-btn pill-gray" id="importBackupBtn" style="flex:1;">📥 استيراد نسخة احتياطية</button>
         </div>
+        <input type="file" id="backupFileInput" accept="application/json" style="display:none;">
       </div>
 
-      <!-- ====== محتوى الوضع: المساعد الصوتي ===== -->
-      <div id="modeVoice" class="mode-panel" style="display:none;">
-        <div class="grid grid-cols-2">
-          <div class="surface">
-            <div class="surface-header">
-              <div>
-                <h2><span>🎙️</span> مساعد بسّام الصوتي</h2>
-                <small>تكلّم بالعربي، والمساعد يحاول فهم طلبك وتنفيذه على الكشوف</small>
-              </div>
-            </div>
-
-            <div class="section">
-              <h3><span class="icon">💡</span> أمثلة على ما يمكنك قوله</h3>
-              <div class="intents-row">
-                <div class="intent-pill">
-                  <span class="dot action"></span>
-                  "افتح كشف جديد لأحمد اليوم"
-                </div>
-                <div class="intent-pill">
-                  <span class="dot query"></span>
-                  "كم له أحمد بالريال السعودي؟"
-                </div>
-                <div class="intent-pill">
-                  <span class="dot smalltalk"></span>
-                  "شكراً يا بسّام"
-                </div>
-              </div>
-            </div>
-
-            <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
-              <button class="pill-btn pill-green" id="startVoiceBtn">
-                <span>🎙️</span> ابدأ الاستماع
-              </button>
-              <button class="pill-btn pill-gray" id="stopVoiceBtn">
-                <span>🛑</span> إيقاف
-              </button>
-
-              <div class="voice-status">
-                <div>
-                  <span id="voiceStatusDot" class="dot idle"></span>
-                  <span id="voiceStatusText">المساعد في وضع الانتظار.</span>
-                </div>
-                <span class="badge-small" id="lastSourceBadge">المدخل الحالي: —</span>
-              </div>
-            </div>
-
-            <div class="section">
-              <h3><span class="icon">🧠</span> تحليلات المساعد</h3>
-              <small>النية المتوقعة، المزاج التقريبي، ونوع الطلب</small>
-            </div>
-
-            <div class="stats-row" id="voiceBadgesRow">
-              <span class="badge-intent" id="intentBadge">النية: —</span>
-              <span class="badge-sentiment" id="sentimentBadge">المزاج: —</span>
-              <span class="badge-source" id="sourceBadge">المصدر: —</span>
-            </div>
-
-            <div class="section" style="margin-top:10px;">
-              <h3><span class="icon">📜</span> آخر الأوامر الصوتية</h3>
-              <small>للمراجعة والعودة لأوامر سابقة</small>
-            </div>
-
-            <div id="voiceHistoryList" class="history-list"></div>
-          </div>
-
-          <div class="surface">
-            <div class="surface-header">
-              <div>
-                <h2><span>📥</span> النص المستلم من الصوت</h2>
-                <small>ما سمعه المساعد من كلامك قبل التحليل</small>
-              </div>
-            </div>
-
-            <textarea id="voiceRawText" placeholder="سيظهر هنا النص الناتج من تحويل الصوت إلى نص..." style="min-height:80px;"></textarea>
-
-            <div class="section" style="margin-top:10px;">
-              <h3><span class="icon">🧾</span> تفسير المساعد للأمر</h3>
-              <small>كيف فهم الذكاء الاصطناعي طلبك، وما هي العملية المقترحة</small>
-            </div>
-
-            <textarea id="voiceInterpretation" placeholder="سيظهر هنا ملخص للنية والأوامر التي سيتخذها التطبيق..." style="min-height:100px;"></textarea>
-
-            <div class="surface-toolbar" style="margin-top:8px;">
-              <button class="btn btn-primary" id="applyVoiceActionBtn">
-                <span class="icon">⚙️</span> تنفيذ الأمر المقترح
-              </button>
-              <button class="btn-ghost btn" id="clearVoiceUiBtn">
-                <span class="icon">🧹</span> مسح العرض
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer">
-        بياناتك تُحفظ على جهازك فقط (LocalStorage). يفضّل أخذ نسخة احتياطية دوريًا.
-        |
-        نسخة تجريبية معدلة بواسطة بسّام ومساعده الذكي.
+      <div class="footer-hint">
+        إذا لم يظهر زر التثبيت، استخدم "إضافة إلى الشاشة الرئيسية" من إعدادات المتصفح.
       </div>
     </div>
+
+    <!-- شاشة العملاء -->
+    <div id="screenClients" style="display:none;">
+      <div class="card">
+        <label class="section-title">👥 العملاء</label>
+        <p class="muted">إختر عميلًا لعرض كشوفاته أو ابحث بالاسم.</p>
+
+        <div class="row">
+          <div class="search-wrapper">
+            <span>🔍</span>
+            <input id="clientsSearchInput" class="search-input" type="text" placeholder="ابحث باسم العميل">
+          </div>
+        </div>
+
+        <div id="clientsList" class="saved-list"></div>
+      </div>
+    </div>
+
+    <!-- شاشة التقارير -->
+    <div id="screenReports" style="display:none;">
+      <div class="card">
+        <label class="section-title">📈 تقرير إجمالي لكل عميل</label>
+        <p class="muted">
+          اختر العميل وحدّد فترة (اختياريًا) لعرض إجمالي له / عليه والصافي لكل عملة.
+        </p>
+
+        <div class="row">
+          <div>
+            <label>العميل:</label>
+            <select id="reportClientSelect">
+              <option value="">اختر عميل</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>من تاريخ (اختياري):</label>
+            <input type="date" id="reportFrom">
+          </div>
+          <div>
+            <label>إلى تاريخ (اختياري):</label>
+            <input type="date" id="reportTo">
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="pill-btn pill-green" id="buildReportBtn" style="flex:1;">📊 عرض التقرير</button>
+        </div>
+
+        <div id="reportBox" class="report-box">
+          لا يوجد تقرير بعد. اختر عميل واضغط "عرض التقرير".
+        </div>
+
+        <div class="row" style="margin-top:6px;">
+          <button class="pill-btn pill-gray" id="copyReportBtn" style="flex:1;">📋 نسخ التقرير</button>
+          <button class="pill-btn pill-green" id="shareReportWhatsappBtn" style="flex:1;">🟢 مشاركة واتساب</button>
+        </div>
+
+        <div class="row" style="margin-top:6px;">
+          <button class="pill-btn pill-gray" id="printReportPdfBtn" style="flex:1;">🖨️ حفظ / طباعة التقرير PDF</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <script>
-    // ====== الحالة الرئيسية =====
-    const state = {
-      data: {
-        clients: {}
-      },
-      currentClient: null,
-      currentStatementId: null,
-      lastUsedClientName: null,
-      voiceHistory: []
-    };
+  <!-- حاويات مخفية لتوليد PDF -->
+  <div id="singlePdfContainer" style="position:fixed; left:-99999px; top:0; width:800px; background:#ffffff;"></div>
+  <div id="multiPdfContainer"  style="position:fixed; left:-99999px; top:0; width:800px; background:#ffffff;"></div>
 
-    // ====== عناصر DOM أساسية =====
-    const clientNameInput       = document.getElementById("clientNameInput");
-    const dateInput             = document.getElementById("dateInput");
-    const titleInput            = document.getElementById("titleInput");
-    const truckNumberInput      = document.getElementById("truckNumberInput");
-    const statementNumberInput  = document.getElementById("statementNumberInput");
-    const manualTotalInput      = document.getElementById("manualTotal");
-    const extraNotesInput       = document.getElementById("extraNotes");
-    const entriesContainer      = document.getElementById("entriesContainer");
+  <!-- مكتبات توليد PDF (مجانية) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- ملف المساعد الصوتي -->
+  <script src="voice.js"></script>
+
+  <!-- سكربت التطبيق الرئيسي -->
+  <script>
+    const STORAGE_KEY = "voiceLedgerData_v1";
+    const state = { data:{clients:{}}, currentClient:"", currentStatementId:null, deferredPrompt:null, multiSelectEnabled:false, selectedStatements:[] };
+
+    function loadData(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw) state.data = JSON.parse(raw);
+      }catch(e){ console.error("خطأ في قراءة التخزين",e); }
+    }
+    function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); }
+
+    const tabStatements = document.getElementById("tabStatements");
+    const tabClients    = document.getElementById("tabClients");
+    const tabReports    = document.getElementById("tabReports");
+    const screenStatements = document.getElementById("screenStatements");
+    const screenClients    = document.getElementById("screenClients");
+    const screenReports    = document.getElementById("screenReports");
+
+    tabStatements.onclick = () => showScreen("s");
+    tabClients.onclick    = () => showScreen("c");
+    tabReports.onclick    = () => showScreen("r");
+
+    function showScreen(t){
+      if(t==="s"){
+        screenStatements.style.display = "";
+        screenClients.style.display    = "none";
+        screenReports.style.display    = "none";
+        tabStatements.classList.add("active");
+        tabClients.classList.remove("active");
+        tabReports.classList.remove("active");
+      } else if(t==="c"){
+        screenStatements.style.display = "none";
+        screenClients.style.display    = "";
+        screenReports.style.display    = "none";
+        tabStatements.classList.remove("active");
+        tabClients.classList.add("active");
+        tabReports.classList.remove("active");
+        renderClientsList();
+      } else {
+        screenStatements.style.display = "none";
+        screenClients.style.display    = "none";
+        screenReports.style.display    = "";
+        tabStatements.classList.remove("active");
+        tabClients.classList.remove("active");
+        tabReports.classList.add("active");
+        renderReportsClientOptions();
+      }
+    }
+
+    const clientNameInput      = document.getElementById("clientName");
+    const dateInput            = document.getElementById("statementDate");
+    const titleInput           = document.getElementById("statementTitle");
+    const truckNumberInput     = document.getElementById("truckNumber");
+    const statementNumberInput = document.getElementById("statementNumber");
+    const entriesContainer     = document.getElementById("entriesContainer");
+    const manualTotalInput     = document.getElementById("manualTotal");
+    const extraNotesInput      = document.getElementById("extraNotes");
     const whatsAppBox          = document.getElementById("whatsAppText");
     const statementsListEl     = document.getElementById("statementsList");
     const totalsBoxEl          = document.getElementById("totalsBox");
-    const currentStatementTotalsEl = document.getElementById("currentStatementTotals");
     const clientsListEl        = document.getElementById("clientsList");
     const clientsSearchInput   = document.getElementById("clientsSearchInput");
-    const clientsCountBadge    = document.getElementById("clientsCountBadge");
-    const reportClientSelect   = document.getElementById("reportClientSelect");
-    const reportFromInput      = document.getElementById("reportFrom");
-    const reportToInput        = document.getElementById("reportTo");
-    const reportBox            = document.getElementById("reportBox");
+    const statementsSearchInput= document.getElementById("statementsSearchInput");
 
-    const voiceStatusDot       = document.getElementById("voiceStatusDot");
-    const voiceStatusText      = document.getElementById("voiceStatusText");
-    const voiceRawText         = document.getElementById("voiceRawText");
-    const voiceInterpretation  = document.getElementById("voiceInterpretation");
-    const voiceHistoryList     = document.getElementById("voiceHistoryList");
-    const intentBadge          = document.getElementById("intentBadge");
-    const sentimentBadge       = document.getElementById("sentimentBadge");
-    const sourceBadge          = document.getElementById("sourceBadge");
-    const lastSourceBadge      = document.getElementById("lastSourceBadge");
-    const voiceBadgesRow       = document.getElementById("voiceBadgesRow");
+    const multiSelectToggle = document.getElementById("multiSelectToggle");
+    const shareMultiPdfBtn  = document.getElementById("shareMultiPdfBtn");
+    const multiSelectHint   = document.getElementById("multiSelectHint");
+    const singlePdfContainer= document.getElementById("singlePdfContainer");
+    const multiPdfContainer = document.getElementById("multiPdfContainer");
 
-    // ====== تحميل / حفظ إلى LocalStorage =====
-    function loadData(){
-      try {
-        const raw = localStorage.getItem("voice-ledger-data");
-        if(!raw) return;
-        const obj = JSON.parse(raw);
-        if(obj && obj.clients) {
-          state.data.clients = obj.clients;
-        }
-      } catch(e) {
-        console.error("Error loading data", e);
-      }
-    }
+    document.getElementById("addEntryBtn").onclick              = () => addEntryRow();
+    document.getElementById("copyLastEntriesBtn").onclick       = copyLastEntries;
+    document.getElementById("saveStatementBtn").onclick         = saveCurrentStatement;
+    document.getElementById("newStatementSameClientBtn").onclick= () => resetForm(clientNameInput.value);
+    document.getElementById("copyTextBtn").onclick              = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
+    document.getElementById("shareWhatsappBtn").onclick         = () => window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
+    document.getElementById("printPdfBtn").onclick              = printAsPdf;
+    document.getElementById("sharePdfBtn").onclick              = () => sharePdf();
+    clientsSearchInput.addEventListener("input", renderClientsList);
+    statementsSearchInput.addEventListener("input", renderStatementsList);
 
-    function saveData(){
-      try {
-        localStorage.setItem("voice-ledger-data", JSON.stringify({clients: state.data.clients}));
-      } catch(e) {
-        console.error("Error saving data", e);
-      }
-    }
+    // عناصر التقارير
+    const reportClientSelect       = document.getElementById("reportClientSelect");
+    const reportFromInput          = document.getElementById("reportFrom");
+    const reportToInput            = document.getElementById("reportTo");
+    const reportBox                = document.getElementById("reportBox");
+    document.getElementById("buildReportBtn").onclick          = buildReport;
+    document.getElementById("copyReportBtn").onclick           = () => navigator.clipboard.writeText(reportBox.textContent || "");
+    document.getElementById("shareReportWhatsappBtn").onclick  = () => window.open("https://wa.me/?text="+encodeURIComponent(reportBox.textContent || ""));
+    document.getElementById("printReportPdfBtn").onclick       = printReportPdf;
 
-    // ====== إنشاء صف بند جديد =====
-    function createEntryRow(initial){
+    multiSelectToggle.addEventListener("change", () => {
+      state.multiSelectEnabled = multiSelectToggle.checked;
+      state.selectedStatements = [];
+      multiSelectHint.style.display = state.multiSelectEnabled ? "block" : "none";
+      renderStatementsList();
+    });
+
+    shareMultiPdfBtn.onclick = () => shareSelectedStatementsPdf();
+
+    // ====== البند ======
+    function addEntryRow(init){
       const row = document.createElement("div");
       row.className = "entry-row";
 
-      row.innerHTML = `
-        <input type="text" class="entry-desc" placeholder="الوصف (مثال: جمرك شحن، تحميل، أتعاب تخليص)">
-        <input type="number" class="entry-amount" placeholder="المبلغ" step="0.01">
-        <select class="entry-curr">
-          <option value="ريال سعودي">ريال سعودي</option>
-          <option value="ريال يمني">ريال يمني</option>
-          <option value="درهم إماراتي">درهم إماراتي</option>
-          <option value="دولار">دولار</option>
-        </select>
-        <select class="entry-dir">
-          <option value="له">له</option>
-          <option value="عليه">عليه</option>
-        </select>
-        <button class="btn btn-icon-only" title="حذف هذا البند">🗑️</button>
-      `;
+      const desc = input("text","وصف البند");
+      desc.className = "entry-desc";
 
-      const descInput   = row.querySelector(".entry-desc");
-      const amountInput = row.querySelector(".entry-amount");
-      const currSelect  = row.querySelector(".entry-curr");
-      const dirSelect   = row.querySelector(".entry-dir");
-      const deleteBtn   = row.querySelector("button");
-
-      if(initial){
-        descInput.value   = initial.desc || "";
-        amountInput.value = initial.amount || "";
-        currSelect.value  = initial.currency || "ريال سعودي";
-        dirSelect.value   = initial.direction || "له";
-      }
-
-      descInput.addEventListener("input", updatePreviewText);
-      amountInput.addEventListener("input", updatePreviewText);
-      currSelect.addEventListener("change", updatePreviewText);
-      dirSelect.addEventListener("change", updatePreviewText);
-
-      deleteBtn.addEventListener("click", ()=>{
-        row.remove();
+      const amount = document.createElement("input");
+      amount.type = "tel";
+      amount.inputMode = "numeric";
+      amount.placeholder = "المبلغ";
+      amount.className = "entry-amount";
+      amount.addEventListener("input", () => {
+        let raw = amount.value.replace(/[^\d]/g,"");
+        if(raw){
+          amount.value = Number(raw).toLocaleString("en-US");
+        }else{
+          amount.value = "";
+        }
         updatePreviewText();
       });
 
-      return row;
-    }
+      const curr = select(["يمني","سعودي","درهم","دولار","عماني"]);
+      curr.className = "entry-curr";
 
-    function addEntryRow(initial){
-      const row = createEntryRow(initial);
+      const dir  = select(["عليه","له"]); // عليه افتراضي
+      dir.className = "entry-dir";
+
+      const del  = button("حذف","pill-btn pill-red entry-del");
+      del.onclick = () => confirm("حذف البند؟") && row.remove();
+
+      if(init){
+        desc.value   = init.desc || "";
+        amount.value = init.amount ? Number(init.amount).toLocaleString("en-US") : "";
+        curr.value   = init.currency;
+        dir.value    = init.direction;
+      }
+
+      [desc,curr,dir].forEach(e => e.addEventListener("input", updatePreviewText));
+
+      row.append(desc,amount,curr,dir,del);
       entriesContainer.appendChild(row);
     }
 
-    // ====== قراءة البنود الحالية ككائنات =====
+    function input(t,p){ const e=document.createElement("input"); e.type=t; e.placeholder=p; return e; }
+    function select(arr){ const s=document.createElement("select"); arr.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;s.append(o)}); return s; }
+    function button(t,c){ const b=document.createElement("button"); b.textContent=t; b.className=c; return b; }
+
     function getEntries(){
       return [...entriesContainer.querySelectorAll(".entry-row")].map(r=>{
         const amountRaw = (r.querySelector(".entry-amount").value || "").replace(/,/g,"");
@@ -1286,49 +573,7 @@
       }).filter(e=>e.desc || e.amount);
     }
 
-    function computeTotalsForEntries(entries){
-      const totals = {};
-      entries.forEach(e => {
-        if (!e.currency) return;
-        if (!totals[e.currency]) {
-          totals[e.currency] = { lah: 0, alaih: 0 };
-        }
-        if (e.direction === "له") {
-          totals[e.currency].lah += e.amount;
-        } else {
-          totals[e.currency].alaih += e.amount;
-        }
-      });
-      return totals;
-    }
-
-    function renderCurrentStatementTotals(){
-      if (!currentStatementTotalsEl) return;
-
-      const entries = getEntries();
-      const totals  = computeTotalsForEntries(entries);
-
-      if (!Object.keys(totals).length) {
-        currentStatementTotalsEl.textContent = "لا توجد بنود بعد.";
-        return;
-      }
-
-      let txt = "إجمالي هذا الكشف:\n";
-      Object.keys(totals).forEach(c => {
-        const t    = totals[c];
-        const diff = t.lah - t.alaih;
-        const dir  = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء");
-
-        txt += `${c}:\n` +
-               `له: ${t.lah.toLocaleString("en-US")}\n` +
-               `عليه: ${t.alaih.toLocaleString("en-US")}\n` +
-               `الصافي: ${Math.abs(diff).toLocaleString("en-US")} (${dir})\n\n`;
-      });
-
-      currentStatementTotalsEl.textContent = txt;
-    }
-
-        function ensureClient(n){
+    function ensureClient(n){
       if(!state.data.clients[n]) state.data.clients[n] = {statements:[]};
     }
 
@@ -1337,432 +582,31 @@
       if(!name){ alert("اكتب اسم العميل"); return; }
       ensureClient(name);
       const st = {
-        id: state.currentStatementId || Date.now(),
-        date: dateInput.value || new Date().toISOString().slice(0,10),
-        title: titleInput.value,
-        truckNumber: truckNumberInput.value,
-        statementNumber: statementNumberInput.value,
+        id: state.currentStatementId || ("st_"+Date.now()),
+        date: dateInput.value,
+        title: titleInput.value.trim(),
+        truckNumber: truckNumberInput.value.trim(),
+        statementNumber: statementNumberInput.value.trim(),
         entries: getEntries(),
-        manualTotal: manualTotalInput.value,
-        extraNotes: extraNotesInput.value
+        manualTotal: manualTotalInput.value.trim(),
+        extraNotes: extraNotesInput.value.trim()
       };
-      if(!st.entries.length){
-        if(!confirm("لا توجد بنود في الكشف، هل تريد المتابعة؟")) return;
-      }
-      const arr = state.data.clients[name].statements;
-      if(state.currentStatementId){
-        const idx = arr.findIndex(s=>s.id === state.currentStatementId);
-        if(idx>=0) arr[idx] = st;
-      } else {
-        arr.push(st);
-      }
-      state.lastUsedClientName = name;
+      if(!st.entries.length){ alert("أضف بندًا واحدًا على الأقل"); return; }
+
+      const list = state.data.clients[name].statements;
+      const idx  = list.findIndex(s => s.id === st.id);
+      if(idx >= 0) list[idx] = st; else list.unshift(st);
+
       saveData();
-      alert("تم حفظ الكشف.");
-      renderClientsList();
-      renderStatementsForClient(name);
-      renderReportClientsOptions();
-    }
-
-    // ====== عرض الكشوف والإجماليات لكل عميل =====
-    function renderStatementsForClient(name){
       state.currentClient = name;
-      const client = state.data.clients[name];
-      statementsListEl.innerHTML = "";
-      if(!client || !client.statements.length){
-        statementsListEl.innerHTML = `<div class="list-item"><span>لا توجد كشوفات بعد لهذا العميل.</span></div>`;
-        totalsBoxEl.innerHTML = "";
-        return;
-      }
-
-      client.statements
-        .slice()
-        .sort((a,b)=> (a.date||"") < (b.date||"") ? 1 : -1)
-        .forEach(st=>{
-          const div = document.createElement("div");
-          div.className = "list-item";
-          const total = computeTotalsForStatement(st);
-          const summary = summarizeTotalsPerCurrency(total);
-          div.innerHTML = `
-            <div>
-              <div>${st.title || "كشف بدون عنوان"}</div>
-              <div class="meta">
-                <span class="badge-date">📅 ${st.date || "-"}</span>
-                ${st.truckNumber ? `<span class="badge-small">🚚 ${st.truckNumber}</span>` : ""}
-                ${st.statementNumber ? `<span class="badge-small">📄 بيان: ${st.statementNumber}</span>` : ""}
-              </div>
-            </div>
-            <div style="text-align:left;">
-              <div class="badge-amount">${summary}</div>
-            </div>
-          `;
-          div.addEventListener("click", ()=>{
-            loadStatementIntoForm(name, st.id);
-          });
-          statementsListEl.appendChild(div);
-        });
-
-      renderTotalsForCurrentClient();
-    }
-
-    function computeTotalsForStatement(st){
-      const totals = {};
-      (st.entries || []).forEach(e=>{
-        if(!e.currency) return;
-        if(!totals[e.currency]) totals[e.currency] = {lah:0, alaih:0};
-        if(e.direction==="له") totals[e.currency].lah += e.amount||0;
-        else                   totals[e.currency].alaih += e.amount||0;
-      });
-      return totals;
-    }
-
-    function summarizeTotalsPerCurrency(totals){
-      const parts = [];
-      Object.keys(totals).forEach(c=>{
-        const lah   = totals[c].lah;
-        const alaih = totals[c].alaih;
-        const diff  = lah - alaih;
-        const dir   = diff>0 ? "له" : diff<0 ? "عليه" : "متزن";
-        parts.push(`${c}: ${Math.abs(diff).toLocaleString("en-US")} (${dir})`);
-      });
-      return parts.join(" | ");
-    }
-
-    function renderTotalsForCurrentClient(){
-      if(!state.currentClient || !state.data.clients[state.currentClient]){
-        totalsBoxEl.innerHTML = "";
-        return;
-      }
-      const arr = state.data.clients[state.currentClient].statements || [];
-      if(!arr.length){
-        totalsBoxEl.innerHTML = "";
-        return;
-      }
-      const agg = {};
-      arr.forEach(st=>{
-        (st.entries||[]).forEach(e=>{
-          if(!e.currency) return;
-          if(!agg[e.currency]) agg[e.currency] = {lah:0, alaih:0};
-          if(e.direction==="له") agg[e.currency].lah += e.amount||0;
-          else                   agg[e.currency].alaih += e.amount||0;
-        });
-      });
-      totalsBoxEl.innerHTML = "";
-      Object.keys(agg).forEach(c=>{
-        const pill = document.createElement("div");
-        pill.className = "stat-pill";
-        const lah   = agg[c].lah;
-        const alaih = agg[c].alaih;
-        const diff  = lah - alaih;
-        const dir   = diff>0 ? "له" : diff<0 ? "عليه" : "متزن";
-        pill.innerHTML = `
-          <span class="label">${c}:</span>
-          <span>${Math.abs(diff).toLocaleString("en-US")}</span>
-          <span style="opacity:.8;">(${dir})</span>
-        `;
-        totalsBoxEl.appendChild(pill);
-      });
-    }
-
-    function loadStatementIntoForm(name, id){
-      const client = state.data.clients[name];
-      if(!client) return;
-      const st = client.statements.find(s=>s.id===id);
-      if(!st) return;
-      document.querySelector('[data-mode="statements"]').click();
-      clientNameInput.value       = name;
-      dateInput.value             = st.date || "";
-      titleInput.value            = st.title || "";
-      truckNumberInput.value      = st.truckNumber || "";
-      statementNumberInput.value  = st.statementNumber || "";
-      manualTotalInput.value      = st.manualTotal || "";
-      extraNotesInput.value       = st.extraNotes || "";
-      entriesContainer.innerHTML  = "";
-      (st.entries || []).forEach(e=> addEntryRow(e));
-      if(!st.entries || !st.entries.length){
-        addEntryRow();
-      }
       state.currentStatementId = st.id;
+      alert("تم حفظ الكشف");
+      renderStatementsList();
+      renderTotalsForCurrentClient();
       updatePreviewText();
+      renderReportsClientOptions();
     }
 
-    // ====== إدارة قائمة العملاء =====
-    function renderClientsList(){
-      const names = Object.keys(state.data.clients).sort();
-      clientsListEl.innerHTML = "";
-      const search = (clientsSearchInput.value || "").trim();
-      const filtered = names.filter(n => !search || n.includes(search));
-      clientsCountBadge.textContent = `${filtered.length} عميل`;
-      if(!filtered.length){
-        clientsListEl.innerHTML = `<div class="list-item"><span>لا يوجد عملاء مطابقون لبحثك.</span></div>`;
-        return;
-      }
-      filtered.forEach(name=>{
-        const div = document.createElement("div");
-        div.className = "list-item";
-        const stCount = (state.data.clients[name].statements || []).length;
-        div.innerHTML = `
-          <div>
-            <div>${name}</div>
-            <div class="meta">${stCount} كشف/كشوف</div>
-          </div>
-          <div>
-            <button class="pill-btn pill-gray" data-name="${name}">فتح</button>
-          </div>
-        `;
-        div.querySelector("button").addEventListener("click", ()=>{
-          clientNameInput.value = name;
-          state.currentStatementId = null;
-          state.currentClient = name;
-          renderStatementsForClient(name);
-          document.querySelector('[data-mode="statements"]').click();
-        });
-        clientsListEl.appendChild(div);
-      });
-    }
-
-    function renderReportClientsOptions(){
-      const names = Object.keys(state.data.clients).sort();
-      reportClientSelect.innerHTML = `<option value="">— اختر عميل —</option>`;
-      names.forEach(n=>{
-        const opt = document.createElement("option");
-        opt.value = n;
-        opt.textContent = n;
-        reportClientSelect.appendChild(opt);
-      });
-    }
-
-    // ====== تقارير العميل (له / عليه في الفترة) =====
-    function computeTotalsForClient(name, from, to){
-      const client = state.data.clients[name];
-      if(!client) return {};
-      const fromDate = from ? new Date(from) : null;
-      const toDate   = to   ? new Date(to)   : null;
-      const agg = {};
-      client.statements.forEach(st=>{
-        const stDate = st.date ? new Date(st.date) : null;
-        if(fromDate && stDate && stDate < fromDate) return;
-        if(toDate   && stDate && stDate > toDate)   return;
-        (st.entries || []).forEach(e=>{
-          if(!e.currency) return;
-          if(!agg[e.currency]) agg[e.currency] = {lah:0, alaih:0};
-          if(e.direction==="له") agg[e.currency].lah   += e.amount||0;
-          else                   agg[e.currency].alaih += e.amount||0;
-        });
-      });
-      return agg;
-    }
-
-    function buildReport(){
-      const name = reportClientSelect.value;
-      if (!name) { alert("اختر عميل أولاً"); return; }
-
-      const from = reportFromInput.value;
-      const to   = reportToInput.value;
-
-      // نجلب المجاميع الأساسية (له / عليه لكل عملة) للفترة
-      const totals = computeTotalsForClient(name, from, to);
-      if (!Object.keys(totals).length) {
-        reportBox.textContent = "لا توجد بيانات في هذه الفترة.";
-        return;
-      }
-
-      // نحسب معلومات إضافية عن عدد الكشوف وأقدم/أحدث تاريخ في الفترة
-      let statementsCount = 0;
-      let firstDate = null;
-      let lastDate  = null;
-
-      const client = state.data.clients[name];
-      if (client && Array.isArray(client.statements)) {
-        const fromDateObj = from ? new Date(from) : null;
-        const toDateObj   = to   ? new Date(to)   : null;
-
-        client.statements.forEach(s => {
-          let inRange = true;
-          if (fromDateObj || toDateObj) {
-            const sd = s.date ? new Date(s.date) : null;
-            if (sd) {
-              if (fromDateObj && sd < fromDateObj) inRange = false;
-              if (toDateObj   && sd > toDateObj)   inRange = false;
-            }
-          }
-          if (!inRange) return;
-
-          statementsCount++;
-          if (s.date) {
-            if (!firstDate || s.date < firstDate) firstDate = s.date;
-            if (!lastDate  || s.date > lastDate)  lastDate  = s.date;
-          }
-        });
-      }
-
-      let header = `تقرير حساب العميل: ${name}\n`;
-      if (from || to) {
-        header += `الفترة: ${from || "غير محدد"} إلى ${to || "غير محدد"}\n`;
-      }
-      if (statementsCount > 0) {
-        header += `عدد الكشوف في الفترة: ${statementsCount}\n`;
-        if (firstDate || lastDate) {
-          header += `من أقدم كشف بتاريخ: ${firstDate || "-"} إلى أحدث كشف بتاريخ: ${lastDate || "-"}\n`;
-        }
-      }
-      header += "------------------------\n";
-
-      let body = "";
-      Object.keys(totals).forEach(c => {
-        const lah   = totals[c].lah;
-        const alaih = totals[c].alaih;
-        const diff  = lah - alaih;
-        const dir   = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء");
-
-        body += `${c}:\n` +
-                `له: ${lah.toLocaleString("en-US")}\n` +
-                `عليه: ${alaih.toLocaleString("en-US")}\n` +
-                `الصافي: ${Math.abs(diff).toLocaleString("en-US")} (${dir})\n\n`;
-      });
-
-      reportBox.textContent = header + body;
-    }
-
-    // ====== معاينة نص الواتساب =====
-    function updatePreviewText(){
-      const n   = clientNameInput.value.trim() || "العميل";
-      const d   = dateInput.value || "";
-      const ti  = titleInput.value || "";
-      const trk = truckNumberInput.value.trim();
-      const stn = statementNumberInput.value.trim();
-
-      let txt = `${n}\nالتاريخ: ${d}\n----------------\n${ti}`;
-      if (trk) txt += `\nرقم القاطرة: ${trk}`;
-      if (stn) txt += `\nرقم البيان: ${stn}`;
-      txt += "\n";
-
-      const entries = getEntries();
-
-      // البنود سطر بسطر
-      entries.forEach((e, i) => {
-        txt += `\n${i+1}- ${e.desc} ${e.amount.toLocaleString("en-US")} ${e.currency} (${e.direction})`;
-      });
-
-      // إجمالي هذا الكشف لكل عملة
-      const totals = computeTotalsForEntries(entries);
-      if (Object.keys(totals).length) {
-        txt += `\n\nإجمالي هذا الكشف:\n`;
-        Object.keys(totals).forEach(c => {
-          const t    = totals[c];
-          const diff = t.lah - t.alaih;
-          const dir  = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء");
-
-          txt += `${c}: له ${t.lah.toLocaleString("en-US")} - عليه ${t.alaih.toLocaleString("en-US")} = الصافي ${Math.abs(diff).toLocaleString("en-US")} (${dir})\n`;
-        });
-      }
-
-      // لو كتبت إجمالي يدوي
-      if (manualTotalInput.value) {
-        txt += `\n\nالإجمالي (يدوي): ${manualTotalInput.value}`;
-      }
-
-      // ملاحظات إضافية
-      if (extraNotesInput.value) {
-        txt += `\n\nملاحظات:\n${extraNotesInput.value}`;
-      }
-
-      whatsAppBox.textContent = txt;
-
-      // تحديث صندوق إجمالي الكشف في الشاشة
-      renderCurrentStatementTotals();
-    }
-
-    // ====== بناء بلوك HTML لكشف واحد (نستخدمه في PDF) =====
-    function buildStatementHtml(st){
-      const totals = computeTotalsForStatement(st);
-      const summary = summarizeTotalsPerCurrency(totals);
-      const entriesHtml = (st.entries||[]).map((e,i)=>`
-        <tr>
-          <td>${i+1}</td>
-          <td>${e.desc || ""}</td>
-          <td>${e.amount ? e.amount.toLocaleString("en-US") : ""}</td>
-          <td>${e.currency || ""}</td>
-          <td>${e.direction || ""}</td>
-        </tr>
-      `).join("");
-
-      return `
-        <div style="margin-bottom:24px;">
-          <h2 style="margin:0 0 4px 0;font-size:16px;">${st.title || "كشف بدون عنوان"}</h2>
-          <div style="font-size:13px;color:#4b5563;">
-            <span>التاريخ: ${st.date || "-"}</span>
-            ${st.truckNumber ? `<span style="margin-inline:10px;">| رقم القاطرة: ${st.truckNumber}</span>` : ""}
-            ${st.statementNumber ? `<span>| رقم البيان: ${st.statementNumber}</span>` : ""}
-          </div>
-          <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;">
-            <thead>
-              <tr>
-                <th style="border:1px solid #e5e7eb;padding:4px;">#</th>
-                <th style="border:1px solid #e5e7eb;padding:4px;">البند</th>
-                <th style="border:1px solid #e5e7eb;padding:4px;">المبلغ</th>
-                <th style="border:1px solid #e5e7eb;padding:4px;">العملة</th>
-                <th style="border:1px solid #e5e7eb;padding:4px;">له / عليه</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${entriesHtml || `<tr><td colspan="5" style="border:1px solid #e5e7eb;padding:4px;text-align:center;color:#6b7280;">لا توجد بنود</td></tr>`}
-            </tbody>
-          </table>
-          <div style="margin-top:6px;font-size:13px;color:#111827;">
-            <strong>ملخص لكل عملة:</strong> ${summary || "—"}
-          </div>
-          ${st.manualTotal ? `<div style="margin-top:4px;font-size:13px;">الإجمالي (كما أدخلته يدوياً): ${st.manualTotal}</div>` : ""}
-          ${st.extraNotes ? `<div style="margin-top:4px;font-size:13px;white-space:pre-wrap;">ملاحظات:\n${st.extraNotes}</div>` : ""}
-        </div>
-      `;
-    }
-
-    // ====== طباعة / حفظ PDF =====
-    function printCurrentStatementAsPdf(){
-      const name = clientNameInput.value.trim() || "العميل";
-      const st = {
-        date: dateInput.value || "",
-        title: titleInput.value || "",
-        truckNumber: truckNumberInput.value || "",
-        statementNumber: statementNumberInput.value || "",
-        entries: getEntries(),
-        manualTotal: manualTotalInput.value,
-        extraNotes: extraNotesInput.value
-      };
-
-      const html = `
-        <html lang="ar" dir="rtl">
-        <head>
-          <meta charset="utf-8"/>
-          <title>كشف مصروفات - ${name}</title>
-          <style>
-            body {
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-              padding: 16px;
-              color: #111827;
-            }
-            h1 {
-              margin-top: 0;
-              font-size: 18px;
-            }
-          </style>
-        </head>
-        <body>
-          <h1>كشف مصروفات العميل: ${name}</h1>
-          ${buildStatementHtml(st)}
-        </body>
-        </html>
-      `;
-
-      const w = window.open("", "_blank");
-      w.document.write(html);
-      w.document.close();
-      w.focus();
-      w.print();
-    }
-
-    // ====== أوامر بسيطة للمسح وإنشاء كشف جديد =====
     function resetForm(keepName){
       state.currentStatementId = null;
       if(keepName) clientNameInput.value = keepName;
@@ -1775,272 +619,656 @@
       entriesContainer.innerHTML = "";
       addEntryRow();
       updatePreviewText();
-      renderCurrentStatementTotals();
       renderStatementsList();
       renderTotalsForCurrentClient();
     }
 
     function copyLastEntries(){
       const name = clientNameInput.value.trim();
-      if(!name || !state.data.clients[name] || !state.data.clients[name].statements.length){
-        alert("لا توجد كشوفات سابقة لهذا العميل.");
-        return;
-      }
-      const last = state.data.clients[name].statements[state.data.clients[name].statements.length-1];
+      const c    = state.data.clients[name];
+      if(!c || !c.statements.length){ alert("لا يوجد كشف سابق"); return; }
       entriesContainer.innerHTML = "";
-      (last.entries||[]).forEach(e => addEntryRow(e));
-      if(!last.entries || !last.entries.length){
-        addEntryRow();
-      }
+      c.statements[0].entries.forEach(e =>
+        addEntryRow({desc:e.desc,amount:0,currency:e.currency,direction:e.direction})
+      );
       updatePreviewText();
     }
 
-    // ====== نسخ النص / المشاركة =====
-    async function copyWhatsAppText(){
-      try {
-        await navigator.clipboard.writeText(whatsAppBox.textContent || "");
-        alert("تم نسخ النص. الصقه في الواتساب.");
-      } catch(e) {
-        alert("تعذّر النسخ التلقائي. يمكنك تحديد النص ونسخه يدويًا.");
+    function renderStatementsList(){
+      const name = clientNameInput.value.trim();
+      statementsListEl.innerHTML = "";
+      const c = state.data.clients[name];
+      if(!c || !c.statements.length){
+        statementsListEl.textContent = "لا توجد كشوفات";
+        return;
+      }
+
+      const q = (statementsSearchInput.value || "").trim().toLowerCase();
+      const multiMode   = state.multiSelectEnabled;
+      const selectedIds = new Set(state.selectedStatements);
+
+      c.statements
+        .filter(st=>{
+          if(!q) return true;
+          const haystack = [
+            st.title || "",
+            st.date || "",
+            st.truckNumber || "",
+            st.statementNumber || ""
+          ].join(" ").toLowerCase();
+          return haystack.includes(q);
+        })
+        .forEach(st=>{
+          const d = document.createElement("div");
+          d.className = "saved-item";
+
+          const titleSpan = document.createElement("span");
+          const labelExtra = [
+            st.truckNumber ? `ق:${st.truckNumber}` : "",
+            st.statementNumber ? `ب:${st.statementNumber}` : ""
+          ].filter(Boolean).join(" • ");
+          titleSpan.textContent =
+            (st.title || "بدون عنوان") + (labelExtra ? " — " + labelExtra : "");
+
+          const dateSpan = document.createElement("span");
+          dateSpan.className = "date";
+          dateSpan.textContent = st.date || "";
+
+          if (multiMode) {
+            const wrap = document.createElement("div");
+            wrap.style.display = "flex";
+            wrap.style.alignItems = "center";
+            wrap.style.gap = "6px";
+
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.style.margin = "0";
+            checkbox.checked = selectedIds.has(st.id);
+
+            checkbox.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              toggleStatementSelection(st.id, checkbox.checked);
+              d.style.background = checkbox.checked ? "#bbf7d0" : "#ecfdf3";
+            });
+
+            wrap.appendChild(checkbox);
+            wrap.appendChild(titleSpan);
+
+            d.appendChild(wrap);
+            d.appendChild(dateSpan);
+
+            if (checkbox.checked) d.style.background = "#bbf7d0";
+
+            d.onclick = () => {
+              const newVal = !checkbox.checked;
+              checkbox.checked = newVal;
+              toggleStatementSelection(st.id, newVal);
+              d.style.background = newVal ? "#bbf7d0" : "#ecfdf3";
+            };
+          } else {
+            d.appendChild(titleSpan);
+            d.appendChild(dateSpan);
+            d.onclick = () => {
+              if (confirm("فتح هذا الكشف؟")) loadStatement(name, st.id);
+            };
+          }
+
+          statementsListEl.appendChild(d);
+        });
+
+      if(!statementsListEl.childElementCount){
+        statementsListEl.textContent = "لا توجد نتائج مطابقة لبحثك.";
       }
     }
 
-    async function shareWhatsAppText(){
-      const text = whatsAppBox.textContent || "";
-      if(navigator.share){
-        try {
-          await navigator.share({text});
-        } catch(e) {
-          console.error(e);
-        }
+    function toggleStatementSelection(id, isSelected){
+      const arr = state.selectedStatements;
+      const idx = arr.indexOf(id);
+      if (isSelected) {
+        if (idx === -1) arr.push(id);
       } else {
-        await copyWhatsAppText();
+        if (idx !== -1) arr.splice(idx, 1);
       }
     }
 
-    // ====== تقارير: نسخ التقرير =====
-    async function copyReportText(){
-      try {
-        await navigator.clipboard.writeText(reportBox.textContent || "");
-        alert("تم نسخ التقرير.");
-      } catch(e) {
-        alert("تعذّر النسخ التلقائي. يمكنك تحديد التقرير ونسخه يدويًا.");
-      }
+    function loadStatement(name,id){
+      const st = state.data.clients[name].statements.find(s=>s.id===id);
+      if(!st) return;
+      state.currentClient = name;
+      state.currentStatementId = id;
+      clientNameInput.value      = name;
+      dateInput.value            = st.date;
+      titleInput.value           = st.title;
+      truckNumberInput.value     = st.truckNumber || "";
+      statementNumberInput.value = st.statementNumber || "";
+      manualTotalInput.value     = st.manualTotal || "";
+      extraNotesInput.value      = st.extraNotes || "";
+      entriesContainer.innerHTML = "";
+      st.entries.forEach(e => addEntryRow(e));
+      updatePreviewText();
+      renderStatementsList();
+      renderTotalsForCurrentClient();
     }
 
-    // ====== أوضاع الواجهة (Tabs) =====
-    function setupTabs(){
-      const tabs = document.querySelectorAll("#modeTabs .tab");
-      tabs.forEach(tab=>{
-        tab.addEventListener("click", ()=>{
-          tabs.forEach(t=>t.classList.remove("active"));
-          tab.classList.add("active");
-          const mode = tab.getAttribute("data-mode");
-          document.querySelectorAll(".mode-panel").forEach(p=>p.style.display="none");
-          document.getElementById("mode" + mode.charAt(0).toUpperCase()+mode.slice(1)).style.display = "";
+    function renderClientsList(){
+      clientsListEl.innerHTML = "";
+      const names = Object.keys(state.data.clients);
+      if(!names.length){
+        clientsListEl.textContent = "لا يوجد عملاء بعد";
+        return;
+      }
+      const search = (clientsSearchInput.value || "").trim().toLowerCase();
+      names
+        .filter(n => !search || n.toLowerCase().includes(search))
+        .sort((a,b)=>a.localeCompare(b,"ar"))
+        .forEach(n=>{
+          const d = document.createElement("div");
+          d.className = "saved-item";
+          const last = state.data.clients[n].statements[0];
+          d.innerHTML =
+            `<span>${n}</span>`+
+            `<span class="date">${last ? (last.date || "") : ""}</span>`;
+          d.onclick = () => { showScreen("s"); loadStatement(n, last.id); };
+          clientsListEl.appendChild(d);
+        });
+    }
+
+    function computeTotalsForClient(name, fromDate, toDate){
+      const c = state.data.clients[name]; if(!c) return {};
+      const t = {};
+      const from = fromDate ? new Date(fromDate) : null;
+      const to   = toDate   ? new Date(toDate)   : null;
+
+      c.statements.forEach(s=>{
+        if(from || to){
+          const sd = s.date ? new Date(s.date) : null;
+          if(sd){
+            if(from && sd < from) return;
+            if(to   && sd > to)   return;
+          }
+        }
+        s.entries.forEach(e=>{
+          if(!t[e.currency]) t[e.currency] = {lah:0,alaih:0};
+          if(e.direction==="له")  t[e.currency].lah   += e.amount;
+          else                    t[e.currency].alaih += e.amount;
         });
       });
+      return t;
     }
 
-    // ====== البحث في قائمة العملاء =====
-    function setupClientsSearch(){
-      clientsSearchInput.addEventListener("input", renderClientsList);
+    function renderTotalsForCurrentClient(){
+      const n = clientNameInput.value.trim();
+      if(!state.data.clients[n]){ totalsBoxEl.textContent="لا توجد بيانات"; return; }
+      const t = computeTotalsForClient(n);
+      let txt = "";
+      Object.keys(t).forEach(c=>{
+        const diff = t[c].lah - t[c].alaih;
+        txt += `${c}:\nله: ${t[c].lah}\nعليه: ${t[c].alaih}\nالصافي: ${diff}\n\n`;
+      });
+      totalsBoxEl.textContent = txt || "لا توجد بيانات";
     }
 
-    // ====== النسخ الاحتياطي (تصدير/استيراد) =====
-    async function exportBackup(){
-      const dataStr = JSON.stringify({clients: state.data.clients}, null, 2);
-      const blob = new Blob([dataStr], {type:"application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "voice-ledger-backup.json";
-      a.click();
-      URL.revokeObjectURL(url);
+    function updatePreviewText(){
+      const n   = clientNameInput.value.trim() || "العميل";
+      const d   = dateInput.value || "";
+      const ti  = titleInput.value || "";
+      const trk = truckNumberInput.value.trim();
+      const stn = statementNumberInput.value.trim();
+
+      let txt = `${n}\nالتاريخ: ${d}\n----------------\n${ti}`;
+      if(trk) txt += `\nرقم القاطرة: ${trk}`;
+      if(stn) txt += `\nرقم البيان: ${stn}`;
+      txt += "\n";
+
+      getEntries().forEach((e,i)=>
+        txt += `\n${i+1}- ${e.desc} ${e.amount.toLocaleString("en-US")} ${e.currency} (${e.direction})`
+      );
+      if(manualTotalInput.value)
+        txt += `\n----------------\nالإجمالي: ${manualTotalInput.value}`;
+      if(extraNotesInput.value)
+        txt += `\n\nملاحظات:\n${extraNotesInput.value}`;
+      whatsAppBox.textContent = txt;
     }
 
-    async function importBackup(){
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = "application/json";
-      input.onchange = (e)=>{
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = ()=>{
-          try {
-            const obj = JSON.parse(reader.result);
-            if(obj && obj.clients){
-              if(!confirm("سيتم استبدال بيانات العملاء الحالية بالملف المختار. هل تريد المتابعة؟")) return;
-              state.data.clients = obj.clients;
-              saveData();
-              renderClientsList();
-              renderReportClientsOptions();
-              alert("تم استيراد النسخة الاحتياطية.");
-            } else {
-              alert("الملف لا يحتوي على بيانات عملاء صالحة.");
-            }
-          } catch(e) {
-            alert("تعذر قراءة الملف. تأكد أنه ملف النسخة الاحتياطية للتطبيق.");
-          }
-        };
-        reader.readAsText(file);
-      };
-      input.click();
-    }
+    // ====== بناء بلوك HTML لكشف واحد (نستخدمه في PDF) ======
+    function buildStatementHtmlBlock(st, name){
+      const entries = st.entries || [];
 
-    // ====== أزرار وأحداث الواجهة =====
-    document.getElementById("addEntryBtn").addEventListener("click", ()=>{ addEntryRow(); updatePreviewText(); });
-    document.getElementById("saveStatementBtn").addEventListener("click", saveCurrentStatement);
-    document.getElementById("newStatementSameClientBtn").addEventListener("click", ()=>{
-      const keepName = clientNameInput.value.trim();
-      resetForm(keepName);
-    });
-    document.getElementById("copyLastClientBtn").addEventListener("click", ()=>{
-      if(state.lastUsedClientName){
-        clientNameInput.value = state.lastUsedClientName;
-        renderStatementsForClient(state.lastUsedClientName);
-      } else {
-        alert("لا يوجد عميل سابق بعد.");
-      }
-    });
-    document.getElementById("todayBtn").addEventListener("click", ()=>{
-      dateInput.value = new Date().toISOString().slice(0,10);
-      updatePreviewText();
-    });
-    document.getElementById("copyLastEntriesBtn").addEventListener("click", copyLastEntries);
-    document.getElementById("copyTextBtn").addEventListener("click", copyWhatsAppText);
-    document.getElementById("shareTextBtn").addEventListener("click", shareWhatsAppText);
-    document.getElementById("printPdfBtn").addEventListener("click", printCurrentStatementAsPdf);
+      const totalsPerCurrency = {};
+      entries.forEach(e=>{
+        if (!totalsPerCurrency[e.currency]) {
+          totalsPerCurrency[e.currency] = { lah:0, alaih:0 };
+        }
+        if (e.direction === "له") totalsPerCurrency[e.currency].lah += e.amount;
+        else                      totalsPerCurrency[e.currency].alaih += e.amount;
+      });
 
-    document.getElementById("buildReportBtn").addEventListener("click", buildReport);
-    document.getElementById("clearReportBtn").addEventListener("click", ()=>{
-      reportBox.textContent = "لم يتم اختيار عميل بعد.";
-    });
-    document.getElementById("copyReportBtn").addEventListener("click", copyReportText);
+      let totalsRows = "";
+      Object.keys(totalsPerCurrency).forEach(c=>{
+        const t = totalsPerCurrency[c];
+        const diff = t.lah - t.alaih;
+        const dir = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء");
+        totalsRows += `
+          <tr>
+            <td style="border:1px solid #ddd; padding:3px; text-align:center;">${c}</td>
+            <td style="border:1px solid #ddd; padding:3px; text-align:center;">${t.lah.toLocaleString("en-US")}</td>
+            <td style="border:1px solid #ddd; padding:3px; text-align:center;">${t.alaih.toLocaleString("en-US")}</td>
+            <td style="border:1px solid #ddd; padding:3px; text-align:center;">${Math.abs(diff).toLocaleString("en-US")} (${dir})</td>
+          </tr>`;
+      });
 
-    // ====== الأحداث العامة للمدخلات =====
-    clientNameInput.addEventListener("input", updatePreviewText);
-    dateInput.addEventListener("change", updatePreviewText);
-    titleInput.addEventListener("input", updatePreviewText);
-    truckNumberInput.addEventListener("input", updatePreviewText);
-    statementNumberInput.addEventListener("input", updatePreviewText);
-    manualTotalInput.addEventListener("input", updatePreviewText);
-    extraNotesInput.addEventListener("input", updatePreviewText);
+      const notesHtml = (st.extraNotes || "").replace(/\n/g,"<br>");
 
-    // ====== إعداد النسخ الاحتياطي من الواجهة (أزرار افتراضية في قائمة العميل) =====
-    (function setupBackupButtons(){
-      const backupRow = document.createElement("div");
-      backupRow.className = "section";
-      backupRow.innerHTML = `
-        <h3><span class="icon">💾</span> نسخ احتياطي</h3>
-        <small>تصدير أو استيراد بيانات العملاء والكشوف</small>
-        <div class="surface-toolbar" style="margin-top:6px;">
-          <button class="btn" id="exportBackupBtn"><span class="icon">⬇️</span> تصدير نسخة احتياطية</button>
-          <button class="btn-ghost btn" id="importBackupBtn"><span class="icon">⬆️</span> استيراد نسخة احتياطية</button>
+      return `
+        <div style="width:100%; padding:16px 24px; box-sizing:border-box; font-family:system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif; color:#111827; direction:rtl; page-break-after:always;">
+          <h2 style="text-align:center; margin:0 0 6px;">كشف حساب</h2>
+          <div style="margin:2px 0;">العميل: ${name}</div>
+          <div style="margin:2px 0;">التاريخ: ${st.date || ""}</div>
+          <div style="margin:2px 0;">العنوان: ${st.title || ""}</div>
+          ${st.truckNumber ? `<div style="margin:2px 0;">رقم القاطرة: ${st.truckNumber}</div>` : ""}
+          ${st.statementNumber ? `<div style="margin:2px 0;">رقم البيان: ${st.statementNumber}</div>` : ""}
+
+          <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+            <thead>
+              <tr>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">#</th>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">الوصف</th>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">المبلغ</th>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">العملة</th>
+                <th style="border:1px solid #ddd; padding:4px; background:#f3f4f6;">له/عليه</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${entries.map((e,i)=>`
+                <tr>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:center;">${i+1}</td>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:right;">${e.desc}</td>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:center;">${e.amount.toLocaleString("en-US")}</td>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:center;">${e.currency}</td>
+                  <td style="border:1px solid #ddd; padding:3px; text-align:center;">${e.direction}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+
+          <div style="margin-top:8px; font-size:0.9rem;">
+            <strong>ملخص الأرصدة لهذا الكشف:</strong>
+            <table style="width:100%; border-collapse:collapse; margin-top:4px;">
+              <thead>
+                <tr>
+                  <th style="border:1px solid #ddd; padding:3px; background:#f3f4f6;">العملة</th>
+                  <th style="border:1px solid #ddd; padding:3px; background:#f3f4f6;">إجمال له</th>
+                  <th style="border:1px solid #ddd; padding:3px; background:#f3f4f6;">إجمال عليه</th>
+                  <th style="border:1px solid #ddd; padding:3px; background:#f3f4f6;">الصافي</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${totalsRows || `<tr><td colspan="4" style="border:1px solid #ddd; padding:3px; text-align:center;">لا توجد بيانات.</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+
+          ${notesHtml ? `<div style="margin-top:8px;">ملاحظات:<br>${notesHtml}</div>` : ""}
         </div>
       `;
-      document.getElementById("modeClients").querySelector(".surface").appendChild(backupRow);
-      document.getElementById("exportBackupBtn").addEventListener("click", exportBackup);
-      document.getElementById("importBackupBtn").addEventListener("click", importBackup);
-    })();
+    }
 
-    // ====== المساعد الصوتي (الجزء الخاص بالواجهة فقط) =====
-    function setVoiceStatus(active, text){
-      if(active){
-        voiceStatusDot.classList.remove("idle");
-        voiceStatusDot.classList.add("active");
-        voiceStatusText.textContent = text || "يستمع الآن...";
+    // ====== طباعة كشف واحد PDF عبر نافذة المتصفح (كما كان سابقاً) ======
+    function printAsPdf(){
+      const name    = clientNameInput.value.trim() || "العميل";
+      const st = {
+        date: dateInput.value || new Date().toISOString().slice(0,10),
+        title: titleInput.value || "",
+        truckNumber: truckNumberInput.value.trim(),
+        statementNumber: statementNumberInput.value.trim(),
+        entries: getEntries(),
+        extraNotes: extraNotesInput.value
+      };
+
+      const html = buildStatementHtmlBlock(st, name);
+
+      const w = window.open("", "_blank");
+      w.document.write(`
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>كشف - ${name}</title>
+<style>
+  @page { size:A4; margin:10mm; }
+  body { margin:0; padding:0; background:#ffffff; }
+</style>
+</head>
+<body>
+  ${html}
+</body>
+</html>`);
+      w.document.close();
+      w.focus();
+      w.onload = function () {
+        try { this.print(); } catch(e) {}
+      };
+    }
+
+    // ====== مشاركة كشف واحد PDF كملف ======
+    async function sharePdf(){
+      const name = clientNameInput.value.trim() || "العميل";
+      const st = {
+        date: dateInput.value || new Date().toISOString().slice(0,10),
+        title: titleInput.value || "",
+        truckNumber: truckNumberInput.value.trim(),
+        statementNumber: statementNumberInput.value.trim(),
+        entries: getEntries(),
+        extraNotes: extraNotesInput.value
+      };
+      if (!st.entries.length){
+        alert("أضف بنودًا للكشف أولاً.");
+        return;
+      }
+
+      singlePdfContainer.innerHTML = buildStatementHtmlBlock(st, name);
+      singlePdfContainer.style.display = "block";
+
+      const canvas = await html2canvas(singlePdfContainer, { scale: 2 });
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p","mm","a4");
+      const pageWidth  = 210;
+      const pageHeight = 297;
+      const imgWidth   = pageWidth;
+      const imgHeight  = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position   = 0;
+
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      singlePdfContainer.style.display = "none";
+
+      const pdfBlob = pdf.output("blob");
+      const pdfFile = new File(
+        [pdfBlob],
+        `statement-${name}-${new Date().toISOString().slice(0,10)}.pdf`,
+        { type: "application/pdf" }
+      );
+
+      if (navigator.canShare && navigator.canShare({ files:[pdfFile] })) {
+        navigator.share({
+          title: "كشف حساب PDF",
+          text: "كشف حساب العميل.",
+          files: [pdfFile]
+        }).catch(()=>{});
       } else {
-        voiceStatusDot.classList.remove("active");
-        voiceStatusDot.classList.add("idle");
-        voiceStatusText.textContent = text || "المساعد في وضع الانتظار.";
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = pdfFile.name;
+        a.click();
+        URL.revokeObjectURL(url);
       }
     }
 
-    function updateVoiceBadges(info){
-      if(!info){
-        intentBadge.textContent    = "النية: —";
-        sentimentBadge.textContent = "المزاج: —";
-        sourceBadge.textContent    = "المصدر: —";
+    // ====== مشاركة عدة كشوف PDF في ملف واحد ======
+    async function shareSelectedStatementsPdf(){
+      const name = clientNameInput.value.trim();
+      if (!name) {
+        alert("اكتب اسم العميل أولاً.");
         return;
       }
-      intentBadge.textContent    = "النية: " + (info.intentLabel || "غير معروفة");
-      sentimentBadge.textContent = "المزاج: " + (info.sentimentLabel || "غير محدد");
-      sourceBadge.textContent    = "المصدر: " + (info.source || "محلي");
-    }
-
-    function pushVoiceHistoryItem(item){
-      state.voiceHistory.unshift(item);
-      if(state.voiceHistory.length>20) state.voiceHistory.pop();
-      renderVoiceHistoryList();
-    }
-
-    function renderVoiceHistoryList(){
-      voiceHistoryList.innerHTML = "";
-      if(!state.voiceHistory.length){
-        voiceHistoryList.innerHTML = `<div class="history-item"><span>لا توجد أوامر صوتية بعد.</span></div>`;
+      if (!state.multiSelectEnabled || !state.selectedStatements.length) {
+        alert("فعّل تحديد عدة كشوف ثم اختر كشوف من القائمة.");
         return;
       }
-      state.voiceHistory.forEach(h=>{
-        const div = document.createElement("div");
-        div.className = "history-item";
-        div.innerHTML = `
-          <div>
-            <div>${h.text || ""}</div>
-            <div class="meta">
-              ${h.intentLabel ? `<span>نية: ${h.intentLabel}</span>` : ""}
-              ${h.sentimentLabel ? `<span style="margin-inline:6px;">| مزاج: ${h.sentimentLabel}</span>` : ""}
-            </div>
-          </div>
-          <div>
-            <span class="badge-date">${h.date || ""}</span>
-          </div>
-        `;
-        voiceHistoryList.appendChild(div);
+
+      const client = state.data.clients[name];
+      if (!client) {
+        alert("لا توجد كشوف لهذا العميل.");
+        return;
+      }
+
+      multiPdfContainer.innerHTML = "";
+      multiPdfContainer.style.display = "block";
+
+      state.selectedStatements.forEach((id) => {
+        const st = client.statements.find(s => s.id === id);
+        if (!st) return;
+        multiPdfContainer.insertAdjacentHTML("beforeend", buildStatementHtmlBlock(st, name));
+      });
+
+      const canvas = await html2canvas(multiPdfContainer, { scale: 2 });
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p","mm","a4");
+      const pageWidth  = 210;
+      const pageHeight = 297;
+      const imgWidth   = pageWidth;
+      const imgHeight  = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position   = 0;
+
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      multiPdfContainer.style.display = "none";
+
+      const pdfBlob = pdf.output("blob");
+      const pdfFile = new File(
+        [pdfBlob],
+        `statements-${name}-${new Date().toISOString().slice(0,10)}.pdf`,
+        { type: "application/pdf" }
+      );
+
+      if (navigator.canShare && navigator.canShare({ files:[pdfFile] })) {
+        navigator.share({
+          title: "مجموعة كشوف حساب PDF",
+          text: "الكشوف المحددة لهذا العميل.",
+          files: [pdfFile]
+        }).catch(()=>{});
+      } else {
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = pdfFile.name;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    // ====== تقارير العملاء ======
+    function renderReportsClientOptions(){
+      while (reportClientSelect.options.length > 1) {
+        reportClientSelect.remove(1);
+      }
+      const names = Object.keys(state.data.clients);
+      names.sort((a,b)=>a.localeCompare(b,"ar")).forEach(n=>{
+        const opt = document.createElement("option");
+        opt.value = n;
+        opt.textContent = n;
+        reportClientSelect.appendChild(opt);
       });
     }
 
-    // سنربط لاحقاً بـ voice.js و intent-engine.js لتنفيذ حقيقي
-    document.getElementById("startVoiceBtn").addEventListener("click", ()=>{
-      if(window.voiceEngine && window.voiceEngine.start){
-        window.voiceEngine.start();
-      } else {
-        setVoiceStatus(true, "يستمع (نسخة تجريبية بدون خادم)...");
+    function buildReport(){
+      const name = reportClientSelect.value;
+      if(!name){ alert("اختر عميل أولاً"); return; }
+      const from = reportFromInput.value;
+      const to   = reportToInput.value;
+      const totals = computeTotalsForClient(name, from, to);
+      if(!Object.keys(totals).length){
+        reportBox.textContent = "لا توجد بيانات في هذه الفترة.";
+        return;
       }
-    });
-    document.getElementById("stopVoiceBtn").addEventListener("click", ()=>{
-      if(window.voiceEngine && window.voiceEngine.stop){
-        window.voiceEngine.stop();
+      let header = `تقرير حساب العميل: ${name}\n`;
+      if(from || to){
+        header += `الفترة: ${from || "غير محدد"} إلى ${to || "غير محدد"}\n`;
       }
-      setVoiceStatus(false, "تم إيقاف الاستماع.");
-    });
+      header += "------------------------\n";
 
-    document.getElementById("applyVoiceActionBtn").addEventListener("click", ()=>{
-      alert("تطبيق الإجراء من المساعد الصوتي سيُنفَّذ لاحقًا بعد ربط الخادم الفعلي.");
-    });
-    document.getElementById("clearVoiceUiBtn").addEventListener("click", ()=>{
-      voiceRawText.value = "";
-      voiceInterpretation.value = "";
-      updateVoiceBadges(null);
-    });
+      let body = "";
+      Object.keys(totals).forEach(c=>{
+        const lah   = totals[c].lah;
+        const alaih = totals[c].alaih;
+        const diff  = lah - alaih;
+        const dir   = diff>0 ? "له" : (diff<0 ? "عليه" : "لا شيء");
+        body += `${c}:\nله: ${lah}\nعليه: ${alaih}\nالصافي: ${Math.abs(diff)} (${dir})\n\n`;
+      });
 
-    // ====== تهيئة التطبيق عند التحميل =====
-    function init(){
-      loadData();
-      setupTabs();
-      setupClientsSearch();
-      addEntryRow();
-      dateInput.value = new Date().toISOString().slice(0,10);
-      renderClientsList();
-      renderReportClientsOptions();
-      updatePreviewText();
+      reportBox.textContent = header + body;
     }
 
-    document.addEventListener("DOMContentLoaded", init);
-  </script>
+    function printReportPdf(){
+      const txt  = reportBox.textContent || "";
+      const name = reportClientSelect.value || "العميل";
+      if(!txt.trim()){ alert("لا يوجد تقرير للطباعة."); return; }
 
-  <script src="intent-engine.js"></script>
-  <script src="voice.js"></script>
+      const w = window.open("", "_blank");
+      w.document.write(`
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تقرير - ${name}</title>
+<style>
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+  margin:20px;
+  white-space:pre-wrap;
+}
+</style>
+</head>
+<body>
+<pre>${txt.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre>
+</body>
+</html>`);
+      w.document.close();
+      w.focus();
+      w.onload = function () {
+        try { this.print(); } catch(e) {}
+      };
+    }
+
+    // ====== النسخة الاحتياطية ======
+    const exportBtn   = document.getElementById("exportBackupBtn");
+    const importBtn   = document.getElementById("importBackupBtn");
+    const backupInput = document.getElementById("backupFileInput");
+
+    exportBtn.onclick = exportBackup;
+    importBtn.onclick = () => backupInput.click();
+
+    backupInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const obj = JSON.parse(ev.target.result);
+          if (!obj.clients) throw new Error("bad format");
+          state.data = obj;
+          saveData();
+          alert("تم استيراد النسخة الاحتياطية بنجاح.");
+          renderStatementsList();
+          renderClientsList();
+          renderTotalsForCurrentClient();
+          updatePreviewText();
+          renderReportsClientOptions();
+        } catch (err) {
+          console.error(err);
+          alert("ملف النسخة الاحتياطية غير صالح.");
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    });
+
+    function exportBackup() {
+      try {
+        const raw  = localStorage.getItem(STORAGE_KEY) || JSON.stringify(state.data);
+        const blob = new Blob([raw], { type: "application/json" });
+        const fileName = "voice-ledger-backup-" + new Date().toISOString().slice(0,10) + ".json";
+
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: "application/json" })] })) {
+          const file = new File([blob], fileName, { type: "application/json" });
+          navigator.share({
+            title: "نسخة احتياطية دفتر كشف الحساب",
+            text: "ملف النسخة الاحتياطية للتطبيق.",
+            files: [file]
+          }).catch(() => {});
+        } else if (navigator.share) {
+          navigator.share({
+            title: "نسخة احتياطية دفتر كشف الحساب",
+            text: "تم تنزيل ملف النسخة الاحتياطية، يمكنك رفعه إلى Google Drive."
+          }).catch(() => {});
+        }
+
+        alert("تم إنشاء النسخة الاحتياطية. احفظ الملف في Google Drive أو أي مكان آمن.");
+      } catch (e) {
+        console.error(e);
+        alert("حصل خطأ أثناء إنشاء النسخة الاحتياطية.");
+      }
+    }
+
+    // ====== PWA / تثبيت التطبيق ======
+    const installButton = document.getElementById("installButton");
+
+    window.addEventListener("beforeinstallprompt", e=>{
+      e.preventDefault();
+      state.deferredPrompt = e;
+      installButton.style.display = "inline-flex";
+    });
+
+    installButton.onclick = async () => {
+      if(!state.deferredPrompt) return;
+      state.deferredPrompt.prompt();
+      state.deferredPrompt = null;
+      installButton.style.display = "none";
+    };
+
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.register("./sw.js");
+    }
+
+    // ====== تهيئة أولية ======
+    const hadDataBefore = !!localStorage.getItem(STORAGE_KEY);
+    loadData();
+    dateInput.value = new Date().toISOString().slice(0,10);
+    addEntryRow();
+    updatePreviewText();
+    renderStatementsList();
+    renderClientsList();
+    renderTotalsForCurrentClient();
+    renderReportsClientOptions();
+
+    if (!hadDataBefore) {
+      setTimeout(() => {
+        if (confirm("هل لديك نسخة احتياطية محفوظة وتريد استيرادها الآن؟")) {
+          backupInput.click();
+        }
+      }, 800);
+    }
+  </script>
 </body>
 </html>
