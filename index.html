@@ -180,7 +180,25 @@
       background:#f9fafb;  
       padding:10px;  
       font-size:.8rem;  
-      white-space:pre-wrap;  
+      /* ما زالت مناسبة حتى مع الجداول */  
+      white-space:normal;  
+    }  
+  
+    .report-box table {  
+      width:100%;  
+      border-collapse:collapse;  
+      margin-top:8px;  
+      font-size:.8rem;  
+    }  
+    .report-box th,  
+    .report-box td {  
+      border:1px solid #ddd;  
+      padding:4px 6px;  
+      text-align:center;  
+    }  
+    .report-box th {  
+      background:#e5e7eb;  
+      font-weight:600;  
     }  
   </style>  
 </head>  
@@ -356,7 +374,7 @@
         <label class="section-title">📈 تقرير إجمالي لكل عميل</label>  
         <p class="muted">  
           اختر العميل وحدّد فترة (اختياريًا) لعرض إجمالي له / عليه والصافي لكل عملة،  
-          أو عرض تقرير ملخص لكل كشف على حدة.  
+          أو عرض تقرير ملخص لكل كشف على حدة بشكل مجدول.  
         </p>  
   
         <div class="row">  
@@ -381,7 +399,7 @@
   
         <div class="row">  
           <button class="pill-btn pill-green" id="buildReportBtn" style="flex:1;">📊 إجمالي حسب العملة</button>  
-          <button class="pill-btn pill-gray" id="buildDetailedReportBtn" style="flex:1;">📑 تقرير ملخص لكل كشف</button>  
+          <button class="pill-btn pill-gray" id="buildDetailedReportBtn" style="flex:1;">📑 تقرير ملخص لكل كشف (جدول)</button>  
         </div>  
   
         <div id="reportBox" class="report-box">  
@@ -925,7 +943,7 @@
       `;  
     }  
   
-    // ====== طباعة كشف واحد PDF عبر نافذة المتصفح (كما كان سابقاً) ======  
+    // ====== طباعة كشف واحد PDF عبر نافذة المتصفح ======  
     function printAsPdf(){  
       const name    = clientNameInput.value.trim() || "العميل";  
       const st = {  
@@ -1103,7 +1121,7 @@
       }  
     }  
   
-    // ====== تقارير العملاء (الإجمالي حسب العملة) ======  
+    // ====== تقارير العملاء (الإجمالي حسب العملة، جدول) ======  
     function renderReportsClientOptions(){  
       while (reportClientSelect.options.length > 1) {  
         reportClientSelect.remove(1);  
@@ -1127,25 +1145,43 @@
         reportBox.textContent = "لا توجد بيانات في هذه الفترة.";  
         return;  
       }  
-      let header = `تقرير حساب العميل: ${name}\n`;  
+      let headerHtml = `<h3 style="margin-top:0;">تقرير حساب العميل: ${name}</h3>`;  
       if(from || to){  
-        header += `الفترة: ${from || "غير محدد"} إلى ${to || "غير محدد"}\n`;  
+        headerHtml += `<p>الفترة: ${from || "غير محدد"} إلى ${to || "غير محدد"}</p>`;  
       }  
-      header += "------------------------\n";  
   
-      let body = "";  
+      let tableHtml = `  
+        <table>  
+          <thead>  
+            <tr>  
+              <th>العملة</th>  
+              <th>إجمال له</th>  
+              <th>إجمال عليه</th>  
+              <th>الصافي</th>  
+            </tr>  
+          </thead>  
+          <tbody>`;  
+  
       Object.keys(totals).forEach(c=>{  
         const lah   = totals[c].lah;  
         const alaih = totals[c].alaih;  
         const diff  = lah - alaih;  
         const dir   = diff>0 ? "له" : (diff<0 ? "عليه" : "لا شيء");  
-        body += `${c}:\nله: ${lah}\nعليه: ${alaih}\nالصافي: ${Math.abs(diff)} (${dir})\n\n`;  
+        tableHtml += `  
+          <tr>  
+            <td>${c}</td>  
+            <td>${lah}</td>  
+            <td>${alaih}</td>  
+            <td>${Math.abs(diff)} (${dir})</td>  
+          </tr>`;  
       });  
   
-      reportBox.textContent = header + body;  
+      tableHtml += `</tbody></table>`;  
+  
+      reportBox.innerHTML = headerHtml + tableHtml;  
     }  
   
-    // ====== تقرير ملخص لكل كشف للعميل ======  
+    // ====== تقرير ملخص لكل كشف للعميل (مجدول) ======  
     function computeTotalsForStatement(st){  
       const totals = {};  
       (st.entries || []).forEach(e => {  
@@ -1168,29 +1204,44 @@
         return;  
       }  
   
-      const lines = [];  
-      lines.push(`تقرير ملخص لكل كشف للعميل: ${name}`);  
-      lines.push("================================");  
+      const statements = client.statements.slice().reverse(); // الأقدم في الأعلى  
   
-      const grandTotals = {}; // إجمالي جميع الكشوف  
+      const grandTotals = {};  
   
-      client.statements.slice().reverse().forEach((st, idx) => {  
-        lines.push(`\n${idx+1}) ${st.title || "بدون عنوان"} — ${st.date || ""}`);  
+      let html = `<h3 style="margin-top:0;">تقرير ملخص لكل كشف للعميل: ${name}</h3>`;  
+      html += `  
+        <table>  
+          <thead>  
+            <tr>  
+              <th>التاريخ</th>  
+              <th>عنوان الكشف</th>  
+              <th>العملة</th>  
+              <th>إجمال له</th>  
+              <th>إجمال عليه</th>  
+              <th>الصافي (له/عليه)</th>  
+            </tr>  
+          </thead>  
+          <tbody>`;  
+  
+      statements.forEach((st) => {  
         const totals = computeTotalsForStatement(st);  
         if (!Object.keys(totals).length){  
-          lines.push("   لا توجد بنود في هذا الكشف.");  
           return;  
         }  
         Object.keys(totals).forEach(c => {  
           const t = totals[c];  
           const diff = t.lah - t.alaih;  
           const dir  = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء");  
-          lines.push(  
-            `   العملة: ${c}\n` +  
-            `      إجمال له: ${t.lah}\n` +  
-            `      إجمال عليه: ${t.alaih}\n` +  
-            `      الصافي: ${Math.abs(diff)} (${dir})`  
-          );  
+  
+          html += `  
+            <tr>  
+              <td>${st.date || ""}</td>  
+              <td>${st.title || "بدون عنوان"}</td>  
+              <td>${c}</td>  
+              <td>${t.lah}</td>  
+              <td>${t.alaih}</td>  
+              <td>${Math.abs(diff)} (${dir})</td>  
+            </tr>`;  
   
           if (!grandTotals[c]) grandTotals[c] = { lah:0, alaih:0 };  
           grandTotals[c].lah   += t.lah;  
@@ -1198,29 +1249,48 @@
         });  
       });  
   
+      html += `</tbody></table>`;  
+  
       if (Object.keys(grandTotals).length){  
-        lines.push("\n================================");  
-        lines.push("إجمالي الصافي لجميع الكشوف:");  
+        html += `<h4 style="margin-top:14px;">إجمالي الصافي لجميع الكشوف:</h4>`;  
+        html += `  
+          <table>  
+            <thead>  
+              <tr>  
+                <th>العملة</th>  
+                <th>إجمال له</th>  
+                <th>إجمال عليه</th>  
+                <th>الصافي (له/عليه)</th>  
+              </tr>  
+            </thead>  
+            <tbody>`;  
+  
         Object.keys(grandTotals).forEach(c => {  
           const t   = grandTotals[c];  
           const diff= t.lah - t.alaih;  
           const dir = diff > 0 ? "له" : (diff < 0 ? "عليه" : "لا شيء");  
-          lines.push(  
-            `العملة: ${c}\n` +  
-            `   إجمال له: ${t.lah}\n` +  
-            `   إجمال عليه: ${t.alaih}\n` +  
-            `   الصافي: ${Math.abs(diff)} (${dir})\n`  
-          );  
+          html += `  
+            <tr>  
+              <td>${c}</td>  
+              <td>${t.lah}</td>  
+              <td>${t.alaih}</td>  
+              <td>${Math.abs(diff)} (${dir})</td>  
+            </tr>`;  
         });  
+  
+        html += `</tbody></table>`;  
       }  
   
-      reportBox.textContent = lines.join("\n");  
+      reportBox.innerHTML = html;  
     }  
   
     function printReportPdf(){  
-      const txt  = reportBox.textContent || "";  
+      const htmlContent = reportBox.innerHTML.trim();  
       const name = reportClientSelect.value || "العميل";  
-      if(!txt.trim()){ alert("لا يوجد تقرير للطباعة."); return; }  
+      if(!htmlContent){  
+        alert("لا يوجد تقرير للطباعة.");  
+        return;  
+      }  
   
       const w = window.open("", "_blank");  
       w.document.write(`  
@@ -1232,12 +1302,25 @@
 body{  
   font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;  
   margin:20px;  
-  white-space:pre-wrap;  
+}  
+table{  
+  width:100%;  
+  border-collapse:collapse;  
+  margin-top:8px;  
+  font-size:.85rem;  
+}  
+th,td{  
+  border:1px solid #ddd;  
+  padding:4px 6px;  
+  text-align:center;  
+}  
+th{  
+  background:#f3f4f6;  
 }  
 </style>  
 </head>  
 <body>  
-<pre>${txt.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre>  
+${htmlContent}  
 </body>  
 </html>`);  
       w.document.close();  
