@@ -1,7 +1,7 @@
-// voice.js — مساعد بسّام الصوتي الذكي (نسخة مطوّرة)
+// voice.js — مساعد بسّام الصوتي الذكي (نسخة كاملة ومحدّثة)
 // يدعم:
-// 1) أوامر ثابتة (كشف جديد، اسم العميل، وصف البند، المبلغ، العملة، له/عليه، حفظ...)
-// 2) محاولة ذكاء أعلى عبر API خارجي (Smart AI) إذا لم يفهم الأوامر الثابتة
+// 1) أوامر ثابتة داخل المتصفح (كشف جديد، اسم العميل، رقم القاطرة، رقم البيان، البنود، حفظ، آخر كشف، إرسال واتساب...)
+// 2) طبقة ذكاء أعلى عبر API خارجي (SMART_AI_ENDPOINT) إذا رغبت لاحقًا
 
 (function () {
   const btn = document.getElementById("voiceAssistantBtn");
@@ -23,9 +23,9 @@
 
   let listening = false;
 
-  // ===== إعداد عنوان API للذكاء القوي (عدّل هذا عندك) =====
-  // يمكنك تعريف window.VOICE_AI_ENDPOINT في index.html قبل تضمين هذا الملف
-  // أو عدّل الرابط هنا مباشرة:
+  // ===== إعداد عنوان API للذكاء القوي (اختياري) =====
+  // يمكنك تعريف window.VOICE_AI_ENDPOINT في index.html قبل هذا الملف
+  // أو تعديل الرابط هنا مباشرة:
   const SMART_AI_ENDPOINT =
     window.VOICE_AI_ENDPOINT || null; // مثال: "https://your-server.com/voice-intent"
 
@@ -66,12 +66,20 @@
     return text.replace(/[٠-٩]/g, (d) => map[d] || d);
   }
 
-  // تنظيف النص: تصغير، إزالة مسافات زائدة، تحويل أرقام
-  function normalize(text) {
-    return normalizeDigits(text).toLowerCase().trim();
+  // توحيد بعض الحروف العربية (أ/إ/آ → ا، ة → ه، ى → ي) لتسهيل المطابقة
+  function normalizeLetters(text) {
+    return text
+      .replace(/[أإآ]/g, "ا")
+      .replace(/ة/g, "ه")
+      .replace(/ى/g, "ي");
   }
 
-  // تغيير قيمة حقل بالـ id
+  // تنظيف النص: توحيد الحروف + الأرقام + تصغير + إزالة مسافات
+  function normalize(text) {
+    return normalizeLetters(normalizeDigits(text)).toLowerCase().trim();
+  }
+
+  // تغيير قيمة حقل بالـ id وتحديث المعاينة إذا موجودة
   function setInputValue(id, value) {
     const el = getEl(id);
     if (el) {
@@ -123,15 +131,18 @@
     const text = normalize(rawText);
     console.log("🔎 بعد التطبيع:", text);
 
-    // أولاً: حاول نفّذ بالأوامر الثابتة
+    // لو حاب تشوف النص في الجوال أثناء التجربة، فك الكومنت:
+    // alert("سمعت: " + rawText + "\nبعد التطبيع: " + text);
+
+    // 1) جرّب الأوامر الثابتة
     const handled = await handleSimpleCommands(text, rawText);
     if (handled) return;
 
-    // ثانيًا: لو عندك API للذكاء القوي، جرّب تستخدمه
+    // 2) جرّب الذكاء الخارجي (إن وجد)
     const smartHandled = await trySmartAi(rawText, text);
     if (smartHandled) return;
 
-    // في النهاية لو ما فهم شيء
+    // 3) لو ولا واحد فهم
     say("سمعتك تقول: " + rawText + " لكن ما فهمت الأمر يا بسّام.");
   }
 
@@ -200,6 +211,8 @@
       text.includes("حذف اخر بند") ||
       text.includes("احذف اخر بند") ||
       text.includes("امسح اخر بند") ||
+      text.includes("حذف آخر بند") ||
+      text.includes("احذف آخر بند") ||
       text.includes("امسح آخر بند")
     ) {
       const container = getEl("entriesContainer");
@@ -256,11 +269,13 @@
 
     // --- رقم القاطرة ---
     // مثال: "رقم القاطرة واحد اثنين ثلاثة" أو "القاطرة 123"
-    if (text.includes("رقم القاطرة") || text.startsWith("القاطرة")) {
+    if (text.includes("رقم القاطره") || text.startsWith("القاطره")) {
       const truckInput = getEl("truckNumber");
       const clean = normalizeDigits(rawText)
         .replace(/رقم القاطرة/i, "")
+        .replace(/رقم القاطره/i, "")
         .replace(/القاطرة/i, "")
+        .replace(/القاطره/i, "")
         .trim();
       if (truckInput && clean) {
         truckInput.value = clean;
@@ -351,7 +366,7 @@
 
     // --- تغيير العملة ---
     // "العملة يمني" / "خلي العملة سعودي" / "غير العملة دولار"
-    if (text.includes("العملة") || text.includes("عملة")) {
+    if (text.includes("العمله") || text.includes("عملة")) {
       const row = getLastEntryRow();
       if (!row) {
         say("ما في بند عشان أغير له العملة.");
@@ -452,12 +467,11 @@
       return true;
     }
 
-    // --- فتح آخر كشف لنفس العميل ---
+    // --- فتح آخر كشف للعميل الحالي ---
     if (
       text.includes("اخر كشف") ||
-      text.includes("آخر كشف") ||
       text.includes("اخر حساب") ||
-      text.includes("آخر حساب")
+      (text.includes("اخر") && (text.includes("كشف") || text.includes("حساب")))
     ) {
       const name = clientInput ? clientInput.value.trim() : "";
       if (!name) {
@@ -474,7 +488,7 @@
         say("ما لقيت كشوف لهذا العميل.");
         return true;
       }
-      const last = list[0]; // لأننا مرتبين الأحدث أولاً
+      const last = list[0]; // الأحدث أول واحد
       if (typeof window.loadStatement === "function") {
         window.loadStatement(name, last.id);
         say("فتحت لك آخر كشف للعميل " + name);
@@ -485,7 +499,10 @@
     }
 
     // --- مشاركة واتساب ---
-    if (text.includes("ارسل واتساب") || text.includes("أرسل واتس") || text.includes("واتساب")) {
+    if (
+      (text.includes("ارسل") || text.includes("رسل") || text.includes("ابعث")) &&
+      (text.includes("واتس") || text.includes("واتساب") || text.includes("واتس اب"))
+    ) {
       const btnShare = getEl("shareWhatsappBtn");
       if (btnShare) {
         btnShare.click();
@@ -509,7 +526,6 @@
     }
 
     try {
-      // نرسل للنموذج النص كما هو (بدون تطبيع كثير)
       const res = await fetch(SMART_AI_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -599,29 +615,31 @@
         return true;
 
       case "set_entry":
-        // { action:"set_entry", index:0, desc:"..", amount:123, currency:"سعودي", direction:"له" }
-        const row = getLastEntryRow();
-        if (!row) return false;
-        if (act.desc != null) {
-          const descInput =
-            row.querySelector(".entry-desc") || row.querySelector("input");
-          if (descInput) descInput.value = act.desc;
+        // { action:"set_entry", desc:"..", amount:123, currency:"سعودي", direction:"له" }
+        {
+          const row = getLastEntryRow();
+          if (!row) return false;
+          if (act.desc != null) {
+            const descInput =
+              row.querySelector(".entry-desc") || row.querySelector("input");
+            if (descInput) descInput.value = act.desc;
+          }
+          if (act.amount != null) {
+            const amountInput = row.querySelector(".entry-amount");
+            if (amountInput) amountInput.value = String(act.amount);
+          }
+          if (act.currency) {
+            const curr = row.querySelector(".entry-curr");
+            if (curr) curr.value = act.currency;
+          }
+          if (act.direction) {
+            const dir = row.querySelector(".entry-dir");
+            if (dir) dir.value = act.direction;
+          }
+          if (typeof window.updatePreviewText === "function")
+            window.updatePreviewText();
+          return true;
         }
-        if (act.amount != null) {
-          const amountInput = row.querySelector(".entry-amount");
-          if (amountInput) amountInput.value = String(act.amount);
-        }
-        if (act.currency) {
-          const curr = row.querySelector(".entry-curr");
-          if (curr) curr.value = act.currency;
-        }
-        if (act.direction) {
-          const dir = row.querySelector(".entry-dir");
-          if (dir) dir.value = act.direction;
-        }
-        if (typeof window.updatePreviewText === "function")
-          window.updatePreviewText();
-        return true;
 
       case "set_direction_last":
         {
