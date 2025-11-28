@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <title>دفتر كشف الحساب اليومي</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#16a34a" />
 
@@ -148,17 +147,6 @@
 
     .footer-hint { text-align:center; font-size:.7rem; color:var(--text-muted); }
 
-    .badge {
-      display:inline-flex;
-      align-items:center;
-      gap:4px;
-      font-size:.78rem;
-      border-radius:999px;
-      padding:3px 8px;
-      background:#e5e7eb;
-      color:#374151;
-    }
-
     .search-input {
       border-radius:999px;
       padding-inline-start:30px;
@@ -211,7 +199,6 @@
     <!-- شاشة الكشوفات -->
     <div id="screenStatements">
       <div class="card">
-
         <div class="row">
           <div>
             <label>العميل:</label>
@@ -266,7 +253,6 @@
           <button class="pill-btn pill-green" id="saveStatementBtn" style="flex:1;">💾 حفظ الكشف</button>
           <button class="pill-btn pill-gray" id="newStatementSameClientBtn" style="flex:1;">+ كشف جديد مع نفس العميل</button>
         </div>
-
       </div>
 
       <div class="card">
@@ -337,7 +323,7 @@
     <div id="screenClients" style="display:none;">
       <div class="card">
         <label class="section-title">👥 العملاء</label>
-        <p class="muted">إختر عميلًا لعرض كشوفاته أو ابحث بالاسم.</p>
+        <p class="muted">اختر عميلًا لعرض كشوفاته أو ابحث بالاسم. يمكنك حذف العميل إذا كان مكررًا.</p>
 
         <div class="row">
           <div class="search-wrapper">
@@ -396,14 +382,13 @@
         </div>
       </div>
     </div>
-
   </div>
 
   <!-- حاويات مخفية لتوليد PDF -->
   <div id="singlePdfContainer" style="position:fixed; left:-99999px; top:0; width:800px; background:#ffffff;"></div>
   <div id="multiPdfContainer"  style="position:fixed; left:-99999px; top:0; width:800px; background:#ffffff;"></div>
 
-  <!-- مكتبات توليد PDF (مجانية) -->
+  <!-- مكتبات توليد PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -413,7 +398,14 @@
   <!-- سكربت التطبيق الرئيسي -->
   <script>
     const STORAGE_KEY = "voiceLedgerData_v1";
-    const state = { data:{clients:{}}, currentClient:"", currentStatementId:null, deferredPrompt:null, multiSelectEnabled:false, selectedStatements:[] };
+    const state = {
+      data:{clients:{}},
+      currentClient:"",
+      currentStatementId:null,
+      deferredPrompt:null,
+      multiSelectEnabled:false,
+      selectedStatements:[]
+    };
 
     function loadData(){
       try{
@@ -493,7 +485,6 @@
     clientsSearchInput.addEventListener("input", renderClientsList);
     statementsSearchInput.addEventListener("input", renderStatementsList);
 
-    // عناصر التقارير
     const reportClientSelect       = document.getElementById("reportClientSelect");
     const reportFromInput          = document.getElementById("reportFrom");
     const reportToInput            = document.getElementById("reportTo");
@@ -509,10 +500,12 @@
       multiSelectHint.style.display = state.multiSelectEnabled ? "block" : "none";
       renderStatementsList();
     });
-
     shareMultiPdfBtn.onclick = () => shareSelectedStatementsPdf();
 
-    // ====== البند ======
+    function input(t,p){ const e=document.createElement("input"); e.type=t; e.placeholder=p; return e; }
+    function select(arr){ const s=document.createElement("select"); arr.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;s.append(o)}); return s; }
+    function button(t,c){ const b=document.createElement("button"); b.textContent=t; b.className=c; return b; }
+
     function addEntryRow(init){
       const row = document.createElement("div");
       row.className = "entry-row";
@@ -538,7 +531,7 @@
       const curr = select(["يمني","سعودي","درهم","دولار","عماني"]);
       curr.className = "entry-curr";
 
-      const dir  = select(["عليه","له"]); // عليه افتراضي
+      const dir  = select(["عليه","له"]);
       dir.className = "entry-dir";
 
       const del  = button("حذف","pill-btn pill-red entry-del");
@@ -556,10 +549,6 @@
       row.append(desc,amount,curr,dir,del);
       entriesContainer.appendChild(row);
     }
-
-    function input(t,p){ const e=document.createElement("input"); e.type=t; e.placeholder=p; return e; }
-    function select(arr){ const s=document.createElement("select"); arr.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;s.append(o)}); return s; }
-    function button(t,c){ const b=document.createElement("button"); b.textContent=t; b.className=c; return b; }
 
     function getEntries(){
       return [...entriesContainer.querySelectorAll(".entry-row")].map(r=>{
@@ -750,6 +739,24 @@
       renderTotalsForCurrentClient();
     }
 
+    // ===== حذف عميل بالكامل =====
+    function deleteClient(name){
+      if(!confirm(`سيتم حذف جميع كشوفات العميل "${name}" من هذا الجهاز.\nهل أنت متأكد؟`)) return;
+      if(state.data.clients[name]) delete state.data.clients[name];
+      saveData();
+      if(state.currentClient === name){
+        state.currentClient = "";
+        state.currentStatementId = null;
+        resetForm("");
+        clientNameInput.value = "";
+      }
+      renderClientsList();
+      renderStatementsList();
+      renderTotalsForCurrentClient();
+      renderReportsClientOptions();
+    }
+
+    // ===== قائمة العملاء مع زر الحذف =====
     function renderClientsList(){
       clientsListEl.innerHTML = "";
       const names = Object.keys(state.data.clients);
@@ -762,15 +769,57 @@
         .filter(n => !search || n.toLowerCase().includes(search))
         .sort((a,b)=>a.localeCompare(b,"ar"))
         .forEach(n=>{
-          const d = document.createElement("div");
-          d.className = "saved-item";
-          const last = state.data.clients[n].statements[0];
-          d.innerHTML =
-            `<span>${n}</span>`+
-            `<span class="date">${last ? (last.date || "") : ""}</span>`;
-          d.onclick = () => { showScreen("s"); loadStatement(n, last.id); };
-          clientsListEl.appendChild(d);
+          const clientData = state.data.clients[n];
+          const last = clientData && clientData.statements && clientData.statements[0];
+
+          const row = document.createElement("div");
+          row.className = "saved-item";
+
+          const leftWrap = document.createElement("div");
+          leftWrap.style.display = "flex";
+          leftWrap.style.alignItems = "center";
+          leftWrap.style.gap = "6px";
+
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = n;
+
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "حذف";
+          delBtn.style.border = "none";
+          delBtn.style.background = "transparent";
+          delBtn.style.color = "#dc2626";
+          delBtn.style.fontSize = ".75rem";
+          delBtn.style.cursor = "pointer";
+          delBtn.style.padding = "0";
+          delBtn.style.marginInlineStart = "4px";
+          delBtn.onclick = ev => {
+            ev.stopPropagation();
+            deleteClient(n);
+          };
+
+          leftWrap.appendChild(nameSpan);
+          leftWrap.appendChild(delBtn);
+
+          const dateSpan = document.createElement("span");
+          dateSpan.className = "date";
+          dateSpan.textContent = last ? (last.date || "") : "";
+
+          row.appendChild(leftWrap);
+          row.appendChild(dateSpan);
+
+          row.onclick = () => {
+            if (last) {
+              showScreen("s");
+              loadStatement(n, last.id);
+            }
+          };
+
+          clientsListEl.appendChild(row);
         });
+
+      if(!clientsListEl.childElementCount){
+        clientsListEl.textContent = "لا توجد نتائج مطابقة لبحثك.";
+      }
     }
 
     function computeTotalsForClient(name, fromDate, toDate){
@@ -830,7 +879,6 @@
       whatsAppBox.textContent = txt;
     }
 
-    // ====== بناء بلوك HTML لكشف واحد (نستخدمه في PDF) ======
     function buildStatementHtmlBlock(st, name){
       const entries = st.entries || [];
 
@@ -913,7 +961,6 @@
       `;
     }
 
-    // ====== طباعة كشف واحد PDF عبر نافذة المتصفح (كما كان سابقاً) ======
     function printAsPdf(){
       const name    = clientNameInput.value.trim() || "العميل";
       const st = {
@@ -949,7 +996,6 @@
       };
     }
 
-    // ====== مشاركة كشف واحد PDF كملف ======
     async function sharePdf(){
       const name = clientNameInput.value.trim() || "العميل";
       const st = {
@@ -1016,7 +1062,6 @@
       }
     }
 
-    // ====== مشاركة عدة كشوف PDF في ملف واحد ======
     async function shareSelectedStatementsPdf(){
       const name = clientNameInput.value.trim();
       if (!name) {
@@ -1091,7 +1136,6 @@
       }
     }
 
-    // ====== تقارير العملاء ======
     function renderReportsClientOptions(){
       while (reportClientSelect.options.length > 1) {
         reportClientSelect.remove(1);
@@ -1163,7 +1207,6 @@ body{
       };
     }
 
-    // ====== النسخة الاحتياطية ======
     const exportBtn   = document.getElementById("exportBackupBtn");
     const importBtn   = document.getElementById("importBackupBtn");
     const backupInput = document.getElementById("backupFileInput");
@@ -1231,7 +1274,6 @@ body{
       }
     }
 
-    // ====== PWA / تثبيت التطبيق ======
     const installButton = document.getElementById("installButton");
 
     window.addEventListener("beforeinstallprompt", e=>{
@@ -1251,7 +1293,6 @@ body{
       navigator.serviceWorker.register("./sw.js");
     }
 
-    // ====== تهيئة أولية ======
     const hadDataBefore = !!localStorage.getItem(STORAGE_KEY);
     loadData();
     dateInput.value = new Date().toISOString().slice(0,10);
