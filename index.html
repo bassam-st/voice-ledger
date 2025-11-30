@@ -140,6 +140,19 @@
       border:1px solid #bbf7d0; font-size:.8rem;
     }
 
+    /* زر الحذف في سجل الكشوفات */
+    .saved-item .delete-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0 4px;
+      color: var(--text-muted);
+    }
+    .saved-item .delete-btn:hover {
+      color: var(--red);
+    }
+
     .totals-box {
       background:#f0fdf4; border-radius:var(--radius-md);
       border:1px solid #bbf7d0; padding:8px 10px; white-space:pre-wrap;
@@ -672,6 +685,7 @@
       updatePreviewText();
     }
 
+    /* === سجل الكشوفات مع زر الحذف === */
     function renderStatementsList(){
       const name = clientNameInput.value.trim();
       statementsListEl.innerHTML = "";
@@ -712,11 +726,24 @@
           dateSpan.className = "date";
           dateSpan.textContent = st.date || "";
 
+          // زر الحذف
+          const deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "delete-btn";
+          deleteBtn.textContent = "🗑️";
+          deleteBtn.title = "حذف هذا الكشف";
+          deleteBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            if (confirm("هل تريد حذف هذا الكشف نهائيًا لهذا العميل؟ لا يمكن التراجع.")) {
+              deleteStatementForCurrentClient(st.id);
+            }
+          });
+
           if (multiMode) {
-            const wrap = document.createElement("div");
-            wrap.style.display = "flex";
-            wrap.style.alignItems = "center";
-            wrap.style.gap = "6px";
+            const leftWrap = document.createElement("div");
+            leftWrap.style.display = "flex";
+            leftWrap.style.alignItems = "center";
+            leftWrap.style.gap = "6px";
 
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
@@ -729,11 +756,18 @@
               d.style.background = checkbox.checked ? "#bbf7d0" : "#ecfdf3";
             });
 
-            wrap.appendChild(checkbox);
-            wrap.appendChild(titleSpan);
+            leftWrap.appendChild(checkbox);
+            leftWrap.appendChild(titleSpan);
 
-            d.appendChild(wrap);
-            d.appendChild(dateSpan);
+            const rightWrap = document.createElement("div");
+            rightWrap.style.display = "flex";
+            rightWrap.style.alignItems = "center";
+            rightWrap.style.gap = "6px";
+            rightWrap.appendChild(dateSpan);
+            rightWrap.appendChild(deleteBtn);
+
+            d.appendChild(leftWrap);
+            d.appendChild(rightWrap);
 
             if (checkbox.checked) d.style.background = "#bbf7d0";
 
@@ -744,8 +778,16 @@
               d.style.background = newVal ? "#bbf7d0" : "#ecfdf3";
             };
           } else {
+            const rightWrap = document.createElement("div");
+            rightWrap.style.display = "flex";
+            rightWrap.style.alignItems = "center";
+            rightWrap.style.gap = "6px";
+            rightWrap.appendChild(dateSpan);
+            rightWrap.appendChild(deleteBtn);
+
             d.appendChild(titleSpan);
-            d.appendChild(dateSpan);
+            d.appendChild(rightWrap);
+
             d.onclick = () => {
               if (confirm("فتح هذا الكشف؟")) loadStatement(name, st.id);
             };
@@ -767,6 +809,36 @@
       } else {
         if (idx !== -1) arr.splice(idx, 1);
       }
+    }
+
+    /* === دالة حذف كشف واحد مع التحديث === */
+    function deleteStatementForCurrentClient(statementId){
+      const name = clientNameInput.value.trim();
+      if (!name) return;
+      const client = state.data.clients[name];
+      if (!client || !Array.isArray(client.statements)) return;
+
+      const idx = client.statements.findIndex(s => s.id === statementId);
+      if (idx === -1) return;
+
+      // حذف الكشف من بيانات العميل
+      client.statements.splice(idx, 1);
+
+      // إزالة من التحديد المتعدد إن كان موجودًا
+      const selIdx = state.selectedStatements.indexOf(statementId);
+      if (selIdx !== -1) state.selectedStatements.splice(selIdx, 1);
+
+      // لو الكشف المحذوف هو المفتوح حاليًا
+      if (state.currentStatementId === statementId) {
+        state.currentStatementId = null;
+        resetForm(name); // نحافظ على اسم العميل
+      }
+
+      saveData();
+      renderStatementsList();
+      renderTotalsForCurrentClient();
+      updatePreviewText();
+      renderReportsClientOptions();
     }
 
     function loadStatement(name,id){
