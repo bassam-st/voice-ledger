@@ -124,6 +124,18 @@
     .pill-red   { background: var(--red);   color:#fff; }
     .pill-gray  { background:#e5e7eb; }
 
+    /* زر الصوت لكل بند */
+    .entry-voice-btn {
+      background: var(--green-dark);
+      color: #fff;
+      padding: 6px 10px;
+      font-size: .75rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
     .section-title { font-size:.9rem; font-weight:600; margin-bottom:6px; }
     .muted { color:var(--text-muted); font-size:.78rem; }
 
@@ -530,6 +542,8 @@
     const singlePdfContainer= document.getElementById("singlePdfContainer");
     const multiPdfContainer = document.getElementById("multiPdfContainer");
 
+    const voiceAssistantBtnEl = document.getElementById("voiceAssistantBtn");
+
     document.getElementById("addEntryBtn").onclick              = () => addEntryRow();
     document.getElementById("copyLastEntriesBtn").onclick       = copyLastEntries;
     document.getElementById("saveStatementBtn").onclick         = saveCurrentStatement;
@@ -592,6 +606,18 @@
       const dir  = select(["عليه","له"]); // عليه افتراضي
       dir.className = "entry-dir";
 
+      // زر الصوت لكل بند
+      const voiceBtn = button("🎤","pill-btn entry-voice-btn");
+      voiceBtn.type = "button";
+      voiceBtn.title = "مساعد بسّام الصوتي للبند";
+      voiceBtn.onclick = () => {
+        // ركّز على خانة الوصف ثم شغّل نفس زر المساعد الرئيسي
+        desc.focus();
+        if (voiceAssistantBtnEl) {
+          voiceAssistantBtnEl.click();
+        }
+      };
+
       const del  = button("حذف","pill-btn pill-red entry-del");
       del.onclick = () => confirm("حذف البند؟") && row.remove();
 
@@ -604,7 +630,8 @@
 
       [desc,curr,dir].forEach(e => e.addEventListener("input", updatePreviewText));
 
-      row.append(desc,amount,curr,dir,del);
+      // أضف زر الصوت قبل زر الحذف
+      row.append(desc,amount,curr,dir,voiceBtn,del);
       entriesContainer.appendChild(row);
     }
 
