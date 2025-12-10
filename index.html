@@ -152,7 +152,7 @@
       border:1px solid #bbf7d0; font-size:.8rem;
     }
 
-    /* زر الحذف في سجل الكشوفات والعملاء */
+    /* زر الحذف في السجلات (الكشوفات والعملاء) */
     .saved-item .delete-btn {
       border: none;
       background: transparent;
@@ -868,6 +868,26 @@
       renderReportsClientOptions();
     }
 
+    /* === دالة حذف عميل كامل مع جميع كشوفه === */
+    function deleteClient(name){
+      if (!state.data.clients[name]) return;
+
+      delete state.data.clients[name];
+
+      // لو العميل المحذوف هو المفتوح حاليًا
+      if (clientNameInput.value.trim() === name) {
+        clientNameInput.value = "";
+        resetForm("");
+        totalsBoxEl.textContent = "لا توجد بيانات";
+      }
+
+      saveData();
+      renderClientsList();
+      renderStatementsList();
+      renderReportsClientOptions();
+      updatePreviewText();
+    }
+
     function loadStatement(name,id){
       const st = state.data.clients[name].statements.find(s=>s.id===id);
       if(!st) return;
@@ -887,14 +907,15 @@
       renderTotalsForCurrentClient();
     }
 
-    /* === قائمة العملاء مع زر حذف عميل === */
     function renderClientsList(){
       clientsListEl.innerHTML = "";
       const names = Object.keys(state.data.clients);
-      if(!names.length){
+
+      if (!names.length){
         clientsListEl.textContent = "لا يوجد عملاء بعد";
         return;
       }
+
       const search = (clientsSearchInput.value || "").trim().toLowerCase();
 
       names
@@ -904,8 +925,7 @@
           const d = document.createElement("div");
           d.className = "saved-item";
 
-          const client = state.data.clients[n];
-          const last   = client && client.statements && client.statements[0];
+          const last = state.data.clients[n].statements[0];
 
           const nameSpan = document.createElement("span");
           nameSpan.textContent = n;
@@ -914,62 +934,38 @@
           dateSpan.className = "date";
           dateSpan.textContent = last ? (last.date || "") : "";
 
+          // زر حذف العميل
           const deleteBtn = document.createElement("button");
           deleteBtn.type = "button";
           deleteBtn.className = "delete-btn";
-          deleteBtn.textContent = "✖";
-          deleteBtn.title = "حذف هذا العميل وكافة كشوفاته";
+          deleteBtn.textContent = "🗑️";
+          deleteBtn.title = "حذف هذا العميل مع جميع الكشوف";
           deleteBtn.addEventListener("click", (ev) => {
             ev.stopPropagation();
-            deleteClient(n);
+            if (confirm(`هل تريد حذف العميل "${n}" مع جميع الكشوف؟ لا يمكن التراجع.`)) {
+              deleteClient(n);
+            }
           });
 
-          // الترتيب: [اسم العميل] [التاريخ] [زر الحذف] ليظهر الزر قبل التاريخ في الطرف الآخر
+          const rightWrap = document.createElement("div");
+          rightWrap.style.display = "flex";
+          rightWrap.style.alignItems = "center";
+          rightWrap.style.gap = "6px";
+          rightWrap.appendChild(dateSpan);
+          rightWrap.appendChild(deleteBtn);
+
           d.appendChild(nameSpan);
-          d.appendChild(dateSpan);
-          d.appendChild(deleteBtn);
+          d.appendChild(rightWrap);
 
           d.onclick = () => {
-            showScreen("s");
-            if (last && last.id) {
+            if (last) {
+              showScreen("s");
               loadStatement(n, last.id);
-            } else {
-              clientNameInput.value = n;
-              resetForm(n);
             }
           };
 
           clientsListEl.appendChild(d);
         });
-    }
-
-    /* === دالة حذف عميل كامل مع كل كشوفاته === */
-    function deleteClient(clientName){
-      const msg = `هل تريد حذف العميل "${clientName}" مع جميع كشوفاته؟ لا يمكن التراجع.`;
-      if (!confirm(msg)) return;
-
-      if (!state.data.clients || !state.data.clients[clientName]) return;
-
-      // حذف العميل من البيانات
-      delete state.data.clients[clientName];
-
-      // إذا كان هذا العميل هو المفتوح حاليًا في شاشة الكشوفات
-      if (clientNameInput.value.trim() === clientName) {
-        clientNameInput.value = "";
-        state.currentClient = "";
-        state.currentStatementId = null;
-        entriesContainer.innerHTML = "";
-        addEntryRow();
-        totalsBoxEl.textContent = "لا توجد بيانات";
-        statementsListEl.innerHTML = "لا توجد كشوفات";
-        whatsAppBox.textContent = "";
-      }
-
-      saveData();
-      renderClientsList();
-      renderStatementsList();
-      renderTotalsForCurrentClient();
-      renderReportsClientOptions();
     }
 
     function computeTotalsForClient(name, fromDate, toDate){
@@ -1397,6 +1393,7 @@
         if (!Object.keys(totals).length){
           return;
         }
+
         Object.keys(totals).forEach(c => {
           const t = totals[c];
           const diff = t.lah - t.alaih;
