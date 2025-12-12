@@ -726,7 +726,25 @@
       const multiMode   = state.multiSelectEnabled;
       const selectedIds = new Set(state.selectedStatements);
 
-      c.statements
+      // ✅ ترتيب العرض فقط حسب التاريخ (الأحدث بالأعلى) بدون لمس البيانات الأصلية
+      const sortedStatements = (c.statements || []).slice().sort((a, b) => {
+        const da = a.date || "";
+        const db = b.date || "";
+
+        if (da && db) {
+          const cmp = db.localeCompare(da); // الأحدث أولاً
+          if (cmp !== 0) return cmp;
+        } else if (db) {
+          return -1; // b عنده تاريخ و a لا
+        } else if (da) {
+          return 1;  // a عنده تاريخ و b لا
+        }
+
+        // كسر التعادل: أحدث ID غالباً أكبر
+        return (b.id || "").localeCompare(a.id || "");
+      });
+
+      sortedStatements
         .filter(st=>{
           if(!q) return true;
           const haystack = [
