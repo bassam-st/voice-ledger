@@ -3,7 +3,9 @@ function executeIntent(intent) {
   switch (intent.action) {
 
     case "new_statement":
-      if (typeof resetForm === "function") resetForm(document.getElementById("clientName")?.value || "");
+      if (typeof resetForm === "function") {
+        resetForm(document.getElementById("clientName")?.value || "");
+      }
       speak("تم فتح كشف جديد يا بسام");
       break;
 
@@ -42,13 +44,31 @@ function executeIntent(intent) {
       speak("تم تجهيز الطباعة");
       break;
 
-    // ✅ جديد (اختياري): نسخ البنود من كشف سابق عبر نفس نافذة الاختيار
+    // ✅ نسخ البنود من كشف سابق عبر الصوت
     case "copy_from_old_statement":
       if (typeof window.copyEntriesFromPreviousStatement === "function") {
+        // مهم جداً: اعتبر النسخ بداية كشف جديد حتى لا يعدّل كشف قديم عند تغيير العنوان
+        if (typeof window.__markNewDraftAfterCopy === "function") {
+          window.__markNewDraftAfterCopy();
+        }
+
         window.copyEntriesFromPreviousStatement();
         speak("اختر الكشف الذي تريد النسخ منه");
       } else {
         speak("ميزة النسخ من كشف سابق غير متاحة حالياً");
+      }
+      break;
+
+    // ✅ (اختياري) نسخ البنود من آخر كشف عبر الصوت
+    case "copy_last_entries":
+      if (typeof window.copyLastEntries === "function") {
+        if (typeof window.__markNewDraftAfterCopy === "function") {
+          window.__markNewDraftAfterCopy();
+        }
+        window.copyLastEntries();
+        speak("تم نسخ البنود من آخر كشف");
+      } else {
+        speak("ميزة النسخ من آخر كشف غير متاحة حالياً");
       }
       break;
 
