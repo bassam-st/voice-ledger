@@ -295,6 +295,8 @@
         <div class="row">
           <button class="pill-btn pill-green" id="addEntryBtn">+ بند جديد</button>
           <button class="pill-btn pill-gray" id="copyLastEntriesBtn">📋 نسخ البنود من آخر كشف</button>
+          <!-- ✅ زر جديد: نسخ من كشف سابق -->
+          <button class="pill-btn pill-gray" id="copyFromOldEntriesBtn">🗂️ نسخ البنود من كشف سابق</button>
         </div>
 
         <div id="entriesContainer" class="entries"></div>
@@ -546,6 +548,9 @@
 
     document.getElementById("addEntryBtn").onclick              = () => addEntryRow();
     document.getElementById("copyLastEntriesBtn").onclick       = copyLastEntries;
+    // ✅ الزر الجديد
+    document.getElementById("copyFromOldEntriesBtn").onclick    = copyEntriesFromPreviousStatement;
+
     document.getElementById("saveStatementBtn").onclick         = saveCurrentStatement;
     document.getElementById("newStatementSameClientBtn").onclick= () => resetForm(clientNameInput.value);
     document.getElementById("copyTextBtn").onclick              = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
@@ -611,7 +616,6 @@
       voiceBtn.type = "button";
       voiceBtn.title = "مساعد بسّام الصوتي للبند";
       voiceBtn.onclick = () => {
-        // ركّز على خانة الوصف ثم شغّل نفس زر المساعد الرئيسي
         desc.focus();
         if (voiceAssistantBtnEl) {
           voiceAssistantBtnEl.click();
@@ -630,7 +634,6 @@
 
       [desc,curr,dir].forEach(e => e.addEventListener("input", updatePreviewText));
 
-      // أضف زر الصوت قبل زر الحذف
       row.append(desc,amount,curr,dir,voiceBtn,del);
       entriesContainer.appendChild(row);
     }
@@ -712,6 +715,74 @@
       updatePreviewText();
     }
 
+    // ✅ الجديد: نسخ البنود من كشف سابق تختاره أنت
+    function copyEntriesFromPreviousStatement(){
+      const name = clientNameInput.value.trim();
+      const c = state.data.clients[name];
+      if(!name){ alert("اكتب اسم العميل أولاً"); return; }
+      if(!c || !c.statements || !c.statements.length){
+        alert("لا توجد كشوف سابقة لهذا العميل.");
+        return;
+      }
+
+      // نفس ترتيب العرض: الأحدث أولاً حسب التاريخ
+      const sortedStatements = (c.statements || []).slice().sort((a, b) => {
+        const da = a.date || "";
+        const db = b.date || "";
+        if (da && db) {
+          const cmp = db.localeCompare(da);
+          if (cmp !== 0) return cmp;
+        } else if (db) return -1;
+        else if (da) return 1;
+        return (b.id || "").localeCompare(a.id || "");
+      });
+
+      const maxShow = Math.min(20, sortedStatements.length);
+      let msg = "اختر رقم الكشف لنسخ البنود منه:\n";
+      msg += "(أو اكتب رقم البيان مباشرة إذا تريده)\n\n";
+
+      for(let i=0;i<maxShow;i++){
+        const st = sortedStatements[i];
+        const t  = st.title || "بدون عنوان";
+        const d  = st.date || "";
+        const sn = st.statementNumber ? ` | ب:${st.statementNumber}` : "";
+        const tr = st.truckNumber ? ` | ق:${st.truckNumber}` : "";
+        msg += `${i+1}) ${d} — ${t}${sn}${tr}\n`;
+      }
+
+      const ans = prompt(msg, "1");
+      if(ans === null) return;
+      const inputVal = (ans || "").trim();
+      if(!inputVal) return;
+
+      // لو كتب رقم → نعتبره اختيار من القائمة
+      let picked = null;
+      const asNum = parseInt(inputVal, 10);
+      if(!Number.isNaN(asNum) && asNum >= 1 && asNum <= maxShow){
+        picked = sortedStatements[asNum - 1];
+      } else {
+        // لو كتب رقم بيان → نبحث عنه
+        picked = sortedStatements.find(s => (s.statementNumber || "").trim() === inputVal);
+      }
+
+      if(!picked){
+        alert("لم يتم العثور على الكشف المطلوب. جرّب رقم من القائمة أو رقم البيان الصحيح.");
+        return;
+      }
+
+      if(!picked.entries || !picked.entries.length){
+        alert("هذا الكشف لا يحتوي بنود.");
+        return;
+      }
+
+      entriesContainer.innerHTML = "";
+      picked.entries.forEach(e => {
+        addEntryRow({ desc: e.desc, amount: 0, currency: e.currency, direction: e.direction });
+      });
+      updatePreviewText();
+      alert("تم نسخ البنود من الكشف المختار ✅");
+    }
+
     /* === سجل الكشوفات مع زر الحذف === */
     function renderStatementsList(){
       const name = clientNameInput.value.trim();
@@ -726,21 +797,18 @@
       const multiMode   = state.multiSelectEnabled;
       const selectedIds = new Set(state.selectedStatements);
 
-      // ✅ ترتيب العرض فقط حسب التاريخ (الأحدث بالأعلى) بدون لمس البيانات الأصلية
       const sortedStatements = (c.statements || []).slice().sort((a, b) => {
         const da = a.date || "";
         const db = b.date || "";
 
         if (da && db) {
-          const cmp = db.localeCompare(da); // الأحدث أولاً
+          const cmp = db.localeCompare(da);
           if (cmp !== 0) return cmp;
         } else if (db) {
-          return -1; // b عنده تاريخ و a لا
+          return -1;
         } else if (da) {
-          return 1;  // a عنده تاريخ و b لا
+          return 1;
         }
-
-        // كسر التعادل: أحدث ID غالباً أكبر
         return (b.id || "").localeCompare(a.id || "");
       });
 
@@ -771,7 +839,6 @@
           dateSpan.className = "date";
           dateSpan.textContent = st.date || "";
 
-          // زر الحذف
           const deleteBtn = document.createElement("button");
           deleteBtn.type = "button";
           deleteBtn.className = "delete-btn";
@@ -856,7 +923,6 @@
       }
     }
 
-    /* === دالة حذف كشف واحد مع التحديث === */
     function deleteStatementForCurrentClient(statementId){
       const name = clientNameInput.value.trim();
       if (!name) return;
@@ -866,17 +932,14 @@
       const idx = client.statements.findIndex(s => s.id === statementId);
       if (idx === -1) return;
 
-      // حذف الكشف من بيانات العميل
       client.statements.splice(idx, 1);
 
-      // إزالة من التحديد المتعدد إن كان موجودًا
       const selIdx = state.selectedStatements.indexOf(statementId);
       if (selIdx !== -1) state.selectedStatements.splice(selIdx, 1);
 
-      // لو الكشف المحذوف هو المفتوح حاليًا
       if (state.currentStatementId === statementId) {
         state.currentStatementId = null;
-        resetForm(name); // نحافظ على اسم العميل
+        resetForm(name);
       }
 
       saveData();
@@ -886,13 +949,11 @@
       renderReportsClientOptions();
     }
 
-    /* === دالة حذف عميل كامل مع جميع كشوفه === */
     function deleteClient(name){
       if (!state.data.clients[name]) return;
 
       delete state.data.clients[name];
 
-      // لو العميل المحذوف هو المفتوح حاليًا
       if (clientNameInput.value.trim() === name) {
         clientNameInput.value = "";
         resetForm("");
@@ -952,7 +1013,6 @@
           dateSpan.className = "date";
           dateSpan.textContent = last ? (last.date || "") : "";
 
-          // زر حذف العميل
           const deleteBtn = document.createElement("button");
           deleteBtn.type = "button";
           deleteBtn.className = "delete-btn";
@@ -1042,6 +1102,8 @@
         txt += `\n\nملاحظات:\n${extraNotesInput.value}`;
       whatsAppBox.textContent = txt;
     }
+
+    /* ========= باقي كودك كما هو (PDF + تقارير + Backup + PWA + init) ========= */
 
     // ====== بناء بلوك HTML لكشف واحد (نستخدمه في PDF) ======
     function buildStatementHtmlBlock(st, name){
@@ -1364,7 +1426,6 @@
       reportBox.innerHTML = headerHtml + tableHtml;
     }
 
-    // ====== تقرير ملخص لكل كشف للعميل (مجدول) ======
     function computeTotalsForStatement(st){
       const totals = {};
       (st.entries || []).forEach(e => {
@@ -1387,7 +1448,7 @@
         return;
       }
 
-      const statements = client.statements.slice().reverse(); // الأقدم في الأعلى
+      const statements = client.statements.slice().reverse();
 
       const grandTotals = {};
 
@@ -1501,15 +1562,8 @@ th,td{
 th{
   background:#f3f4f6;
 }
-
-/* حتى يبقى التاريخ في سطر واحد ويصغر عرض عنوان الكشف قليلاً */
-table .col-date{
-  white-space:nowrap;
-  width:14%;
-}
-table .col-title{
-  width:32%;
-}
+table .col-date{ white-space:nowrap; width:14%; }
+table .col-title{ width:32%; }
 </style>
 </head>
 <body>
@@ -1629,6 +1683,9 @@ ${htmlContent}
         }
       }, 800);
     }
+
+    // (اختياري) تعريض دالة النسخ للملفات الخارجية مثل app.js
+    window.copyEntriesFromPreviousStatement = copyEntriesFromPreviousStatement;
   </script>
 </body>
 </html>
