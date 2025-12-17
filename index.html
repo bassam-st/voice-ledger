@@ -123,12 +123,7 @@
     .pill-green { background: var(--green); color:#fff; }
     .pill-red   { background: var(--red);   color:#fff; }
     .pill-gray  { background:#e5e7eb; }
-
-    .pill-disabled {
-      opacity: .55;
-      cursor: not-allowed !important;
-      filter: grayscale(30%);
-    }
+    .pill-dark  { background:#0f172a; color:#fff; }
 
     /* زر الصوت لكل بند */
     .entry-voice-btn {
@@ -167,13 +162,9 @@
       padding: 0 4px;
       color: var(--text-muted);
     }
-    .saved-item .delete-btn:hover { color: var(--red); }
-
-    .saved-item .delete-btn.disabled {
-      opacity: .35;
-      cursor: not-allowed;
+    .saved-item .delete-btn:hover {
+      color: var(--red);
     }
-    .saved-item .delete-btn.disabled:hover { color: var(--text-muted); }
 
     .totals-box {
       background:#f0fdf4; border-radius:var(--radius-md);
@@ -186,13 +177,16 @@
     .badge {
       display:inline-flex;
       align-items:center;
-      gap:4px;
+      gap:6px;
       font-size:.78rem;
       border-radius:999px;
-      padding:3px 8px;
+      padding:4px 10px;
       background:#e5e7eb;
       color:#374151;
+      white-space:nowrap;
     }
+    .badge.locked { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+    .badge.unlocked { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
 
     .search-input {
       border-radius:999px;
@@ -236,27 +230,23 @@
     }
 
     /* للتحكم في عرض التاريخ وعنوان الكشف في تقرير "ملخص لكل كشف" */
-    .report-box .col-date { white-space: nowrap; width: 14%; }
-    .report-box .col-title { width: 32%; }
-
-    /* شارة حالة القفل */
-    .lock-badge {
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      font-size:.78rem;
-      border-radius:999px;
-      padding:4px 10px;
-      border:1px solid var(--border);
-      background:#f8fafc;
-      color:#0f172a;
-      margin-bottom: 8px;
+    .report-box .col-date {
+      white-space: nowrap;
+      width: 14%;
     }
-    .lock-badge.locked { background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
-    .lock-badge.unlocked { background:#ecfdf3; border-color:#bbf7d0; color:#166534; }
+    .report-box .col-title {
+      width: 32%;
+    }
 
+    /* مظهر عند القفل */
+    .locked-mask {
+      opacity: .65;
+      pointer-events: none;
+      user-select: none;
+    }
   </style>
 </head>
+
 <body>
   <div class="app-shell">
     <h1>📒 دفتر كشف الحساب اليومي</h1>
@@ -283,16 +273,24 @@
 
     <!-- شاشة الكشوفات -->
     <div id="screenStatements">
-      <div class="card">
 
-        <!-- شارة حالة القفل + أزرار القفل -->
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-          <div id="lockBadge" class="lock-badge unlocked">🔓 الكشف مفتوح للتعديل</div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button class="pill-btn pill-gray" id="lockStatementBtn" title="إقفال الكشف (بعد الحفظ)">🔒 إقفال</button>
-            <button class="pill-btn pill-gray" id="unlockStatementBtn" title="فتح القفل للتعديل">🔓 فتح القفل</button>
+      <!-- شريط القفل -->
+      <div class="card">
+        <div class="row" style="align-items:center;">
+          <div style="flex:2;">
+            <span id="lockBadge" class="badge unlocked">🔓 الكشف مفتوح للتعديل</span>
+            <div class="muted" id="lockHint" style="margin-top:4px;">
+              بعد حفظ الكشف سيتم قفله تلقائياً. لفتح القفل اضغط زر "فتح القفل".
+            </div>
+          </div>
+          <div style="flex:1; display:flex; gap:8px;">
+            <button class="pill-btn pill-dark" id="unlockBtn" style="flex:1;">🔓 فتح القفل</button>
+            <button class="pill-btn pill-gray" id="lockNowBtn" style="flex:1;">🔒 قفل الآن</button>
           </div>
         </div>
+      </div>
+
+      <div class="card" id="editCard">
 
         <div class="row">
           <div>
@@ -323,7 +321,7 @@
         <label class="section-title">🧾 البنود التفصيلية</label>
         <p class="muted">يمكنك إضافة بنود متعددة وتحديد (عليه / له) والعملة والمبلغ.</p>
 
-        <div class="row">
+        <div class="row" id="entriesButtonsRow">
           <button class="pill-btn pill-green" id="addEntryBtn">+ بند جديد</button>
           <button class="pill-btn pill-gray" id="copyLastEntriesBtn">📋 نسخ البنود من آخر كشف</button>
           <button class="pill-btn pill-gray" id="copyFromOldEntriesBtn">🗂️ نسخ البنود من كشف سابق</button>
@@ -350,10 +348,6 @@
           <button class="pill-btn pill-gray" id="newStatementSameClientBtn" style="flex:1;">+ كشف جديد مع نفس العميل</button>
         </div>
 
-        <p class="muted" id="lockedHint" style="display:none; margin-top:8px;">
-          🔒 هذا الكشف مقفول: لا تعديل / لا حذف / لا حفظ. يمكنك فقط العرض و PDF والمشاركة.
-        </p>
-
       </div>
 
       <div class="card">
@@ -373,7 +367,7 @@
 
       <div class="card">
         <label class="section-title">📁 سجل الكشوفات:</label>
-        <p class="muted">اضغط لفتح كشف سابق أو تعديله. يمكنك البحث برقم البيان أو رقم القاطرة أو العنوان.</p>
+        <p class="muted">اضغط لفتح كشف سابق (سيُفتح مقفول للحماية). يمكنك البحث برقم البيان أو رقم القاطرة أو العنوان.</p>
 
         <div class="row">
           <div class="search-wrapper">
@@ -407,12 +401,40 @@
 
       <div class="card">
         <label class="section-title">🗄️ نسخة احتياطية للبيانات</label>
-        <p class="muted">تستطيع تصدير كل الكشوفات في ملف JSON ثم رفعه إلى Google Drive أو إرساله لنفسك، وبعدها استيراده.</p>
+        <p class="muted">تستطيع تصدير كل الكشوفات في ملف JSON ثم حفظه في Google Drive أو إرساله لنفسك، وبعدها استيراده.</p>
         <div class="row">
           <button class="pill-btn pill-green" id="exportBackupBtn" style="flex:1;">📤 تصدير نسخة احتياطية</button>
           <button class="pill-btn pill-gray" id="importBackupBtn" style="flex:1;">📥 استيراد نسخة احتياطية</button>
         </div>
         <input type="file" id="backupFileInput" accept="application/json" style="display:none;">
+
+        <hr style="border:none;border-top:1px solid var(--border); margin:12px 0;">
+
+        <label class="section-title">⏰ نسخ احتياطية تلقائية يومية (12:00)</label>
+        <p class="muted">
+          النسخة التلقائية تُحفظ داخل التطبيق تلقائياً. ويمكنك تنزيل آخر نسخة تلقائية بملف JSON وقت ما تريد.
+        </p>
+
+        <div class="row">
+          <div>
+            <label>حالة النسخ التلقائي:</label>
+            <select id="autoBackupToggle">
+              <option value="on">مفعل ✅</option>
+              <option value="off">موقف ❌</option>
+            </select>
+          </div>
+          <div>
+            <label>آخر نسخة تلقائية:</label>
+            <div id="autoBackupStatus" class="totals-box" style="min-height:auto; white-space:normal;">
+              لا توجد نسخة تلقائية بعد.
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="pill-btn pill-green" id="downloadLastAutoBackupBtn" style="flex:1;">⬇️ تنزيل آخر نسخة تلقائية</button>
+          <button class="pill-btn pill-gray" id="clearAutoBackupsBtn" style="flex:1;">🧹 مسح النسخ التلقائية</button>
+        </div>
       </div>
 
       <div class="footer-hint">
@@ -499,17 +521,22 @@
   <!-- ملف المساعد الصوتي -->
   <script src="voice.js"></script>
 
-  <!-- سكربت التطبيق الرئيسي -->
   <script>
     const STORAGE_KEY = "voiceLedgerData_v1";
+
+    // نسخ تلقائية
+    const AUTO_BACKUPS_KEY = "voiceLedgerAutoBackups_v1";
+    const AUTO_BACKUP_PREF_KEY = "voiceLedgerAutoBackupPref_v1";
+    const AUTO_BACKUP_LASTRUN_KEY = "voiceLedgerAutoBackupLastRun_v1";
+
     const state = {
       data:{clients:{}},
       currentClient:"",
       currentStatementId:null,
+      currentStatementLocked:false,
       deferredPrompt:null,
       multiSelectEnabled:false,
-      selectedStatements:[],
-      currentLocked:false
+      selectedStatements:[]
     };
 
     function loadData(){
@@ -519,6 +546,15 @@
       }catch(e){ console.error("خطأ في قراءة التخزين",e); }
     }
     function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); }
+
+    function getAutoBackups(){
+      try{
+        return JSON.parse(localStorage.getItem(AUTO_BACKUPS_KEY) || "[]");
+      }catch(_){ return []; }
+    }
+    function setAutoBackups(arr){
+      localStorage.setItem(AUTO_BACKUPS_KEY, JSON.stringify(arr));
+    }
 
     const tabStatements = document.getElementById("tabStatements");
     const tabClients    = document.getElementById("tabClients");
@@ -581,28 +617,30 @@
 
     const voiceAssistantBtnEl = document.getElementById("voiceAssistantBtn");
 
-    // ======= عناصر القفل =======
-    const lockBadgeEl = document.getElementById("lockBadge");
-    const lockBtnEl = document.getElementById("lockStatementBtn");
-    const unlockBtnEl = document.getElementById("unlockStatementBtn");
-    const lockedHintEl = document.getElementById("lockedHint");
+    // قفل
+    const lockBadge   = document.getElementById("lockBadge");
+    const unlockBtn   = document.getElementById("unlockBtn");
+    const lockNowBtn  = document.getElementById("lockNowBtn");
+    const editCard    = document.getElementById("editCard");
+    const entriesButtonsRow = document.getElementById("entriesButtonsRow");
 
-    const addEntryBtnEl = document.getElementById("addEntryBtn");
-    const copyLastBtnEl = document.getElementById("copyLastEntriesBtn");
-    const copyOldBtnEl  = document.getElementById("copyFromOldEntriesBtn");
-    const saveBtnEl     = document.getElementById("saveStatementBtn");
-    const newSameClientBtnEl = document.getElementById("newStatementSameClientBtn");
+    // نسخ تلقائي
+    const autoBackupToggle = document.getElementById("autoBackupToggle");
+    const autoBackupStatus = document.getElementById("autoBackupStatus");
+    const downloadLastAutoBackupBtn = document.getElementById("downloadLastAutoBackupBtn");
+    const clearAutoBackupsBtn = document.getElementById("clearAutoBackupsBtn");
 
-    addEntryBtnEl.onclick = () => addEntryRow();
-    copyLastBtnEl.onclick = copyLastEntries;
-    copyOldBtnEl.onclick  = copyEntriesFromPreviousStatement;
-    saveBtnEl.onclick     = saveCurrentStatement;
-    newSameClientBtnEl.onclick = () => resetForm(clientNameInput.value);
+    document.getElementById("addEntryBtn").onclick              = () => addEntryRow();
+    document.getElementById("copyLastEntriesBtn").onclick       = copyLastEntries;
+    document.getElementById("copyFromOldEntriesBtn").onclick    = copyEntriesFromPreviousStatement;
 
-    document.getElementById("copyTextBtn").onclick      = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
-    document.getElementById("shareWhatsappBtn").onclick = () => window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
-    document.getElementById("printPdfBtn").onclick      = printAsPdf;
-    document.getElementById("sharePdfBtn").onclick      = () => sharePdf();
+    document.getElementById("saveStatementBtn").onclick         = saveCurrentStatement;
+    document.getElementById("newStatementSameClientBtn").onclick= () => resetForm(clientNameInput.value);
+
+    document.getElementById("copyTextBtn").onclick              = () => navigator.clipboard.writeText(whatsAppBox.textContent || "");
+    document.getElementById("shareWhatsappBtn").onclick         = () => window.open("https://wa.me/?text="+encodeURIComponent(whatsAppBox.textContent || ""));
+    document.getElementById("printPdfBtn").onclick              = printAsPdf;
+    document.getElementById("sharePdfBtn").onclick              = () => sharePdf();
 
     clientsSearchInput.addEventListener("input", renderClientsList);
     statementsSearchInput.addEventListener("input", renderStatementsList);
@@ -629,119 +667,86 @@
 
     shareMultiPdfBtn.onclick = () => shareSelectedStatementsPdf();
 
-    // ====== سلوك القفل الذكي ======
-    function setLockedUI(isLocked){
-      state.currentLocked = !!isLocked;
+    // ====== القفل ======
+    unlockBtn.onclick = () => {
+      if (!state.currentStatementId) {
+        // كشف جديد غير محفوظ: نعتبره مفتوح دائماً
+        state.currentStatementLocked = false;
+        applyLockUI();
+        return;
+      }
+      if (confirm("هل تريد فتح القفل لهذا الكشف للتعديل؟")) {
+        state.currentStatementLocked = false;
+        applyLockUI();
+      }
+    };
 
-      // الشارة
-      if (state.currentLocked){
-        lockBadgeEl.textContent = "🔒 الكشف مقفول (عرض فقط)";
-        lockBadgeEl.classList.remove("unlocked");
-        lockBadgeEl.classList.add("locked");
-        lockedHintEl.style.display = "block";
+    lockNowBtn.onclick = () => {
+      if (confirm("هل تريد قفل الكشف الآن؟")) {
+        state.currentStatementLocked = true;
+        // نخزن القفل في البيانات لو كان الكشف محفوظ
+        persistLockToCurrentStatement(true);
+        applyLockUI();
+      }
+    };
+
+    function applyLockUI(){
+      const locked = !!state.currentStatementLocked;
+
+      // Badge
+      if (locked) {
+        lockBadge.className = "badge locked";
+        lockBadge.textContent = "🔒 الكشف مقفول (للطباعة/المشاركة فقط)";
+        editCard.classList.add("locked-mask");
       } else {
-        lockBadgeEl.textContent = "🔓 الكشف مفتوح للتعديل";
-        lockBadgeEl.classList.remove("locked");
-        lockBadgeEl.classList.add("unlocked");
-        lockedHintEl.style.display = "none";
+        lockBadge.className = "badge unlocked";
+        lockBadge.textContent = "🔓 الكشف مفتوح للتعديل";
+        editCard.classList.remove("locked-mask");
       }
 
-      // أزرار القفل/الفتح
-      lockBtnEl.style.display = state.currentLocked ? "none" : "inline-flex";
-      unlockBtnEl.style.display = state.currentLocked ? "inline-flex" : "none";
+      // منع أزرار التعديل
+      const disable = locked;
 
-      // تعطيل/تفعيل أدوات التعديل
-      const disableEdit = state.currentLocked;
+      // عناصر الإدخال الرئيسية
+      [
+        clientNameInput, dateInput, titleInput, truckNumberInput, statementNumberInput,
+        manualTotalInput, extraNotesInput
+      ].forEach(el => { if(el) el.disabled = disable; });
 
-      // حقول الرأس
-      [clientNameInput, dateInput, titleInput, truckNumberInput, statementNumberInput, manualTotalInput, extraNotesInput]
-        .forEach(el => {
-          // العميل نتركه دائمًا قابل للتعديل عشان تقدر تكتب اسم وتبحث،
-          // لكن أثناء عرض كشف مقفول نمنع تعديل بياناته (عدا العميل لتجنب حبس المستخدم)
-          if (el === clientNameInput) return;
-          el.disabled = disableEdit;
-        });
+      // أزرار البنود
+      if (entriesButtonsRow) {
+        entriesButtonsRow.style.display = locked ? "none" : "";
+      }
 
-      // زر إضافة/نسخ/حفظ
-      setBtnDisabled(addEntryBtnEl, disableEdit);
-      setBtnDisabled(copyLastBtnEl, disableEdit);
-      setBtnDisabled(copyOldBtnEl, disableEdit);
-      setBtnDisabled(saveBtnEl, disableEdit);
-
-      // زر كشف جديد (مسموح دائمًا)
-      setBtnDisabled(newSameClientBtnEl, false);
-
-      // البنود
-      [...entriesContainer.querySelectorAll(".entry-row")].forEach(row => {
-        const d = row.querySelector(".entry-desc");
-        const a = row.querySelector(".entry-amount");
-        const c = row.querySelector(".entry-curr");
-        const r = row.querySelector(".entry-dir");
-        const v = row.querySelector(".entry-voice-btn");
-        const del = row.querySelector(".entry-del");
-
-        [d,a,c,r].forEach(x => { if (x) x.disabled = disableEdit; });
-        if (v) v.disabled = disableEdit;
-        if (del) del.style.display = disableEdit ? "none" : "";
+      // أزرار حذف البنود + زر الصوت للبند (كمان نخفيها عند القفل)
+      [...entriesContainer.querySelectorAll(".entry-del, .entry-voice-btn")].forEach(btn=>{
+        btn.style.display = locked ? "none" : "";
       });
+
+      // مدخلات البنود
+      [...entriesContainer.querySelectorAll("input, select, textarea")].forEach(el=>{
+        el.disabled = disable;
+      });
+
+      // زر الحفظ (نخفيه عند القفل لمنع حفظ بالغلط)
+      document.getElementById("saveStatementBtn").style.display = locked ? "none" : "";
     }
 
-    function setBtnDisabled(btn, disabled){
-      if(!btn) return;
-      btn.disabled = !!disabled;
-      if (btn.disabled) btn.classList.add("pill-disabled");
-      else btn.classList.remove("pill-disabled");
-    }
-
-    function ensureClient(n){
-      if(!state.data.clients[n]) state.data.clients[n] = {statements:[]};
-    }
-
-    // ====== ربط أزرار القفل ======
-    lockBtnEl.onclick = () => {
-      // لا يمكن قفل كشف غير محفوظ (بدون ID)
+    function persistLockToCurrentStatement(locked){
       const name = clientNameInput.value.trim();
-      if(!name){ alert("اكتب اسم العميل أولاً"); return; }
-      if(!state.currentStatementId){
-        alert("لا يمكن إقفال كشف غير محفوظ. احفظ الكشف أولاً ثم اقفله.");
-        return;
-      }
+      if (!name) return;
       const client = state.data.clients[name];
-      if(!client){ alert("لا يوجد عميل"); return; }
+      if (!client || !client.statements) return;
       const st = client.statements.find(s => s.id === state.currentStatementId);
-      if(!st){ alert("لم يتم العثور على هذا الكشف"); return; }
-
-      st.locked = true;
+      if (!st) return;
+      st.locked = !!locked;
       saveData();
-      setLockedUI(true);
-      renderStatementsList();
-      alert("تم إقفال الكشف ✅");
-    };
-
-    unlockBtnEl.onclick = () => {
-      if(!state.currentStatementId){
-        // إذا كشف جديد غير محفوظ: اعتبره مفتوح
-        setLockedUI(false);
-        return;
-      }
-      if(!confirm("هل تريد فتح القفل وتعديل هذا الكشف؟")) return;
-
-      const name = clientNameInput.value.trim();
-      const client = state.data.clients[name];
-      if(!client){ setLockedUI(false); return; }
-      const st = client.statements.find(s => s.id === state.currentStatementId);
-      if(!st){ setLockedUI(false); return; }
-
-      st.locked = false;
-      saveData();
-      setLockedUI(false);
-      renderStatementsList();
-    };
+    }
 
     // ====== البند ======
     function addEntryRow(init){
-      if (state.currentLocked){
-        alert("هذا الكشف مقفول. افتح القفل أولاً للتعديل.");
+      if (state.currentStatementLocked) {
+        alert("الكشف مقفول. افتح القفل أولاً لإضافة بنود.");
         return;
       }
 
@@ -777,15 +782,14 @@
       voiceBtn.type = "button";
       voiceBtn.title = "مساعد بسّام الصوتي للبند";
       voiceBtn.onclick = () => {
+        if (state.currentStatementLocked) return;
         desc.focus();
-        if (voiceAssistantBtnEl) {
-          voiceAssistantBtnEl.click();
-        }
+        if (voiceAssistantBtnEl) voiceAssistantBtnEl.click();
       };
 
       const del  = button("حذف","pill-btn pill-red entry-del");
       del.onclick = () => {
-        if (state.currentLocked) return;
+        if (state.currentStatementLocked) return;
         confirm("حذف البند؟") && row.remove();
         updatePreviewText();
       };
@@ -801,6 +805,8 @@
 
       row.append(desc,amount,curr,dir,voiceBtn,del);
       entriesContainer.appendChild(row);
+
+      applyLockUI();
     }
 
     function input(t,p){ const e=document.createElement("input"); e.type=t; e.placeholder=p; return e; }
@@ -819,15 +825,20 @@
       }).filter(e=>e.desc || e.amount);
     }
 
-    function saveCurrentStatement(){
-      if (state.currentLocked){
-        alert("هذا الكشف مقفول. افتح القفل أولاً إذا تريد التعديل ثم احفظ.");
-        return;
-      }
+    function ensureClient(n){
+      if(!state.data.clients[n]) state.data.clients[n] = {statements:[]};
+    }
 
+    // ✅ حفظ + قفل تلقائي
+    function saveCurrentStatement(){
       const name = clientNameInput.value.trim();
       if(!name){ alert("اكتب اسم العميل"); return; }
       ensureClient(name);
+
+      if (state.currentStatementLocked){
+        alert("هذا الكشف مقفول. افتح القفل أولاً إذا تريد التعديل ثم احفظ.");
+        return;
+      }
 
       const st = {
         id: state.currentStatementId || ("st_"+Date.now()),
@@ -838,8 +849,6 @@
         entries: getEntries(),
         manualTotal: manualTotalInput.value.trim(),
         extraNotes: extraNotesInput.value.trim(),
-
-        // ✅ السلوك الذكي: الافتراضي بعد الحفظ = مقفول
         locked: true
       };
 
@@ -848,36 +857,34 @@
       const list = state.data.clients[name].statements;
       const idx  = list.findIndex(s => s.id === st.id);
 
-      if(idx >= 0){
-        // إذا كان الكشف موجود: احترم حالة القفل الحالية إلا لو كانت غير موجودة
-        const prevLocked = (list[idx].locked === undefined) ? true : !!list[idx].locked;
-        st.locked = prevLocked;
-        list[idx] = st;
-      } else {
-        // كشف جديد: يقفل تلقائياً بعد الحفظ
-        st.locked = true;
-        list.unshift(st);
-      }
+      if(idx >= 0) list[idx] = st;
+      else list.unshift(st);
 
       saveData();
+
       state.currentClient = name;
       state.currentStatementId = st.id;
 
-      alert("تم حفظ الكشف");
+      // ✅ اقفل مباشرة
+      state.currentStatementLocked = true;
 
-      // بعد الحفظ: اقفله تلقائياً
-      setLockedUI(true);
+      alert("تم حفظ الكشف ✅ وتم إقفاله تلقائياً 🔒");
 
       renderStatementsList();
       renderTotalsForCurrentClient();
       updatePreviewText();
       renderReportsClientOptions();
+      applyLockUI();
+      refreshDailyBackupUI();
     }
 
     function resetForm(keepName){
       state.currentStatementId = null;
-      if(keepName) clientNameInput.value = keepName;
 
+      // ✅ كشف جديد يكون مفتوح
+      state.currentStatementLocked = false;
+
+      if(keepName) clientNameInput.value = keepName;
       dateInput.value        = new Date().toISOString().slice(0,10);
       titleInput.value       = "";
       truckNumberInput.value = "";
@@ -885,25 +892,23 @@
       manualTotalInput.value = "";
       extraNotesInput.value  = "";
       entriesContainer.innerHTML = "";
-
-      // كشف جديد: مفتوح للتعديل
-      setLockedUI(false);
-
       addEntryRow();
       updatePreviewText();
       renderStatementsList();
       renderTotalsForCurrentClient();
+      applyLockUI();
     }
 
     function copyLastEntries(){
-      if (state.currentLocked){
-        alert("هذا الكشف مقفول. افتح القفل أولاً للتعديل.");
+      if (state.currentStatementLocked) {
+        alert("افتح القفل أولاً للنسخ.");
         return;
       }
 
       const name = clientNameInput.value.trim();
       const c    = state.data.clients[name];
       if(!c || !c.statements.length){ alert("لا يوجد كشف سابق"); return; }
+
       entriesContainer.innerHTML = "";
       c.statements[0].entries.forEach(e =>
         addEntryRow({desc:e.desc,amount:0,currency:e.currency,direction:e.direction})
@@ -911,9 +916,10 @@
       updatePreviewText();
     }
 
+    // ✅ نسخ البنود من كشف سابق بدون لمس العنوان/التاريخ/الأرقام/ID
     function copyEntriesFromPreviousStatement(){
-      if (state.currentLocked){
-        alert("هذا الكشف مقفول. افتح القفل أولاً للتعديل.");
+      if (state.currentStatementLocked) {
+        alert("افتح القفل أولاً للنسخ.");
         return;
       }
 
@@ -966,12 +972,12 @@
         alert("لم يتم العثور على الكشف المطلوب. جرّب رقم من القائمة أو رقم البيان الصحيح.");
         return;
       }
-
       if(!picked.entries || !picked.entries.length){
         alert("هذا الكشف لا يحتوي بنود.");
         return;
       }
 
+      // ✅ فقط البنود، بدون لمس العنوان/التاريخ/ID
       entriesContainer.innerHTML = "";
       picked.entries.forEach(e => {
         addEntryRow({ desc: e.desc, amount: 0, currency: e.currency, direction: e.direction });
@@ -980,7 +986,7 @@
       alert("تم نسخ البنود من الكشف المختار ✅");
     }
 
-    /* === سجل الكشوفات مع زر الحذف (ومنع الحذف إذا مقفول) === */
+    /* === سجل الكشوفات مع زر الحذف === */
     function renderStatementsList(){
       const name = clientNameInput.value.trim();
       statementsListEl.innerHTML = "";
@@ -997,15 +1003,11 @@
       const sortedStatements = (c.statements || []).slice().sort((a, b) => {
         const da = a.date || "";
         const db = b.date || "";
-
         if (da && db) {
           const cmp = db.localeCompare(da);
           if (cmp !== 0) return cmp;
-        } else if (db) {
-          return -1;
-        } else if (da) {
-          return 1;
-        }
+        } else if (db) return -1;
+        else if (da) return 1;
         return (b.id || "").localeCompare(a.id || "");
       });
 
@@ -1028,8 +1030,9 @@
           const labelExtra = [
             st.truckNumber ? `ق:${st.truckNumber}` : "",
             st.statementNumber ? `ب:${st.statementNumber}` : "",
-            (st.locked ? "🔒" : "🔓")
+            st.locked ? "🔒" : "🔓"
           ].filter(Boolean).join(" • ");
+
           titleSpan.textContent =
             (st.title || "بدون عنوان") + (labelExtra ? " — " + labelExtra : "");
 
@@ -1041,22 +1044,13 @@
           deleteBtn.type = "button";
           deleteBtn.className = "delete-btn";
           deleteBtn.textContent = "🗑️";
-          deleteBtn.title = st.locked ? "لا يمكن حذف كشف مقفول. افتح القفل أولاً." : "حذف هذا الكشف";
-
-          if (st.locked){
-            deleteBtn.classList.add("disabled");
-            deleteBtn.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              alert("هذا الكشف مقفول. افتح القفل أولاً ثم احذف إذا تريد.");
-            });
-          } else {
-            deleteBtn.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              if (confirm("هل تريد حذف هذا الكشف نهائيًا لهذا العميل؟ لا يمكن التراجع.")) {
-                deleteStatementForCurrentClient(st.id);
-              }
-            });
-          }
+          deleteBtn.title = "حذف هذا الكشف";
+          deleteBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            if (confirm("هل تريد حذف هذا الكشف نهائيًا لهذا العميل؟ لا يمكن التراجع.")) {
+              deleteStatementForCurrentClient(st.id);
+            }
+          });
 
           if (multiMode) {
             const leftWrap = document.createElement("div");
@@ -1108,7 +1102,7 @@
             d.appendChild(rightWrap);
 
             d.onclick = () => {
-              if (confirm("فتح هذا الكشف؟")) loadStatement(name, st.id);
+              if (confirm("فتح هذا الكشف؟ سيتم فتحه مقفول للحماية.")) loadStatement(name, st.id);
             };
           }
 
@@ -1136,12 +1130,6 @@
       const client = state.data.clients[name];
       if (!client || !Array.isArray(client.statements)) return;
 
-      const st = client.statements.find(s => s.id === statementId);
-      if (st && st.locked){
-        alert("هذا الكشف مقفول. افتح القفل أولاً ثم احذف إذا تريد.");
-        return;
-      }
-
       const idx = client.statements.findIndex(s => s.id === statementId);
       if (idx === -1) return;
 
@@ -1152,6 +1140,7 @@
 
       if (state.currentStatementId === statementId) {
         state.currentStatementId = null;
+        state.currentStatementLocked = false;
         resetForm(name);
       }
 
@@ -1160,6 +1149,7 @@
       renderTotalsForCurrentClient();
       updatePreviewText();
       renderReportsClientOptions();
+      refreshDailyBackupUI();
     }
 
     function deleteClient(name){
@@ -1178,87 +1168,34 @@
       renderStatementsList();
       renderReportsClientOptions();
       updatePreviewText();
+      refreshDailyBackupUI();
     }
 
     function loadStatement(name,id){
       const st = state.data.clients[name].statements.find(s=>s.id===id);
       if(!st) return;
 
-      // ✅ عند فتح أي عميل/كشف: إذا كان مقفول يبقى مقفول تلقائيًا
-      const locked = (st.locked === undefined) ? true : !!st.locked;
-
       state.currentClient = name;
       state.currentStatementId = id;
 
       clientNameInput.value      = name;
-      dateInput.value            = st.date || "";
-      titleInput.value           = st.title || "";
+      dateInput.value            = st.date;
+      titleInput.value           = st.title;
       truckNumberInput.value     = st.truckNumber || "";
       statementNumberInput.value = st.statementNumber || "";
       manualTotalInput.value     = st.manualTotal || "";
       extraNotesInput.value      = st.extraNotes || "";
 
       entriesContainer.innerHTML = "";
-      (st.entries || []).forEach(e => addEntryRow(e)); // addEntryRow يمنع إذا مقفول، لذلك سنضيف البنود يدويًا أدناه
+      st.entries.forEach(e => addEntryRow(e));
 
-      // لأن addEntryRow يمنع في حالة القفل، نعيد بناء البنود بطريقة لا تمنع العرض:
-      entriesContainer.innerHTML = "";
-      (st.entries || []).forEach(e => addEntryRowReadOnly(e));
-
-      setLockedUI(locked);
+      // ✅ افتح الكشف مقفول تلقائياً عند الدخول
+      state.currentStatementLocked = (st.locked !== false);
 
       updatePreviewText();
       renderStatementsList();
       renderTotalsForCurrentClient();
-    }
-
-    // إضافة بند للعرض فقط (مهم للكشف المقفول)
-    function addEntryRowReadOnly(init){
-      const row = document.createElement("div");
-      row.className = "entry-row";
-
-      const desc = input("text","وصف البند");
-      desc.className = "entry-desc";
-
-      const amount = document.createElement("input");
-      amount.type = "tel";
-      amount.inputMode = "numeric";
-      amount.placeholder = "المبلغ";
-      amount.className = "entry-amount";
-
-      const curr = select(["يمني","سعودي","درهم","دولار","عماني"]);
-      curr.className = "entry-curr";
-
-      const dir  = select(["عليه","له"]);
-      dir.className = "entry-dir";
-
-      const voiceBtn = button("🎤","pill-btn entry-voice-btn");
-      voiceBtn.type = "button";
-      voiceBtn.title = "مساعد بسّام الصوتي للبند";
-      voiceBtn.onclick = () => {
-        if(state.currentLocked) return;
-        desc.focus();
-        if (voiceAssistantBtnEl) voiceAssistantBtnEl.click();
-      };
-
-      const del  = button("حذف","pill-btn pill-red entry-del");
-      del.onclick = () => {
-        if(state.currentLocked) return;
-        confirm("حذف البند؟") && row.remove();
-        updatePreviewText();
-      };
-
-      if(init){
-        desc.value   = init.desc || "";
-        amount.value = init.amount ? Number(init.amount).toLocaleString("en-US") : "";
-        curr.value   = init.currency;
-        dir.value    = init.direction;
-      }
-
-      [desc,amount,curr,dir].forEach(e => e.addEventListener("input", updatePreviewText));
-
-      row.append(desc,amount,curr,dir,voiceBtn,del);
-      entriesContainer.appendChild(row);
+      applyLockUI();
     }
 
     function renderClientsList(){
@@ -1310,14 +1247,10 @@
           d.appendChild(nameSpan);
           d.appendChild(rightWrap);
 
-          // ✅ السلوك الذكي: عند فتح عميل افتح آخر كشف (ويكون مقفول إذا مقفول)
           d.onclick = () => {
             if (last) {
               showScreen("s");
               loadStatement(n, last.id);
-            } else {
-              showScreen("s");
-              resetForm(n);
             }
           };
 
@@ -1339,7 +1272,7 @@
             if(to   && sd > to)   return;
           }
         }
-        (s.entries || []).forEach(e=>{
+        s.entries.forEach(e=>{
           if(!t[e.currency]) t[e.currency] = {lah:0,alaih:0};
           if(e.direction==="له")  t[e.currency].lah   += e.amount;
           else                    t[e.currency].alaih += e.amount;
@@ -1382,8 +1315,7 @@
       whatsAppBox.textContent = txt;
     }
 
-    /* ========= باقي كود PDF + تقارير + Backup + PWA كما هو ========= */
-
+    // ====== بناء بلوك HTML لكشف واحد (نستخدمه في PDF) ======
     function buildStatementHtmlBlock(st, name){
       const entries = st.entries || [];
 
@@ -1466,6 +1398,7 @@
       `;
     }
 
+    // ====== طباعة كشف واحد PDF عبر نافذة المتصفح ======
     function printAsPdf(){
       const name    = clientNameInput.value.trim() || "العميل";
       const st = {
@@ -1501,6 +1434,7 @@
       };
     }
 
+    // ====== مشاركة كشف واحد PDF كملف ======
     async function sharePdf(){
       const name = clientNameInput.value.trim() || "العميل";
       const st = {
@@ -1567,6 +1501,7 @@
       }
     }
 
+    // ====== مشاركة عدة كشوف PDF في ملف واحد ======
     async function shareSelectedStatementsPdf(){
       const name = clientNameInput.value.trim();
       if (!name) {
@@ -1641,6 +1576,7 @@
       }
     }
 
+    // ====== تقارير العملاء (الإجمالي حسب العملة، جدول) ======
     function renderReportsClientOptions(){
       while (reportClientSelect.options.length > 1) {
         reportClientSelect.remove(1);
@@ -1696,7 +1632,6 @@
       });
 
       tableHtml += `</tbody></table>`;
-
       reportBox.innerHTML = headerHtml + tableHtml;
     }
 
@@ -1850,7 +1785,7 @@ ${htmlContent}
       };
     }
 
-    // ====== النسخة الاحتياطية ======
+    // ====== النسخة الاحتياطية اليدوية ======
     const exportBtn   = document.getElementById("exportBackupBtn");
     const importBtn   = document.getElementById("importBackupBtn");
     const backupInput = document.getElementById("backupFileInput");
@@ -1874,6 +1809,7 @@ ${htmlContent}
           renderTotalsForCurrentClient();
           updatePreviewText();
           renderReportsClientOptions();
+          refreshDailyBackupUI();
         } catch (err) {
           console.error(err);
           alert("ملف النسخة الاحتياطية غير صالح.");
@@ -1897,24 +1833,92 @@ ${htmlContent}
         a.remove();
         URL.revokeObjectURL(url);
 
-        if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: "application/json" })] })) {
-          const file = new File([blob], fileName, { type: "application/json" });
-          navigator.share({
-            title: "نسخة احتياطية دفتر كشف الحساب",
-            text: "ملف النسخة الاحتياطية للتطبيق.",
-            files: [file]
-          }).catch(() => {});
-        } else if (navigator.share) {
-          navigator.share({
-            title: "نسخة احتياطية دفتر كشف الحساب",
-            text: "تم تنزيل ملف النسخة الاحتياطية، يمكنك رفعه إلى Google Drive."
-          }).catch(() => {});
-        }
-
         alert("تم إنشاء النسخة الاحتياطية. احفظ الملف في Google Drive أو أي مكان آمن.");
       } catch (e) {
         console.error(e);
         alert("حصل خطأ أثناء إنشاء النسخة الاحتياطية.");
+      }
+    }
+
+    // ====== النسخ الاحتياطي التلقائي اليومي ======
+    function isAutoBackupEnabled(){
+      const pref = localStorage.getItem(AUTO_BACKUP_PREF_KEY);
+      return (pref === null) ? true : (pref === "on");
+    }
+    function setAutoBackupEnabled(on){
+      localStorage.setItem(AUTO_BACKUP_PREF_KEY, on ? "on" : "off");
+    }
+
+    autoBackupToggle.addEventListener("change", ()=>{
+      const v = autoBackupToggle.value;
+      setAutoBackupEnabled(v === "on");
+      refreshDailyBackupUI();
+    });
+
+    downloadLastAutoBackupBtn.onclick = () => {
+      const arr = getAutoBackups();
+      if (!arr.length) { alert("لا توجد نسخة تلقائية بعد."); return; }
+      const last = arr[0];
+      const blob = new Blob([JSON.stringify(last.data)], { type: "application/json" });
+      const fileName = `voice-ledger-auto-backup-${last.date}.json`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    clearAutoBackupsBtn.onclick = () => {
+      if (confirm("هل تريد مسح النسخ التلقائية المحفوظة داخل التطبيق؟")) {
+        setAutoBackups([]);
+        refreshDailyBackupUI();
+      }
+    };
+
+    function refreshDailyBackupUI(){
+      autoBackupToggle.value = isAutoBackupEnabled() ? "on" : "off";
+      const arr = getAutoBackups();
+      if (!arr.length) {
+        autoBackupStatus.textContent = "لا توجد نسخة تلقائية بعد.";
+        return;
+      }
+      const last = arr[0];
+      autoBackupStatus.textContent = `آخر نسخة تلقائية: ${last.date}\nعدد النسخ المحفوظة: ${arr.length}`;
+    }
+
+    function performAutoBackupIfDue(){
+      if (!isAutoBackupEnabled()) return;
+
+      // نحتاج تعمل مرة واحدة يومياً عند 00:00
+      const now = new Date();
+      const todayKey = now.toISOString().slice(0,10); // YYYY-MM-DD
+      const lastRun = localStorage.getItem(AUTO_BACKUP_LASTRUN_KEY) || "";
+
+      // نفذ فقط بعد منتصف الليل (أو أول تشغيل لليوم) ولم ينفذ اليوم بعد
+      if (lastRun === todayKey) return;
+
+      // شرط: إذا الوقت صار بعد 00:00 (طبعاً دائم)
+      // نعمل النسخة الآن أول مرة يفتح فيها التطبيق خلال اليوم
+      try{
+        const dataObj = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(state.data));
+        const arr = getAutoBackups();
+
+        // خزّن آخر 30 نسخة فقط
+        arr.unshift({
+          date: todayKey,
+          ts: Date.now(),
+          data: dataObj
+        });
+        const trimmed = arr.slice(0, 30);
+        setAutoBackups(trimmed);
+
+        localStorage.setItem(AUTO_BACKUP_LASTRUN_KEY, todayKey);
+        refreshDailyBackupUI();
+      }catch(e){
+        console.error("auto backup error", e);
       }
     }
 
@@ -1940,19 +1944,25 @@ ${htmlContent}
 
     // ====== تهيئة أولية ======
     const hadDataBefore = !!localStorage.getItem(STORAGE_KEY);
+
     loadData();
     dateInput.value = new Date().toISOString().slice(0,10);
-
-    // كشف جديد: مفتوح
-    setLockedUI(false);
-
-    // أول بند
-    addEntryRowReadOnly({desc:"", amount:0, currency:"يمني", direction:"عليه"});
+    addEntryRow();
     updatePreviewText();
     renderStatementsList();
     renderClientsList();
     renderTotalsForCurrentClient();
     renderReportsClientOptions();
+
+    // حالة القفل الأولية: كشف جديد مفتوح
+    state.currentStatementLocked = false;
+    applyLockUI();
+
+    refreshDailyBackupUI();
+    performAutoBackupIfDue();
+
+    // نفحص كل دقيقة (لو ترك التطبيق مفتوح)
+    setInterval(performAutoBackupIfDue, 60 * 1000);
 
     if (!hadDataBefore) {
       setTimeout(() => {
@@ -1964,7 +1974,6 @@ ${htmlContent}
 
     // تعريض دالة النسخ للملفات الخارجية مثل app.js
     window.copyEntriesFromPreviousStatement = copyEntriesFromPreviousStatement;
-
   </script>
 </body>
 </html>
