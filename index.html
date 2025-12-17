@@ -704,10 +704,15 @@
       renderTotalsForCurrentClient();
     }
 
+    // ✅✅✅ تم إصلاح المشكلة هنا
     function copyLastEntries(){
       const name = clientNameInput.value.trim();
       const c    = state.data.clients[name];
       if(!c || !c.statements.length){ alert("لا يوجد كشف سابق"); return; }
+
+      // أهم سطر: اعتبره كشف جديد (حتى لا يعدّل كشف قديم)
+      state.currentStatementId = null;
+
       entriesContainer.innerHTML = "";
       c.statements[0].entries.forEach(e =>
         addEntryRow({desc:e.desc,amount:0,currency:e.currency,direction:e.direction})
@@ -716,6 +721,7 @@
     }
 
     // ✅ الجديد: نسخ البنود من كشف سابق تختاره أنت
+    // ✅✅✅ تم إصلاح المشكلة هنا
     function copyEntriesFromPreviousStatement(){
       const name = clientNameInput.value.trim();
       const c = state.data.clients[name];
@@ -774,6 +780,9 @@
         alert("هذا الكشف لا يحتوي بنود.");
         return;
       }
+
+      // أهم سطر: اعتبره كشف جديد (حتى لا يعدّل كشف قديم)
+      state.currentStatementId = null;
 
       entriesContainer.innerHTML = "";
       picked.entries.forEach(e => {
