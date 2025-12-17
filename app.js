@@ -1,55 +1,64 @@
 // app.js
 function executeIntent(intent) {
+  switch (intent.action) {
 
-    switch (intent.action) {
+    case "new_statement":
+      if (typeof resetForm === "function") resetForm(document.getElementById("clientName")?.value || "");
+      speak("تم فتح كشف جديد يا بسام");
+      break;
 
-        case "new_statement":
-            newStatement();
-            speak("تم فتح كشف جديد يا بسام");
-            break;
+    case "add_entry":
+      if (typeof addEntryRow === "function") addEntryRow();
+      speak("تم إضافة بند جديد");
+      break;
 
-        case "add_entry":
-            addEntry();
-            speak("تم إضافة بند جديد");
-            break;
+    case "set_desc":
+      if (typeof setLastDesc === "function") setLastDesc(intent.value);
+      speak("تم وضع الوصف");
+      break;
 
-        case "set_desc":
-            setLastDesc(intent.value);
-            speak("تم وضع الوصف");
-            break;
+    case "set_amount":
+      if (typeof setLastAmount === "function") setLastAmount(intent.value);
+      speak("تم إدخال المبلغ");
+      break;
 
-        case "set_amount":
-            setLastAmount(intent.value);
-            speak("تم إدخال المبلغ");
-            break;
+    case "set_currency":
+      if (typeof setLastCurrency === "function") setLastCurrency(intent.value);
+      speak("تم تغيير العملة");
+      break;
 
-        case "set_currency":
-            setLastCurrency(intent.value);
-            speak("تم تغيير العملة");
-            break;
+    case "set_direction":
+      if (typeof setLastDirection === "function") setLastDirection(intent.value);
+      speak("تم تحديد الجهة");
+      break;
 
-        case "set_direction":
-            setLastDirection(intent.value);
-            speak("تم تحديد الجهة");
-            break;
+    case "save":
+      if (typeof saveCurrentStatement === "function") saveCurrentStatement();
+      speak("تم حفظ الكشف");
+      break;
 
-        case "save":
-            saveStatement();
-            speak("تم حفظ الكشف");
-            break;
+    case "export_pdf":
+      if (typeof printAsPdf === "function") printAsPdf();
+      speak("تم تجهيز الطباعة");
+      break;
 
-        case "export_pdf":
-            exportPDF();
-            speak("تم إرسال الملف");
-            break;
+    // ✅ جديد (اختياري): نسخ البنود من كشف سابق عبر نفس نافذة الاختيار
+    case "copy_from_old_statement":
+      if (typeof window.copyEntriesFromPreviousStatement === "function") {
+        window.copyEntriesFromPreviousStatement();
+        speak("اختر الكشف الذي تريد النسخ منه");
+      } else {
+        speak("ميزة النسخ من كشف سابق غير متاحة حالياً");
+      }
+      break;
 
-        default:
-            speak("لم أفهم أمرك يا بسام، أعد من فضلك");
-    }
+    default:
+      speak("لم أفهم أمرك يا بسام، أعد من فضلك");
+  }
 }
 
 function speak(text) {
-    const s = new SpeechSynthesisUtterance(text);
-    s.lang = "ar-SA";
-    speechSynthesis.speak(s);
+  const s = new SpeechSynthesisUtterance(text);
+  s.lang = "ar-SA";
+  speechSynthesis.speak(s);
 }
