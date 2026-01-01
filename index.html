@@ -1656,7 +1656,7 @@
         reportBox.textContent = "لا توجد كشوف لهذا العميل.";
         return;
       }
-
+const grandTotals = {};
       const statements = (client.statements || []).slice().sort((a, b) => {
   const da = a.date || "";
   const db = b.date || "";
