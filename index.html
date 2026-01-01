@@ -1663,7 +1663,7 @@ const grandTotals = {};
 
   // الأحدث أولاً إذا يوجد تاريخين
   if (da && db) {
-    const cmp = db.localeCompare(da); // YYYY-MM-DD
+    const cmp = da.localeCompare(db); // YYYY-MM-DD
     if (cmp !== 0) return cmp;
   } else if (db) {
     return 1;   // اللي بدون تاريخ يجي بعد اللي معه تاريخ
@@ -1672,7 +1672,7 @@ const grandTotals = {};
   }
 
   // كسر التعادل: الأحدث حسب id/وقت الإنشاء (تقريباً)
-  return (b.id || "").localeCompare(a.id || "");
+  return (a.id || "").localeCompare(b.id || "");
 });
       let html = `<h3 style="margin-top:0;">تقرير ملخص لكل كشف للعميل: ${name}</h3>`;
       html += `
