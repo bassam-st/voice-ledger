@@ -397,6 +397,57 @@
         <div id="totalsBox" class="totals-box">
           لا توجد بيانات بعد. احفظ أول كشف للعميل.
         </div>
+      <div class="card" id="accountMovementsCard">
+        <label class="section-title">💰 حركات حساب التاجر (حوالات/سداد/مصروف)</label>
+        <p class="muted">هذه الحركات مستقلة عن الكشوفات. لكل حركة يظهر الرصيد بعدها (حسب العملة).</p>
+
+        <div class="row">
+          <div style="flex:2;">
+            <label>البند / الوصف:</label>
+            <input id="mvDesc" type="text" placeholder="مثال: حوالة من التاجر / سداد / مصروف..." />
+          </div>
+          <div>
+            <label>المبلغ:</label>
+            <input id="mvAmount" type="tel" inputmode="numeric" placeholder="0" />
+          </div>
+          <div>
+            <label>العملة:</label>
+            <select id="mvCurr">
+              <option value="يمني">يمني</option>
+              <option value="سعودي">سعودي</option>
+              <option value="درهم">درهم</option>
+              <option value="دولار">دولار</option>
+              <option value="عماني">عماني</option>
+            </select>
+          </div>
+          <div>
+            <label>له / عليه:</label>
+            <select id="mvDir">
+              <option value="له">له</option>
+              <option value="عليه">عليه</option>
+            </select>
+          </div>
+          <div>
+            <label>التاريخ:</label>
+            <input id="mvDate" type="date" />
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="pill-btn pill-green" id="addMovementBtn" style="flex:1;">➕ إضافة حركة</button>
+          <button class="pill-btn pill-gray" id="clearMovementsForClientBtn" style="flex:1;">🧹 مسح حركات هذا التاجر</button>
+        </div>
+
+        <div id="movementsSummaryBox" class="totals-box" style="margin-top:8px;">
+          لا توجد حركات بعد.
+        </div>
+
+        <div id="movementsTable" class="report-box" style="margin-top:10px;">
+          <!-- جدول الحركات يظهر هنا -->
+        </div>
+      </div>
+
+
       </div>
 
       <div class="card">
@@ -529,6 +580,10 @@
     const AUTO_BACKUP_PREF_KEY = "voiceLedgerAutoBackupPref_v1";
     const AUTO_BACKUP_LASTRUN_KEY = "voiceLedgerAutoBackupLastRun_v1";
 
+    // ===== حركات الحساب (حوالات/سداد...) لكل تاجر =====
+    const MOVEMENTS_KEY = "voiceLedgerMovements_v1";
+
+
     const state = {
       data:{clients:{}},
       currentClient:"",
@@ -556,7 +611,159 @@
       localStorage.setItem(AUTO_BACKUPS_KEY, JSON.stringify(arr));
     }
 
-    const tabStatements = document.getElementById("tabStatements");
+    
+
+    // ===== حركات الحساب: تخزين مستقل بدون التأثير على STORAGE_KEY القديم =====
+    function loadMovementsStore(){
+      try{
+        return JSON.parse(localStorage.getItem(MOVEMENTS_KEY) || "{}");
+      }catch(_){
+        return {};
+      }
+    }
+    function saveMovementsStore(obj){
+      localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(obj));
+    }
+
+    function getMovementsForClient(name){
+      const store = loadMovementsStore();
+      const arr = store[name];
+      return Array.isArray(arr) ? arr : [];
+    }
+
+    function setMovementsForClient(name, arr){
+      const store = loadMovementsStore();
+      store[name] = Array.isArray(arr) ? arr : [];
+      saveMovementsStore(store);
+    }
+
+    function addMovementForClient(name, mv){
+      const arr = getMovementsForClient(name);
+      arr.push(mv);
+      // ترتيب حسب التاريخ ثم وقت الإدخال لضمان حساب الرصيد صحيح
+      arr.sort((a,b)=>{
+        const da = (a.date || "");
+        const db = (b.date || "");
+        if (da && db) {
+          const cmp = da.localeCompare(db); // تصاعدي: الأقدم أولاً
+          if (cmp !== 0) return cmp;
+        } else if (db) return -1;
+        else if (da) return 1;
+        return (a.ts||0) - (b.ts||0);
+      });
+      setMovementsForClient(name, arr);
+    }
+
+    function deleteMovementForClient(name, ts){
+      const arr = getMovementsForClient(name).filter(m => (m.ts||0) !== ts);
+      setMovementsForClient(name, arr);
+    }
+
+    function clearMovementsForClient(name){
+      setMovementsForClient(name, []);
+    }
+
+    function filterByDateRange(items, fromDate, toDate){
+      if(!fromDate && !toDate) return items.slice();
+      const from = fromDate ? new Date(fromDate) : null;
+      const to   = toDate   ? new Date(toDate)   : null;
+
+      return items.filter(m=>{
+        const d = m.date ? new Date(m.date) : null;
+        if(!d) return true; // لو بدون تاريخ نخليه يظهر
+        if(from && d < from) return false;
+        if(to && d > to) return false;
+        return true;
+      });
+    }
+
+    function computeMovementTotalsPerCurrency(movements){
+      const t = {};
+      movements.forEach(m=>{
+        const c = m.currency || "";
+        if(!t[c]) t[c] = {lah:0, alaih:0, balance:0};
+        const amt = Number(m.amount||0) || 0;
+        if(m.direction === "له"){
+          t[c].lah += amt;
+          t[c].balance += amt;
+        }else{
+          t[c].alaih += amt;
+          t[c].balance -= amt;
+        }
+      });
+      return t;
+    }
+
+    function renderMovementsForClient(name){
+      const tableEl = document.getElementById("movementsTable");
+      const sumEl   = document.getElementById("movementsSummaryBox");
+      if(!tableEl || !sumEl) return;
+
+      if(!name){
+        sumEl.textContent = "اختر/اكتب اسم التاجر أولاً.";
+        tableEl.innerHTML = "";
+        return;
+      }
+
+      const arr = getMovementsForClient(name);
+      if(!arr.length){
+        sumEl.textContent = "لا توجد حركات بعد.";
+        tableEl.innerHTML = "";
+        return;
+      }
+
+      // ملخص
+      const totals = computeMovementTotalsPerCurrency(arr);
+      let s = "";
+      Object.keys(totals).forEach(c=>{
+        const x = totals[c];
+        s += `${c}:\nله: ${x.lah}\nعليه: ${x.alaih}\nالرصيد: ${x.balance}\n\n`;
+      });
+      sumEl.textContent = s.trim() || "لا توجد حركات بعد.";
+
+      // جدول مع رصيد تراكمي لكل عملة
+      const running = {};
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>التاريخ</th>
+              <th>البند</th>
+              <th>العملة</th>
+              <th>له</th>
+              <th>عليه</th>
+              <th>الرصيد</th>
+              <th>حذف</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      arr.forEach(m=>{
+        const c = m.currency || "";
+        if(running[c] == null) running[c] = 0;
+        const amt = Number(m.amount||0) || 0;
+        const lah  = (m.direction === "له") ? amt : 0;
+        const alaih= (m.direction === "عليه") ? amt : 0;
+        running[c] += (m.direction === "له") ? amt : -amt;
+
+        const safeDesc = (m.desc || "").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        html += `
+          <tr>
+            <td class="col-date">${m.date || ""}</td>
+            <td style="text-align:right;">${safeDesc || "حركة"}</td>
+            <td>${c}</td>
+            <td>${lah || ""}</td>
+            <td>${alaih || ""}</td>
+            <td>${running[c]}</td>
+            <td><button class="pill-btn pill-red" style="padding:4px 10px;" onclick="window.__delMv('${name.replace(/'/g,"\\'")}', ${m.ts||0})">🗑️</button></td>
+          </tr>`;
+      });
+
+      html += `</tbody></table>`;
+      tableEl.innerHTML = html;
+    }
+
+const tabStatements = document.getElementById("tabStatements");
     const tabClients    = document.getElementById("tabClients");
     const tabReports    = document.getElementById("tabReports");
     const screenStatements = document.getElementById("screenStatements");
@@ -591,6 +798,11 @@
         tabClients.classList.remove("active");
         tabReports.classList.add("active");
         renderReportsClientOptions();
+
+    // تهيئة حركات الحساب
+    if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
+    renderMovementsForClient(clientNameInput.value.trim());
+
       }
     }
 
@@ -617,6 +829,17 @@
 
     const voiceAssistantBtnEl = document.getElementById("voiceAssistantBtn");
 
+    // عناصر حركات الحساب
+    const mvDescInput  = document.getElementById("mvDesc");
+    const mvAmountInput= document.getElementById("mvAmount");
+    const mvCurrSelect = document.getElementById("mvCurr");
+    const mvDirSelect  = document.getElementById("mvDir");
+    const mvDateInput  = document.getElementById("mvDate");
+    const addMovementBtn = document.getElementById("addMovementBtn");
+    const clearMovementsForClientBtn = document.getElementById("clearMovementsForClientBtn");
+
+
+
     // قفل
     const lockBadge   = document.getElementById("lockBadge");
     const unlockBtn   = document.getElementById("unlockBtn");
@@ -642,7 +865,66 @@
     document.getElementById("printPdfBtn").onclick              = printAsPdf;
     document.getElementById("sharePdfBtn").onclick              = () => sharePdf();
 
+    // ===== حركات الحساب: إضافة/مسح =====
+    if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
+
+    function normalizeNumericInput(el){
+      if(!el) return;
+      el.addEventListener("input", ()=>{
+        let raw = (el.value || "").replace(/[^\d]/g,"");
+        el.value = raw ? Number(raw).toLocaleString("en-US") : "";
+      });
+    }
+    normalizeNumericInput(mvAmountInput);
+
+    if (addMovementBtn) addMovementBtn.onclick = () => {
+      const name = clientNameInput.value.trim();
+      if(!name){ alert("اكتب اسم التاجر أولاً"); return; }
+
+      const amountRaw = (mvAmountInput.value || "").replace(/,/g,"");
+      const amount = +amountRaw || 0;
+      if(!amount){ alert("أدخل مبلغ صحيح"); return; }
+
+      const mv = {
+        ts: Date.now(),
+        date: mvDateInput.value || new Date().toISOString().slice(0,10),
+        desc: (mvDescInput.value || "").trim() || "حركة",
+        currency: mvCurrSelect.value,
+        direction: mvDirSelect.value, // له / عليه
+        amount: amount
+      };
+
+      addMovementForClient(name, mv);
+      mvDescInput.value = "";
+      mvAmountInput.value = "";
+      renderMovementsForClient(name);
+    };
+
+    // دالة حذف تُستدعى من زر الحذف داخل الجدول
+    window.__delMv = (name, ts) => {
+      if(confirm("حذف هذه الحركة؟")) {
+        deleteMovementForClient(name, ts);
+        renderMovementsForClient(name);
+      }
+    };
+
+    if (clearMovementsForClientBtn) clearMovementsForClientBtn.onclick = () => {
+      const name = clientNameInput.value.trim();
+      if(!name){ alert("اكتب اسم التاجر أولاً"); return; }
+      if(confirm("هل تريد مسح جميع حركات هذا التاجر؟ لا يمكن التراجع.")){
+        clearMovementsForClient(name);
+        renderMovementsForClient(name);
+      }
+    };
+
+
+
     clientsSearchInput.addEventListener("input", renderClientsList);
+    // تحديث عرض حركات الحساب عند تغيير اسم التاجر
+    clientNameInput.addEventListener("input", ()=>{
+      renderMovementsForClient(clientNameInput.value.trim());
+    });
+
     statementsSearchInput.addEventListener("input", renderStatementsList);
 
     // عناصر التقارير
@@ -874,8 +1156,15 @@
       renderTotalsForCurrentClient();
       updatePreviewText();
       renderReportsClientOptions();
+
+    // تهيئة حركات الحساب
+    if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
+    renderMovementsForClient(clientNameInput.value.trim());
+
       applyLockUI();
       refreshDailyBackupUI();
+      renderMovementsForClient(name);
+
     }
 
     function resetForm(keepName){
@@ -897,7 +1186,9 @@
       renderStatementsList();
       renderTotalsForCurrentClient();
       applyLockUI();
-    }
+    
+      renderMovementsForClient(clientNameInput.value.trim());
+}
 
     function copyLastEntries(){
       if (state.currentStatementLocked) {
@@ -1149,6 +1440,11 @@
       renderTotalsForCurrentClient();
       updatePreviewText();
       renderReportsClientOptions();
+
+    // تهيئة حركات الحساب
+    if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
+    renderMovementsForClient(clientNameInput.value.trim());
+
       refreshDailyBackupUI();
     }
 
@@ -1167,6 +1463,11 @@
       renderClientsList();
       renderStatementsList();
       renderReportsClientOptions();
+
+    // تهيئة حركات الحساب
+    if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
+    renderMovementsForClient(clientNameInput.value.trim());
+
       updatePreviewText();
       refreshDailyBackupUI();
     }
@@ -1196,6 +1497,8 @@
       renderStatementsList();
       renderTotalsForCurrentClient();
       applyLockUI();
+      renderMovementsForClient(name);
+
     }
 
     function renderClientsList(){
@@ -1632,6 +1935,81 @@
       });
 
       tableHtml += `</tbody></table>`;
+      
+      // ===== إضافة ملخص الحركات + تفاصيلها (الرصيد بعد كل حركة) =====
+      const allMovements = getMovementsForClient(name);
+      const movementsInRange = filterByDateRange(allMovements, from, to);
+
+      if (movementsInRange.length) {
+        const mtot = computeMovementTotalsPerCurrency(movementsInRange);
+
+        let mSummaryHtml = `<h4 style="margin-top:14px;">ملخص الحركات (له / عليه / الرصيد):</h4>`;
+        mSummaryHtml += `
+          <table>
+            <thead>
+              <tr>
+                <th>العملة</th>
+                <th>له</th>
+                <th>عليه</th>
+                <th>الرصيد</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        Object.keys(mtot).forEach(c=>{
+          const t = mtot[c];
+          mSummaryHtml += `
+            <tr>
+              <td>${c}</td>
+              <td>${t.lah}</td>
+              <td>${t.alaih}</td>
+              <td>${t.balance}</td>
+            </tr>`;
+        });
+
+        mSummaryHtml += `</tbody></table>`;
+
+        // تفاصيل الحركات كسطور (مع رصيد تراكمي لكل عملة)
+        const running = {};
+        let mDetailsHtml = `<h4 style="margin-top:14px;">تفاصيل الحركات (سطر لكل حركة):</h4>`;
+        mDetailsHtml += `
+          <table>
+            <thead>
+              <tr>
+                <th class="col-date">التاريخ</th>
+                <th>البند</th>
+                <th>العملة</th>
+                <th>له</th>
+                <th>عليه</th>
+                <th>الرصيد</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        movementsInRange.forEach(m=>{
+          const c = m.currency || "";
+          if (running[c] == null) running[c] = 0;
+          const amt = Number(m.amount||0) || 0;
+          const lah  = (m.direction === "له") ? amt : 0;
+          const alaih= (m.direction === "عليه") ? amt : 0;
+          running[c] += (m.direction === "له") ? amt : -amt;
+
+          mDetailsHtml += `
+            <tr>
+              <td class="col-date">${m.date || ""}</td>
+              <td style="text-align:right;">${(m.desc || "حركة")}</td>
+              <td>${c}</td>
+              <td>${lah || ""}</td>
+              <td>${alaih || ""}</td>
+              <td>${running[c]}</td>
+            </tr>`;
+        });
+
+        mDetailsHtml += `</tbody></table>`;
+
+        tableHtml += mSummaryHtml + mDetailsHtml;
+      }
+
       reportBox.innerHTML = headerHtml + tableHtml;
     }
 
@@ -1748,6 +2126,76 @@ const grandTotals = {};
         html += `</tbody></table>`;
       }
 
+      
+      // ===== إضافة ملخص الحركات + تفاصيلها في نهاية التقرير =====
+      const allMovements = getMovementsForClient(name);
+      if (allMovements.length) {
+        const mtot = computeMovementTotalsPerCurrency(allMovements);
+
+        html += `<h4 style="margin-top:14px;">ملخص الحركات (له / عليه / الرصيد):</h4>`;
+        html += `
+          <table>
+            <thead>
+              <tr>
+                <th>العملة</th>
+                <th>له</th>
+                <th>عليه</th>
+                <th>الرصيد</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        Object.keys(mtot).forEach(c=>{
+          const t = mtot[c];
+          html += `
+            <tr>
+              <td>${c}</td>
+              <td>${t.lah}</td>
+              <td>${t.alaih}</td>
+              <td>${t.balance}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+
+        const running = {};
+        html += `<h4 style="margin-top:14px;">تفاصيل الحركات (سطر لكل حركة):</h4>`;
+        html += `
+          <table>
+            <thead>
+              <tr>
+                <th class="col-date">التاريخ</th>
+                <th>البند</th>
+                <th>العملة</th>
+                <th>له</th>
+                <th>عليه</th>
+                <th>الرصيد</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        allMovements.forEach(m=>{
+          const c = m.currency || "";
+          if (running[c] == null) running[c] = 0;
+          const amt = Number(m.amount||0) || 0;
+          const lah  = (m.direction === "له") ? amt : 0;
+          const alaih= (m.direction === "عليه") ? amt : 0;
+          running[c] += (m.direction === "له") ? amt : -amt;
+
+          html += `
+            <tr>
+              <td class="col-date">${m.date || ""}</td>
+              <td style="text-align:right;">${(m.desc || "حركة")}</td>
+              <td>${c}</td>
+              <td>${lah || ""}</td>
+              <td>${alaih || ""}</td>
+              <td>${running[c]}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+      }
+
       reportBox.innerHTML = html;
     }
 
@@ -1823,6 +2271,11 @@ ${htmlContent}
           renderTotalsForCurrentClient();
           updatePreviewText();
           renderReportsClientOptions();
+
+    // تهيئة حركات الحساب
+    if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
+    renderMovementsForClient(clientNameInput.value.trim());
+
           refreshDailyBackupUI();
         } catch (err) {
           console.error(err);
@@ -1968,6 +2421,11 @@ ${htmlContent}
     renderTotalsForCurrentClient();
     renderReportsClientOptions();
 
+    // تهيئة حركات الحساب
+    if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
+    renderMovementsForClient(clientNameInput.value.trim());
+
+
     // حالة القفل الأولية: كشف جديد مفتوح
     state.currentStatementLocked = false;
     applyLockUI();
@@ -1990,4 +2448,4 @@ ${htmlContent}
     window.copyEntriesFromPreviousStatement = copyEntriesFromPreviousStatement;
   </script>
 </body>
-</html>
+  </html>
