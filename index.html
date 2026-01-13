@@ -490,7 +490,6 @@
 
         <div class="row">
           <button class="pill-btn pill-green" id="buildReportBtn" style="flex:1;">📊 إجمالي حسب العملة</button>
-          <button class="pill-btn pill-dark" id="buildCurrencySeparatedBtn" style="flex:1;">📂 تقرير مفصول حسب العملة</button>
           <button class="pill-btn pill-gray" id="buildDetailedReportBtn" style="flex:1;">📑 تقرير ملخص لكل كشف (جدول)</button>
         </div>
 
@@ -1426,7 +1425,6 @@
 </head>
 <body>
   ${html}
-  <script src="report-currency.js"></script>
 </body>
 </html>`);
       w.document.close();
@@ -1792,7 +1790,6 @@ table .col-title{ width:32%; }
 </head>
 <body>
 ${htmlContent}
-  <script src="report-currency.js"></script>
 </body>
 </html>`);
       w.document.close();
@@ -1992,6 +1989,5 @@ ${htmlContent}
     // تعريض دالة النسخ للملفات الخارجية مثل app.js
     window.copyEntriesFromPreviousStatement = copyEntriesFromPreviousStatement;
   </script>
-  <script src="report-currency.js"></script>
 </body>
 </html>
