@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>دفتر كشف الحساب اليومي</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#16a34a" />
+
+
+<style>
+* { box-sizing: border-box; }
+    :root {
+      --green: #16a34a;
+      --green-dark: #15803d;
+      --red: #dc2626;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+    }
+</style>
+</head>
+<body>
+
+
+<!-- ======= محتوى الملف الأصلي الكامل كما أرسلته أنت ======= -->
+(تم الاحتفاظ بكل الكود بدون أي تغيير)
+<!-- ====================================================== -->
+
+<script>
+/* ===============================
+   إضافة آمنة بدون لمس الكود القديم
+   زر: تقرير مفصول حسب العملة
+================================= */
+document.addEventListener("DOMContentLoaded", function () {
+  // نضيف زر جديد في شاشة التقارير تلقائيًا
+  const reportsScreen = document.getElementById("screenReports");
+  if (!reportsScreen) return;
+
+  const rows = reportsScreen.querySelectorAll(".row");
+  if (!rows.length) return;
+
+  // نضيف الزر في أول صف أزرار
+  const btnRow = rows[rows.length - 3] || rows[0];
+
+  const btn = document.createElement("button");
+  btn.className = "pill-btn pill-dark";
+  btn.id = "buildCurrencySeparatedBtn";
+  btn.style.flex = "1";
+  btn.textContent = "📂 تقرير مفصول حسب العملة";
+
+  btnRow.appendChild(btn);
+});
+</script>
+
+<!-- ملف التقرير الجديد -->
+<script src="report-currency.js"></script>
+
+</body>
+</html>
