@@ -397,6 +397,8 @@
         <div id="totalsBox" class="totals-box">
           لا توجد بيانات بعد. احفظ أول كشف للعميل.
         </div>
+      </div>
+
       <div class="card" id="accountMovementsCard">
         <label class="section-title">💰 حركات حساب التاجر (حوالات/سداد/مصروف)</label>
         <p class="muted">هذه الحركات مستقلة عن الكشوفات. لكل حركة يظهر الرصيد بعدها (حسب العملة).</p>
@@ -1961,29 +1963,33 @@ function renderReportsClientOptions(){
       if(!name){ alert("اختر عميل أولاً"); return; }
       const from = reportFromInput.value;
       const to   = reportToInput.value;
+
+      // 1) إجماليات الكشوف (ضمن الفترة)
       const totals = computeTotalsForClient(name, from, to);
       if(!Object.keys(totals).length){
         reportBox.textContent = "لا توجد بيانات في هذه الفترة.";
         return;
       }
+
       let headerHtml = `<h3 style="margin-top:0;">تقرير حساب العميل: ${name}</h3>`;
       if(from || to){
         headerHtml += `<p>الفترة: ${from || "غير محدد"} إلى ${to || "غير محدد"}</p>`;
       }
 
+      // جدول إجمالي الصافي لجميع الكشوف
       let tableHtml = `
         <table>
           <thead>
             <tr>
               <th>العملة</th>
-              <th>إجمال له</th>
-              <th>إجمال عليه</th>
-              <th>الصافي</th>
+              <th>إجمالي له</th>
+              <th>إجمالي عليه</th>
+              <th>الصافي (له/عليه)</th>
             </tr>
           </thead>
           <tbody>`;
 
-      Object.keys(totals).forEach(c=>{
+      Object.keys(totals).sort().forEach(c=>{
         const lah   = totals[c].lah;
         const alaih = totals[c].alaih;
         const diff  = lah - alaih;
@@ -1998,15 +2004,17 @@ function renderReportsClientOptions(){
       });
 
       tableHtml += `</tbody></table>`;
-      
-      // ===== إضافة ملخص الحركات + تفاصيلها (الرصيد بعد كل حركة) =====
-      const allMovements = getMovementsForClient(name);
+
+      // 2) الحركات (ضمن الفترة) + ملخصها + تفاصيلها
+      const allMovements     = getMovementsForClient(name);
       const movementsInRange = filterByDateRange(allMovements, from, to);
+      const mtot = movementsInRange.length ? computeMovementTotalsPerCurrency(movementsInRange) : {};
+
+      let mSummaryHtml = "";
+      let mDetailsHtml = "";
 
       if (movementsInRange.length) {
-        const mtot = computeMovementTotalsPerCurrency(movementsInRange);
-
-        let mSummaryHtml = `<h4 style="margin-top:14px;">ملخص الحركات (له / عليه / الرصيد):</h4>`;
+        mSummaryHtml = `<h4 style="margin-top:14px;">ملخص الحركات (له / عليه / الرصيد):</h4>`;
         mSummaryHtml += `
           <table>
             <thead>
@@ -2019,57 +2027,22 @@ function renderReportsClientOptions(){
             </thead>
             <tbody>`;
 
-        Object.keys(mtot).forEach(c=>{
-          const t = mtot[c];
+        Object.keys(mtot).sort().forEach(c=>{
+          const x = mtot[c];
           mSummaryHtml += `
             <tr>
               <td>${c}</td>
-              <td>${t.lah}</td>
-              <td>${t.alaih}</td>
-              <td>${t.balance}</td>
+              <td>${x.lah}</td>
+              <td>${x.alaih}</td>
+              <td>${x.balance}</td>
             </tr>`;
         });
 
         mSummaryHtml += `</tbody></table>`;
 
-        // ✅ الإجمالي النهائي بعد إضافة الحركات (الكشوف + الحركات)
-        const finalCurrencies = new Set([...Object.keys(totals), ...Object.keys(mtot)]);
-        let finalHtml = `<h4 style="margin-top:14px;">الإجمالي النهائي بعد إضافة الحركات:</h4>`;
-        finalHtml += `
-          <table>
-            <thead>
-              <tr>
-                <th>العملة</th>
-                <th>إجمالي له</th>
-                <th>إجمالي عليه</th>
-                <th>الصافي</th>
-              </tr>
-            </thead>
-            <tbody>`;
-        Array.from(finalCurrencies).forEach(c=>{
-          const sLah = (totals[c]?.lah || 0);
-          const sAl  = (totals[c]?.alaih || 0);
-          const mLah = (mtot[c]?.lah || 0);
-          const mAl  = (mtot[c]?.alaih || 0);
-          const fLah = sLah + mLah;
-          const fAl  = sAl  + mAl;
-          const fNet = fLah - fAl;
-          const dir  = fNet>0 ? "له" : (fNet<0 ? "عليه" : "لا شيء");
-          finalHtml += `
-            <tr>
-              <td>${c}</td>
-              <td>${fLah}</td>
-              <td>${fAl}</td>
-              <td>${Math.abs(fNet)} (${dir})</td>
-            </tr>`;
-        });
-        finalHtml += `</tbody></table>`;
-
-
-
         // تفاصيل الحركات كسطور (مع رصيد تراكمي لكل عملة)
         const running = {};
-        let mDetailsHtml = `<h4 style="margin-top:14px;">تفاصيل الحركات (سطر لكل حركة):</h4>`;
+        mDetailsHtml = `<h4 style="margin-top:14px;">تفاصيل الحركات (سطر لكل حركة):</h4>`;
         mDetailsHtml += `
           <table>
             <thead>
@@ -2104,9 +2077,40 @@ function renderReportsClientOptions(){
         });
 
         mDetailsHtml += `</tbody></table>`;
-
-        tableHtml += mSummaryHtml + mDetailsHtml;
       }
+
+      // 3) ✅ الجدول الأهم: الرصيد النهائي (الكشوف + الحركات)
+      const finalCurrencies = new Set([...Object.keys(totals), ...Object.keys(mtot)]);
+      let finalHtml = `<h4 style="margin-top:14px;">الرصيد النهائي للتاجر (الكشوف + الحركات):</h4>`;
+      finalHtml += `
+        <table>
+          <thead>
+            <tr>
+              <th>العملة</th>
+              <th>إجمالي له</th>
+              <th>إجمالي عليه</th>
+              <th>الصافي النهائي (له/عليه)</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      Array.from(finalCurrencies).sort().forEach(c=>{
+        const st = totals[c] || {lah:0, alaih:0};
+        const mv = mtot[c]   || {lah:0, alaih:0, balance:0};
+        const fLah   = (st.lah||0) + (mv.lah||0);
+        const fAlaih = (st.alaih||0) + (mv.alaih||0);
+        const fNet   = fLah - fAlaih;
+        const dir    = fNet>0 ? "له" : (fNet<0 ? "عليه" : "لا شيء");
+        finalHtml += `
+          <tr>
+            <td>${c}</td>
+            <td>${fLah}</td>
+            <td>${fAlaih}</td>
+            <td>${Math.abs(fNet)} (${dir})</td>
+          </tr>`;
+      });
+
+      finalHtml += `</tbody></table>`;
 
       reportBox.innerHTML = headerHtml + tableHtml + mSummaryHtml + finalHtml + mDetailsHtml;
     }
