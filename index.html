@@ -400,6 +400,16 @@
       <div class="card" id="accountMovementsCard">
         <label class="section-title">💰 حركات حساب التاجر (حوالات/سداد/مصروف)</label>
         <p class="muted">هذه الحركات مستقلة عن الكشوفات. لكل حركة يظهر الرصيد بعدها (حسب العملة).</p>
+        <div class="row">
+          <div style="flex:2;">
+            <label>اسم التاجر:</label>
+            <input id="movClientName" type="text" list="clientsDatalist" placeholder="اكتب أو اختر اسم التاجر" />
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button class="pill-btn pill-dark" id="movLoadBtn" type="button" style="height:42px;">🔄 عرض الحركات</button>
+          </div>
+        </div>
+
 
         <div class="row">
           <div style="flex:2;">
@@ -798,6 +808,13 @@ const tabStatements = document.getElementById("tabStatements");
         tabClients.classList.remove("active");
         tabReports.classList.add("active");
         renderReportsClientOptions();
+      renderClientsDatalist();
+
+      // ✅ ترحيل مباشر للتقارير بعد الحفظ
+      showScreen("reports");
+      reportClientSelect.value = name;
+      buildDetailedReport();
+
 
     // تهيئة حركات الحساب
     if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
@@ -835,6 +852,8 @@ const tabStatements = document.getElementById("tabStatements");
     const mvCurrSelect = document.getElementById("mvCurr");
     const mvDirSelect  = document.getElementById("mvDir");
     const mvDateInput  = document.getElementById("mvDate");
+    const movClientNameInput = document.getElementById("movClientName");
+    const movLoadBtn        = document.getElementById("movLoadBtn");
     const addMovementBtn = document.getElementById("addMovementBtn");
     const clearMovementsForClientBtn = document.getElementById("clearMovementsForClientBtn");
 
@@ -878,7 +897,7 @@ const tabStatements = document.getElementById("tabStatements");
     normalizeNumericInput(mvAmountInput);
 
     if (addMovementBtn) addMovementBtn.onclick = () => {
-      const name = clientNameInput.value.trim();
+      const name = (movClientNameInput && movClientNameInput.value.trim()) || clientNameInput.value.trim();
       if(!name){ alert("اكتب اسم التاجر أولاً"); return; }
 
       const amountRaw = (mvAmountInput.value || "").replace(/,/g,"");
@@ -909,7 +928,7 @@ const tabStatements = document.getElementById("tabStatements");
     };
 
     if (clearMovementsForClientBtn) clearMovementsForClientBtn.onclick = () => {
-      const name = clientNameInput.value.trim();
+      const name = (movClientNameInput && movClientNameInput.value.trim()) || clientNameInput.value.trim();
       if(!name){ alert("اكتب اسم التاجر أولاً"); return; }
       if(confirm("هل تريد مسح جميع حركات هذا التاجر؟ لا يمكن التراجع.")){
         clearMovementsForClient(name);
@@ -924,6 +943,20 @@ const tabStatements = document.getElementById("tabStatements");
     clientNameInput.addEventListener("input", ()=>{
       renderMovementsForClient(clientNameInput.value.trim());
     });
+
+    // ✅ اختيار/كتابة اسم التاجر لحركات الحساب (مستقل عن حقل العميل في الكشوف)
+    if(movClientNameInput){
+      movClientNameInput.addEventListener("input", ()=>{
+        renderMovementsForClient(movClientNameInput.value.trim());
+      });
+    }
+    if(movLoadBtn){
+      movLoadBtn.onclick = ()=>{
+        const n = (movClientNameInput && movClientNameInput.value.trim()) || clientNameInput.value.trim();
+        renderMovementsForClient(n);
+      };
+    }
+
 
     statementsSearchInput.addEventListener("input", renderStatementsList);
 
@@ -1156,6 +1189,13 @@ const tabStatements = document.getElementById("tabStatements");
       renderTotalsForCurrentClient();
       updatePreviewText();
       renderReportsClientOptions();
+      renderClientsDatalist();
+
+      // ✅ ترحيل مباشر للتقارير بعد الحفظ
+      showScreen("reports");
+      reportClientSelect.value = name;
+      buildDetailedReport();
+
 
     // تهيئة حركات الحساب
     if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
@@ -1440,6 +1480,13 @@ const tabStatements = document.getElementById("tabStatements");
       renderTotalsForCurrentClient();
       updatePreviewText();
       renderReportsClientOptions();
+      renderClientsDatalist();
+
+      // ✅ ترحيل مباشر للتقارير بعد الحفظ
+      showScreen("reports");
+      reportClientSelect.value = name;
+      buildDetailedReport();
+
 
     // تهيئة حركات الحساب
     if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
@@ -1463,6 +1510,13 @@ const tabStatements = document.getElementById("tabStatements");
       renderClientsList();
       renderStatementsList();
       renderReportsClientOptions();
+      renderClientsDatalist();
+
+      // ✅ ترحيل مباشر للتقارير بعد الحفظ
+      showScreen("reports");
+      reportClientSelect.value = name;
+      buildDetailedReport();
+
 
     // تهيئة حركات الحساب
     if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
@@ -1728,6 +1782,7 @@ const tabStatements = document.getElementById("tabStatements");
 </head>
 <body>
   ${html}
+  <datalist id="clientsDatalist"></datalist>
 </body>
 </html>`);
       w.document.close();
@@ -1880,7 +1935,15 @@ const tabStatements = document.getElementById("tabStatements");
     }
 
     // ====== تقارير العملاء (الإجمالي حسب العملة، جدول) ======
-    function renderReportsClientOptions(){
+    
+    function renderClientsDatalist(){
+      const dl = document.getElementById("clientsDatalist");
+      if(!dl) return;
+      const names = Object.keys(state.data.clients || {}).sort((a,b)=>a.localeCompare(b,"ar"));
+      dl.innerHTML = names.map(n=>`<option value="${escapeHtml(n)}"></option>`).join("");
+    }
+
+function renderReportsClientOptions(){
       while (reportClientSelect.options.length > 1) {
         reportClientSelect.remove(1);
       }
@@ -1969,6 +2032,41 @@ const tabStatements = document.getElementById("tabStatements");
 
         mSummaryHtml += `</tbody></table>`;
 
+        // ✅ الإجمالي النهائي بعد إضافة الحركات (الكشوف + الحركات)
+        const finalCurrencies = new Set([...Object.keys(totals), ...Object.keys(mtot)]);
+        let finalHtml = `<h4 style="margin-top:14px;">الإجمالي النهائي بعد إضافة الحركات:</h4>`;
+        finalHtml += `
+          <table>
+            <thead>
+              <tr>
+                <th>العملة</th>
+                <th>إجمالي له</th>
+                <th>إجمالي عليه</th>
+                <th>الصافي</th>
+              </tr>
+            </thead>
+            <tbody>`;
+        Array.from(finalCurrencies).forEach(c=>{
+          const sLah = (totals[c]?.lah || 0);
+          const sAl  = (totals[c]?.alaih || 0);
+          const mLah = (mtot[c]?.lah || 0);
+          const mAl  = (mtot[c]?.alaih || 0);
+          const fLah = sLah + mLah;
+          const fAl  = sAl  + mAl;
+          const fNet = fLah - fAl;
+          const dir  = fNet>0 ? "له" : (fNet<0 ? "عليه" : "لا شيء");
+          finalHtml += `
+            <tr>
+              <td>${c}</td>
+              <td>${fLah}</td>
+              <td>${fAl}</td>
+              <td>${Math.abs(fNet)} (${dir})</td>
+            </tr>`;
+        });
+        finalHtml += `</tbody></table>`;
+
+
+
         // تفاصيل الحركات كسطور (مع رصيد تراكمي لكل عملة)
         const running = {};
         let mDetailsHtml = `<h4 style="margin-top:14px;">تفاصيل الحركات (سطر لكل حركة):</h4>`;
@@ -2010,7 +2108,7 @@ const tabStatements = document.getElementById("tabStatements");
         tableHtml += mSummaryHtml + mDetailsHtml;
       }
 
-      reportBox.innerHTML = headerHtml + tableHtml;
+      reportBox.innerHTML = headerHtml + tableHtml + mSummaryHtml + finalHtml + mDetailsHtml;
     }
 
     function computeTotalsForStatement(st){
@@ -2238,6 +2336,7 @@ table .col-title{ width:32%; }
 </head>
 <body>
 ${htmlContent}
+  <datalist id="clientsDatalist"></datalist>
 </body>
 </html>`);
       w.document.close();
@@ -2271,6 +2370,13 @@ ${htmlContent}
           renderTotalsForCurrentClient();
           updatePreviewText();
           renderReportsClientOptions();
+      renderClientsDatalist();
+
+      // ✅ ترحيل مباشر للتقارير بعد الحفظ
+      showScreen("reports");
+      reportClientSelect.value = name;
+      buildDetailedReport();
+
 
     // تهيئة حركات الحساب
     if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
@@ -2418,8 +2524,16 @@ ${htmlContent}
     updatePreviewText();
     renderStatementsList();
     renderClientsList();
+    renderClientsDatalist();
     renderTotalsForCurrentClient();
     renderReportsClientOptions();
+      renderClientsDatalist();
+
+      // ✅ ترحيل مباشر للتقارير بعد الحفظ
+      showScreen("reports");
+      reportClientSelect.value = name;
+      buildDetailedReport();
+
 
     // تهيئة حركات الحساب
     if (mvDateInput) mvDateInput.value = new Date().toISOString().slice(0,10);
@@ -2447,5 +2561,6 @@ ${htmlContent}
     // تعريض دالة النسخ للملفات الخارجية مثل app.js
     window.copyEntriesFromPreviousStatement = copyEntriesFromPreviousStatement;
   </script>
+  <datalist id="clientsDatalist"></datalist>
 </body>
 </html>
